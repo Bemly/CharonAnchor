@@ -1,0 +1,6 @@
+# VSCode
+/.vscode
+
+# CSharp
+/*/bin
+/*/obj
