@@ -46,7 +46,7 @@ internal sealed class SegmentBufferWriter : IBufferWriter<byte>, IDisposable
         ArrayPool<byte>.Shared.Return(_currentSegment);
     }
     
-    private void Clear()
+    public void Clear()
     {
         _position = 0;
         _bytesWritten = 0;
@@ -65,6 +65,22 @@ internal sealed class SegmentBufferWriter : IBufferWriter<byte>, IDisposable
         }
         
         span.CopyTo(_currentSegment.AsSpan(0, _position));
+    }
+    
+    public ReadOnlyMemory<byte> CreateReadOnlyMemory ()
+    {
+        var result = new byte[_bytesWritten];
+        var span = result.AsSpan();
+        
+        foreach (var buffer in _completedBuffers)
+        {
+            buffer.Span.CopyTo(span);
+            span = span[buffer.Length..];
+        }
+        
+        _currentSegment.AsSpan(0, _position).CopyTo(span);
+
+        return new ReadOnlyMemory<byte>(result);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]

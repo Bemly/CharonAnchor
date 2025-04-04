@@ -1,4 +1,3 @@
-using System.Buffers.Binary;
 using Lagrange.Core.Common;
 using Lagrange.Core.Utility.Binary;
 using Lagrange.Core.Utility.Compression;
