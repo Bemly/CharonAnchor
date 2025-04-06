@@ -60,14 +60,14 @@ internal class SocketContext : IClientListener, IDisposable
     
     public ValueTask<int> Send(ReadOnlyMemory<byte> packet) => _client.Send(packet);
     
-    private async Task SortServers(Uri[] servers)
+    private async Task SortServers(string[] servers)
     {
         using var ping = new Ping();
-        var sorted = new List<(long, Uri)>(servers.Length);
+        var sorted = new List<(long, string)>(servers.Length);
         
         foreach (var server in servers)
         {
-            var latency = await ping.SendPingAsync(server.Host, 1000);
+            var latency = await ping.SendPingAsync(server, 1000);
             if (latency.Status == IPStatus.Success)
             {
                 sorted.Add((latency.RoundtripTime, server));
@@ -79,13 +79,13 @@ internal class SocketContext : IClientListener, IDisposable
         for (int i = 0; i < sorted.Count; i++) servers[i] = sorted[i].Item2;
     }
     
-    private static async Task<Uri[]> ResolveDns(bool useIPv6Network = false)
+    private async Task<string[]> ResolveDns()
     {
-        string host = useIPv6Network ? "msfwifiv6.3g.qq.com" : "msfwifi.3g.qq.com";
-        var entry = await Dns.GetHostEntryAsync(host, useIPv6Network ? AddressFamily.InterNetworkV6 : AddressFamily.InterNetwork);
-        var result = new Uri[entry.AddressList.Length];
-        
-        for (int i = 0; i < entry.AddressList.Length; i++) result[i] = new Uri($"http://{entry.AddressList[i]}:8080");
+        string host = _config.UseIPv6Network ? "msfwifiv6.3g.qq.com" : "msfwifi.3g.qq.com";
+        var entry = await Dns.GetHostEntryAsync(host, _config.UseIPv6Network ? AddressFamily.InterNetworkV6 : AddressFamily.InterNetwork);
+        var result = new string[entry.AddressList.Length];
+
+        for (int i = 0; i < entry.AddressList.Length; i++) result[i] = entry.AddressList[i].ToString();
 
         return result;
     }

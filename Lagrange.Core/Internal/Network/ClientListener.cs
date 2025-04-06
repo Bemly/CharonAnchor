@@ -20,11 +20,11 @@ internal abstract partial class ClientListener : IClientListener
     /// </summary>
     protected ClientListener() { }
 
-    private async Task<bool> InternalConnectAsync(SocketSession session, Uri uri)
+    private async Task<bool> InternalConnectAsync(SocketSession session, string uri, ushort port)
     {
         try
         {
-            await session.Socket.ConnectAsync(uri.Host, uri.Port);
+            await session.Socket.ConnectAsync(uri, port);
             _ = ReceiveLoop(session);
             return true;
         }
@@ -39,9 +39,10 @@ internal abstract partial class ClientListener : IClientListener
     /// <summary>
     /// Connect to the server
     /// </summary>
-    public Task<bool> Connect(Uri uri)
+    public Task<bool> Connect(string uri)
     {
-        bool isIPv6 = uri.HostNameType == UriHostNameType.IPv6;
+        bool isIPv6 = uri.Contains("::");
+        ushort port = (ushort)(isIPv6 ? 14000 : 8080);
         
         SocketSession? previousSession = Session, createdSession = null;
         if (previousSession != null || // The client has been connected
@@ -51,7 +52,7 @@ internal abstract partial class ClientListener : IClientListener
             return Task.FromResult(false);
         }
 
-        return InternalConnectAsync(createdSession, uri);
+        return InternalConnectAsync(createdSession, uri, port);
     }
 
     /// <summary>
