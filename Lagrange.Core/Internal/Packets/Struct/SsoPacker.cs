@@ -57,12 +57,12 @@ internal class SsoPacker(BotContext context) : StructBase(context)
         var body = parent.ReadBytes(Prefix.Int32 | Prefix.WithPrefix);
         
         var headReader = new BinaryPacket(head);
-        int sequence = headReader.ReadInt32();
-        int retCode = headReader.ReadInt32();
+        int sequence = headReader.Read<int>();
+        int retCode = headReader.Read<int>();
         string extra = headReader.ReadString(Prefix.Int32 | Prefix.WithPrefix);
         string command = headReader.ReadString(Prefix.Int32 | Prefix.WithPrefix);
         var msgCookie = headReader.ReadBytes(Prefix.Int32 | Prefix.WithPrefix);
-        int dataFlag = headReader.ReadInt32();
+        int dataFlag = headReader.Read<int>();
         var reserveField = headReader.ReadBytes(Prefix.Int32 | Prefix.WithPrefix);
         
         ReadOnlyMemory<byte> payload = dataFlag switch

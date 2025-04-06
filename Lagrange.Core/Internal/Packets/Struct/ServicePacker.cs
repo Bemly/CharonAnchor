@@ -68,12 +68,12 @@ internal class ServicePacker(BotContext context) : StructBase(context)
     {
         var reader = new BinaryPacket(input);
         
-        uint length = reader.ReadUInt32();
-        int protocol = reader.ReadInt32();
-        var authFlag = (EncryptType)reader.ReadByte();
-        byte dummy = reader.ReadByte();
+        uint length = reader.Read<uint>();
+        int protocol = reader.Read<int>();
+        var authFlag = (EncryptType)reader.Read<byte>();
+        byte dummy = reader.Read<byte>();
         
-        int uinLength = reader.ReadInt32();
+        int uinLength = reader.Read<int>();
         Span<char> uin = stackalloc char[uinLength - 4];
         reader.ReadString(uin);
 

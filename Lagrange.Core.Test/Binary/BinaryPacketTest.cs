@@ -67,12 +67,12 @@ public class BinaryPacketTest
     {
         var packet = new BinaryPacket(StackBuffer.AsSpan());
         
-        uint length = packet.ReadUInt32();
-        int value1 = packet.ReadInt32();
-        long value2 = packet.ReadInt64();
-        uint value3 = packet.ReadUInt32();
-        long value4 = packet.ReadInt64();
-        ulong value5 = packet.ReadUInt64();
+        uint length = packet.Read<uint>();
+        int value1 = packet.Read<int>();
+        long value2 = packet.Read<long>();
+        uint value3 = packet.Read<uint>();
+        long value4 = packet.Read<long>();
+        ulong value5 = packet.Read<ulong>();
         string value6 = Encoding.UTF8.GetString(packet.ReadBytes(Prefix.Int16 | Prefix.WithPrefix));
         string value7 = Encoding.UTF8.GetString(packet.ReadBytes(Prefix.Int32 | Prefix.WithPrefix));
         
@@ -96,9 +96,9 @@ public class BinaryPacketTest
     {
         var packet = new BinaryPacket(ArrayPoolBuffer.AsSpan());
         
-        short value1 = packet.ReadInt16();
-        long value2 = packet.ReadInt64();
-        ushort value3 = packet.ReadUInt16();
+        short value1 = packet.Read<short>();
+        long value2 = packet.Read<long>();
+        ushort value3 = packet.Read<ushort>();
         string value4 = Encoding.UTF8.GetString(packet.ReadBytes(Prefix.Int8 | Prefix.WithPrefix));
         string value5 = Encoding.UTF8.GetString(packet.ReadBytes(Prefix.Int32 | Prefix.WithPrefix));
         var value6 = packet.ReadBytes(Prefix.Int32 | Prefix.WithPrefix).ToArray();
@@ -120,15 +120,15 @@ public class BinaryPacketTest
     public void TestPeekBuffer()
     {
         var reader = new BinaryPacket(PeekBuffer.AsSpan());
+
+        byte value1 = reader.Peek<byte>();
+        short value2 = reader.Peek<short>();
+        int value3 = reader.Peek<int>();
+        long value4 = reader.Peek<long>();
         
-        byte value1 = reader.PeekByte();
-        short value2 = reader.PeekInt16();
-        int value3 = reader.PeekInt32();
-        long value4 = reader.PeekInt64();
-        
-        ushort value5 = reader.PeekUInt16();
-        uint value6 = reader.PeekUInt32();
-        ulong value7 = reader.PeekUInt64();
+        ushort value5 = reader.Peek<ushort>();
+        uint value6 = reader.Peek<uint>();
+        ulong value7 = reader.Peek<ulong>();
         
         reader.Skip(8);
         var span = reader.CreateReadOnlySpan();
@@ -154,8 +154,8 @@ public class BinaryPacketTest
     {
         var reader = new BinaryPacket(ReadOnlyMemoryBuffer);
 
-        long value1 = reader.ReadInt64();
-        long value2 = reader.ReadInt64();
+        long value1 = reader.Read<long>();
+        long value2 = reader.Read<long>();
         int length = reader.ToArray().Length;
         
         Assert.Multiple(() =>
@@ -171,7 +171,7 @@ public class BinaryPacketTest
     {
         var packet = new BinaryPacket(ExitLengthBarrierBuffer.AsSpan());
         
-        int value = packet.ReadInt32();
+        int value = packet.Read<int>();
         
         Assert.Multiple(() =>
         {

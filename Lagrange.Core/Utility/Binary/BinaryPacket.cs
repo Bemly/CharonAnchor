@@ -73,26 +73,6 @@ internal ref struct BinaryPacket
         _buffer = ref _span.GetPinnableReference();
     }
     
-    public void Write(byte value) => WriteToPacket(in value);
-
-    public void Write(short value)
-    {
-        if (BitConverter.IsLittleEndian) value = BinaryPrimitives.ReverseEndianness(value);
-        WriteToPacket(in value);
-    }
-    
-    public void Write(int value)
-    {
-        if (BitConverter.IsLittleEndian) value = BinaryPrimitives.ReverseEndianness(value);
-        WriteToPacket(in value);
-    }
-    
-    public void Write(long value)
-    {
-        if (BitConverter.IsLittleEndian) value = BinaryPrimitives.ReverseEndianness(value);
-        WriteToPacket(in value);
-    }
-    
     public void Write(scoped ReadOnlySpan<byte> value)
     {
         if (_offset + value.Length > _capacity) GrowSize(value.Length);
@@ -101,22 +81,14 @@ internal ref struct BinaryPacket
         Increment(value.Length);
     }
     
-    public void Write(ushort value)
+    public void Write<T>(in T value) where T : unmanaged, INumberBase<T>
     {
-        if (BitConverter.IsLittleEndian) value = BinaryPrimitives.ReverseEndianness(value);
-        WriteToPacket(in value);
+        WriteToPacket(BitConverter.IsLittleEndian ? BinaryHelper.ReverseEndianness(value) : value);
     }
     
-    public void Write(uint value)
+    public void Write<T>(in T value, int offset) where T : unmanaged, INumberBase<T>
     {
-        if (BitConverter.IsLittleEndian) value = BinaryPrimitives.ReverseEndianness(value);
-        WriteToPacket(in value);
-    }
-    
-    public void Write(ulong value)
-    {
-        if (BitConverter.IsLittleEndian) value = BinaryPrimitives.ReverseEndianness(value);
-        WriteToPacket(in value);
+        Unsafe.WriteUnaligned(ref _span[offset], BitConverter.IsLittleEndian ? BinaryHelper.ReverseEndianness(value) : value);
     }
     
     private void WriteLength(int length, Prefix flag, int addition = 0)
@@ -188,9 +160,9 @@ internal ref struct BinaryPacket
         
         int length = prefixLength switch
         {
-            1 => ReadByte(),
-            2 => ReadInt16(),
-            4 => ReadInt32(),
+            1 => Read<byte>(),
+            2 => Read<short>(),
+            4 => Read<int>(),
             _ => throw new ArgumentOutOfRangeException(nameof(flag), "Invalid prefix length")
         };
         if (lengthCounted) length -= prefixLength;
@@ -216,41 +188,13 @@ internal ref struct BinaryPacket
         return buffer;
     }
     
-    public long ReadInt64()
+    public T Read<T>() where T : unmanaged, INumberBase<T>
     {
-        long value = Unsafe.ReadUnaligned<long>(ref _buffer);
-        if (BitConverter.IsLittleEndian) value = BinaryPrimitives.ReverseEndianness(value);
+        T value = BitConverter.IsLittleEndian
+            ? BinaryHelper.ReverseEndianness(Unsafe.ReadUnaligned<T>(ref _buffer))
+            : Unsafe.ReadUnaligned<T>(ref _buffer);
         
-        Increment<long>();
-        
-        return value;
-    }
-    
-    public int ReadInt32()
-    {
-        int value = Unsafe.ReadUnaligned<int>(ref _buffer);
-        if (BitConverter.IsLittleEndian) value = BinaryPrimitives.ReverseEndianness(value);
-        
-        Increment<int>();
-        
-        return value;
-    }
-    
-    public short ReadInt16()
-    {
-        short value = Unsafe.ReadUnaligned<short>(ref _buffer);
-        if (BitConverter.IsLittleEndian) value = BinaryPrimitives.ReverseEndianness(value);
-        
-        Increment<short>();
-        
-        return value;
-    }
-    
-    public byte ReadByte()
-    {
-        byte value = _buffer;
-        
-        Increment<byte>();
+        Increment<T>();
         
         return value;
     }
@@ -276,51 +220,13 @@ internal ref struct BinaryPacket
         return Encoding.UTF8.GetString(buffer);
     }
     
-    public ushort ReadUInt16()
-    {
-        ushort value = Unsafe.ReadUnaligned<ushort>(ref _buffer);
-        if (BitConverter.IsLittleEndian) value = BinaryPrimitives.ReverseEndianness(value);
-        
-        Increment<ushort>();
-        
-        return value;
-    }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public T Peek<T>() where T : unmanaged, INumberBase<T> => BitConverter.IsLittleEndian
+        ? BinaryHelper.ReverseEndianness(Unsafe.ReadUnaligned<T>(ref _buffer))
+        : Unsafe.ReadUnaligned<T>(ref _buffer);
     
-    public uint ReadUInt32()
-    {
-        uint value = Unsafe.ReadUnaligned<uint>(ref _buffer);
-        if (BitConverter.IsLittleEndian) value = BinaryPrimitives.ReverseEndianness(value);
-        
-        Increment<uint>();
-        
-        return value;
-    }
-    
-    public ulong ReadUInt64()
-    {
-        ulong value = Unsafe.ReadUnaligned<ulong>(ref _buffer);
-        if (BitConverter.IsLittleEndian) value = BinaryPrimitives.ReverseEndianness(value);
-        
-        Increment<ulong>();
-        
-        return value;
-    }
-    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Skip(int count) => Increment(count);
-    
-    public byte PeekByte() => _buffer;
-    
-    public short PeekInt16() => BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(Unsafe.ReadUnaligned<short>(ref _buffer)) : Unsafe.ReadUnaligned<short>(ref _buffer);
-    
-    public int PeekInt32() => BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(Unsafe.ReadUnaligned<int>(ref _buffer)) : Unsafe.ReadUnaligned<int>(ref _buffer);
-    
-    public long PeekInt64() => BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(Unsafe.ReadUnaligned<long>(ref _buffer)) : Unsafe.ReadUnaligned<long>(ref _buffer);
-    
-    public ushort PeekUInt16() => BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(Unsafe.ReadUnaligned<ushort>(ref _buffer)) : Unsafe.ReadUnaligned<ushort>(ref _buffer);
-    
-    public uint PeekUInt32() => BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(Unsafe.ReadUnaligned<uint>(ref _buffer)) : Unsafe.ReadUnaligned<uint>(ref _buffer);
-    
-    public ulong PeekUInt64() => BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(Unsafe.ReadUnaligned<ulong>(ref _buffer)) : Unsafe.ReadUnaligned<ulong>(ref _buffer);
     
     public void EnterLengthBarrier<T>() where T : unmanaged
     {
@@ -328,29 +234,29 @@ internal ref struct BinaryPacket
         Increment<T>(); // reserve space for length
     }
     
-    public unsafe void ExitLengthBarrier<T>(bool includePrefix, int addition = 0) where T : unmanaged
+    public unsafe void ExitLengthBarrier<T>(bool includePrefix, int addition = 0) where T : unmanaged, INumberBase<T>
     {
         Debug.Assert(_barrier != -1, "Barrier must be set before exiting");
         
         int written = _offset - _barrier + addition;
         if (!includePrefix) written -= sizeof(T);
+
+        T casted = BitConverter.IsLittleEndian
+            ? BinaryHelper.ReverseEndianness(T.CreateTruncating(written))
+            : T.CreateTruncating(written);
+        Unsafe.WriteUnaligned(ref _span[_barrier], casted);
         
-        if (BitConverter.IsLittleEndian) written = BinaryPrimitives.ReverseEndianness(written);
-        Unsafe.WriteUnaligned(ref _span[_barrier], Unsafe.As<int, T>(ref written));
+        _barrier = -1;
     }
     
     public void ExitCustomBarrier<T>(T barrier) where T : unmanaged, INumber<T>
     {
         Debug.Assert(_barrier != -1, "Barrier must be set before exiting");
 
-        if (BitConverter.IsLittleEndian)
-        {
-            ulong casted = Unsafe.As<T, ulong>(ref barrier);
-            ulong reversed = BinaryPrimitives.ReverseEndianness(casted);
-            ulong shifted = reversed >> (sizeof(ulong) - Unsafe.SizeOf<T>()) * 8;
-            barrier = Unsafe.As<ulong, T>(ref shifted);
-        }
-        Unsafe.WriteUnaligned(ref _span[_barrier], barrier);
+        T casted = BitConverter.IsLittleEndian
+            ? BinaryHelper.ReverseEndianness(barrier)
+            : barrier;
+        Unsafe.WriteUnaligned(ref _span[_barrier], casted);
         
         _barrier = -1;
     }
@@ -420,6 +326,6 @@ internal ref struct BinaryPacket
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Dispose()
     {
-        if (_bytesToReturnToPool is not null) ArrayPool<byte>.Shared.Return(_bytesToReturnToPool.ToArray());
+        if (_bytesToReturnToPool is not null) ArrayPool<byte>.Shared.Return(_bytesToReturnToPool);
     }
 }
