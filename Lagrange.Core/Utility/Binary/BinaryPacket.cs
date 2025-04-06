@@ -320,7 +320,10 @@ internal ref struct BinaryPacket
     public Span<byte> CreateSpan(int length)
     {
         if (_offset + length > _capacity) GrowSize(length);
-        return _span.Slice(_offset, length);
+        var span = _span.Slice(_offset, length);
+        Increment(length);
+        
+        return span;
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

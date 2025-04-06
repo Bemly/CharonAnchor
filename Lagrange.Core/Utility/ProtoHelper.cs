@@ -1,7 +1,8 @@
 ﻿using System.Collections.Concurrent;
+using Lagrange.Core.Utility.Binary;
 using ProtoBuf.Meta;
 
-namespace Lagrange.Core.Utility.Binary;
+namespace Lagrange.Core.Utility;
 
 internal static class ProtoHelper
 {

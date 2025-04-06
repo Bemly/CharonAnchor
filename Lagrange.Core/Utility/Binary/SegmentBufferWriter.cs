@@ -64,10 +64,10 @@ internal sealed class SegmentBufferWriter : IBufferWriter<byte>, IDisposable
             span = span[buffer.Length..];
         }
         
-        span.CopyTo(_currentSegment.AsSpan(0, _position));
+        _currentSegment.AsSpan(0, _position).CopyTo(span);
     }
     
-    public ReadOnlyMemory<byte> CreateReadOnlyMemory ()
+    public ReadOnlyMemory<byte> CreateReadOnlyMemory()
     {
         var result = new byte[_bytesWritten];
         var span = result.AsSpan();

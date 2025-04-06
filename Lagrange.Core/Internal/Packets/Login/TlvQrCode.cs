@@ -1,17 +1,28 @@
 using Lagrange.Core.Common;
+using Lagrange.Core.Utility;
 using Lagrange.Core.Utility.Binary;
+using ProtoBuf;
 
 namespace Lagrange.Core.Internal.Packets.Login;
 
-internal ref struct TlvQrCode(BotContext context)
+internal ref struct TlvQrCode
 {
-    private BinaryPacket _writer = new(); // TODO: Determine the allocation type of the BinaryPacket
+    private BinaryPacket _writer;
 
     private short _count;
     
-    private readonly BotKeystore _keystore = context.Keystore;
+    private readonly BotKeystore _keystore;
     
-    private readonly BotAppInfo _appInfo = context.AppInfo;
+    private readonly BotAppInfo _appInfo;
+
+    public TlvQrCode(BotContext context)
+    {
+        _keystore = context.Keystore;
+        _appInfo = context.AppInfo;
+        
+        _writer = new BinaryPacket(300);
+        _writer.Skip(2);
+    }
 
     public void Tlv16()
     {
@@ -82,13 +93,29 @@ internal ref struct TlvQrCode(BotContext context)
         
         _writer.ExitLengthBarrier<short>(false);
     }
-    
-    public void WriteTo(ref BinaryPacket writer)
+
+    public void TlvD1()
     {
-        writer.Write(_count);
-        writer.Write(_writer.CreateReadOnlySpan());
+        WriteTlv(0xD1);
         
-        _writer.Dispose();
+        var obj = new TlvQrCodeD1
+        {
+            Sys = new NTQrCodeInfo
+            {
+                OS = _appInfo.Os,
+                Name = _keystore.DeviceName
+            },
+            Type = [0x30, 0xD1]
+        };
+        ProtoHelper.Serialize(ref _writer, obj);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+
+    public ReadOnlySpan<byte> CreateReadOnlySpan()
+    {
+        _writer.Write(_count, 0);
+        return _writer.CreateReadOnlySpan();
     }
     
     private void WriteTlv(short tag)
@@ -97,4 +124,26 @@ internal ref struct TlvQrCode(BotContext context)
         _writer.EnterLengthBarrier<short>();
         _count++;
     }
+}
+
+#pragma warning disable CS8618
+
+[ProtoContract]
+internal class TlvQrCodeD1
+{
+    [ProtoMember(1)] public NTQrCodeInfo Sys { get; set; }
+    
+    [ProtoMember(2)] public string Url { get; set; }
+    
+    [ProtoMember(3)] public string QrSig { get; set; }
+    
+    [ProtoMember(4)] public byte[] Type { get; set; }
+}
+
+[ProtoContract]
+internal class NTQrCodeInfo
+{
+    [ProtoMember(1)] public string OS { get; set; }
+    
+    [ProtoMember(2)] public string Name { get; set; }
 }
