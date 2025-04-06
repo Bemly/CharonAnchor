@@ -3,13 +3,13 @@ using ProtoBuf.Meta;
 
 namespace Lagrange.Core.Utility.Binary;
 
-internal static class Protobuf
+internal static class ProtoHelper
 {
     private static readonly ConcurrentQueue<SegmentBufferWriter> BufferPool = new();
     
     private static readonly RuntimeTypeModel Serializer = RuntimeTypeModel.Create();
 
-    static Protobuf()
+    static ProtoHelper()
     {
         Serializer.UseImplicitZeroDefaults = false; // don't use default values because QQ use proto2 that preserves default values
     }

@@ -99,7 +99,7 @@ internal class SsoPacker(BotContext context) : StructBase(context)
         };
      
         writer.EnterLengthBarrier<int>();
-        Protobuf.Serialize(ref writer, reserved);
+        ProtoHelper.Serialize(ref writer, reserved);
         writer.ExitLengthBarrier<int>(true);
     }
 }
