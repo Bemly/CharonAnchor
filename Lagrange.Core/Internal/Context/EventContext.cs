@@ -7,7 +7,7 @@ using Lagrange.Core.Internal.Packets.Struct;
 
 namespace Lagrange.Core.Internal.Context;
 
-internal class EventContext
+internal class EventContext : IDisposable
 {
     private readonly BotContext _context;
     
@@ -134,4 +134,12 @@ internal class EventContext
     }
     
     public T GetLogic<T>() where T : ILogic => (T)_logics[typeof(T)];
+
+    public void Dispose()
+    {
+        foreach (var logic in _logics.Values)
+        {
+            if (logic is IDisposable disposable) disposable.Dispose();
+        }
+    }
 }

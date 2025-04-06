@@ -5,7 +5,7 @@ using Lagrange.Core.Internal.Context;
 
 namespace Lagrange.Core;
 
-public class BotContext
+public class BotContext : IDisposable
 {
     internal BotContext(BotConfig config, BotKeystore keystore, BotAppInfo appInfo)
     {
@@ -52,4 +52,11 @@ public class BotContext
     public void LogTrace(string tag, string message) => EventInvoker.PostEvent(new BotLogEvent(tag, LogLevel.Trace, message));
 
     #endregion
+
+    public void Dispose()
+    {
+        EventInvoker.Dispose();
+        SocketContext.Dispose();
+        EventContext.Dispose();
+    }
 }

@@ -5,7 +5,7 @@ using Lagrange.Core.Events.EventArgs;
 
 namespace Lagrange.Core.Events;
 
-public class EventInvoker(BotContext context)
+public class EventInvoker(BotContext context) : IDisposable
 {
     private const string Tag = nameof(EventInvoker);
     
@@ -95,4 +95,10 @@ public class EventInvoker(BotContext context)
             PostEvent(new BotLogEvent(Tag, LogLevel.Error, $"{ex}"));
         }
     });
+
+    public void Dispose()
+    {
+        _actions.Clear();
+        _asyncActions.Clear();
+    }
 }
