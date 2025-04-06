@@ -38,7 +38,7 @@ internal ref struct Tlv(BotContext context)
         _writer.Write(_appInfo.AppId);
         _writer.Write(_appInfo.SubAppId);
         _writer.Write(8001u); // app client ver
-        _writer.Write(_appInfo.MainSigMap);
+        _writer.Write(_appInfo.SdkInfo.MainSigMap);
         
         _writer.ExitLengthBarrier<short>(false);
     }
@@ -68,10 +68,10 @@ internal ref struct Tlv(BotContext context)
     {
         WriteTlv(0x116);
         
-        _writer.Write((byte)0);
-        _writer.Write(12058620u);
-        _writer.Write(_appInfo.SubSigMap);
-        _writer.Write((byte)0);
+        _writer.Write((byte)0); // version
+        _writer.Write(_appInfo.SdkInfo.MiscBitMap); // miscBitMap
+        _writer.Write(_appInfo.SdkInfo.SubSigMap);
+        _writer.Write((byte)0); // length of subAppId
         
         _writer.ExitLengthBarrier<short>(false);
     }
@@ -157,7 +157,7 @@ internal ref struct Tlv(BotContext context)
         
         _writer.Write(_appInfo.AppId);
         _writer.Write(_appInfo.PtVersion, Prefix.Int16 | Prefix.LengthOnly);
-        _writer.Write(_appInfo.PackageName, Prefix.Int16 | Prefix.LengthOnly);
+        _writer.Write(_appInfo.ApkSignatureMd5, Prefix.Int16 | Prefix.LengthOnly);
         
         _writer.ExitLengthBarrier<short>(false);
     }
@@ -194,8 +194,8 @@ internal ref struct Tlv(BotContext context)
         WriteTlv(0x177);
         
         _writer.Write((byte)1);
-        _writer.Write(0);
-        _writer.Write(_appInfo.WtLoginSdk, Prefix.Int16 | Prefix.LengthOnly);
+        _writer.Write(0); // sdk build time
+        _writer.Write(_appInfo.SdkInfo.SdkVersion, Prefix.Int16 | Prefix.LengthOnly);
         
         _writer.ExitLengthBarrier<short>(false);
     }

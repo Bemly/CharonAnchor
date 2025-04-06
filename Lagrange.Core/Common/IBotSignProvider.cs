@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using ProtoBuf;
 
 namespace Lagrange.Core.Common;
 
@@ -14,6 +15,7 @@ public interface IBotSignProvider
         "MessageSvc.PbSendMsg",
         "wtlogin.trans_emp",
         "wtlogin.login",
+        "wtlogin.exchange_emp",
         "trpc.login.ecdh.EcdhService.SsoKeyExchange",
         "trpc.login.ecdh.EcdhService.SsoNTLoginPasswordLogin",
         "trpc.login.ecdh.EcdhService.SsoNTLoginEasyLogin",
@@ -55,13 +57,15 @@ public interface IBotSignProvider
 
 internal class DefaultBotSignProvider(Protocols protocol, BotAppInfo appInfo) : IBotSignProvider, IDisposable
 {
-    private readonly HttpClient _client;
+    private readonly HttpClient _client = new();
     
-    private string _url = protocol switch
+    private readonly string _url = protocol switch
     {
         Protocols.Windows => throw new NotSupportedException("Windows is not supported"),
         Protocols.MacOs => throw new NotSupportedException("MacOs is not supported"),
         Protocols.Linux => $"https://sign.lagrangecore.org/api/sign/{appInfo.AppClientVersion}",
+        Protocols.AndroidPhone => throw new NotSupportedException("AndroidPhone is not supported"),
+        Protocols.AndroidPad => throw new NotSupportedException("AndroidPad is not supported"),
         _ => throw new ArgumentOutOfRangeException(nameof(protocol))
     };
     
@@ -82,9 +86,12 @@ internal class DefaultBotSignProvider(Protocols protocol, BotAppInfo appInfo) : 
             var content = await response.Content.ReadFromJsonAsync<Response>();
             if (content == null) return null;
             
-            return new SsoSecureInfo(Convert.FromHexString(content.Sign),
-                Convert.FromHexString(content.Token),
-                Convert.FromHexString(content.Extra));
+            return new SsoSecureInfo
+            {
+                SecSign = Convert.FromHexString(content.Sign),
+                SecToken = Convert.FromHexString(content.Token), 
+                SecExtra = Convert.FromHexString(content.Extra)
+            };
         }
         catch (Exception e)
         {
@@ -110,7 +117,12 @@ internal class DefaultBotSignProvider(Protocols protocol, BotAppInfo appInfo) : 
 }
 
 [Serializable]
-public record SsoSecureInfo(
-    byte[] SecSign,
-    byte[] SecToken,
-    byte[] SecExtra);
+[ProtoContract]
+public class SsoSecureInfo
+{
+    [ProtoMember(1)] public byte[]? SecSign { get; set; }
+    
+    [ProtoMember(2)] public byte[]? SecToken { get; set; }
+    
+    [ProtoMember(3)] public byte[]? SecExtra { get; set; }
+}

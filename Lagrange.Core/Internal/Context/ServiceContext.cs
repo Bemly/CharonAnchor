@@ -1,5 +1,6 @@
 using System.Collections.Frozen;
 using System.Reflection;
+using Lagrange.Core.Common;
 using Lagrange.Core.Internal.Events;
 using Lagrange.Core.Internal.Packets.Struct;
 using Lagrange.Core.Internal.Services;
@@ -32,14 +33,11 @@ internal class ServiceContext
                 
                 foreach (var attribute in type.GetCustomAttributes<EventSubscribeAttribute>())
                 {
-                    if (!servicesEventType.TryGetValue(attribute.EventType, out var list))
-                    {
-                        servicesEventType[attribute.EventType] = (attr, service);
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException($"Multiple services for event type: {attribute.EventType}");
-                    }
+                    if ((attribute.Protocol & context.Config.Protocol) == Protocols.None) return; // skip if not supported
+                    
+                    servicesEventType[attribute.EventType] = !servicesEventType.ContainsKey(attribute.EventType)
+                        ? (attr, service)
+                        : throw new InvalidOperationException($"Multiple services for event type: {attribute.EventType}");
                 }
             }
         }

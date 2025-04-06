@@ -6,7 +6,9 @@ namespace Lagrange.Core.Internal.Packets.Struct;
 
 internal class SsoPacker(BotContext context) : StructBase(context)
 {
-    public BinaryPacket BuildProtocol12(SsoPacket sso, SsoSecureInfo? secInfo) // TODO: sso_reserve_fields
+    private const string Hex = "0123456789abcdef";
+    
+    public BinaryPacket BuildProtocol12(SsoPacket sso, SsoSecureInfo? secInfo)
     {
         var head = new BinaryPacket(stackalloc byte[0x200]);
         
@@ -20,7 +22,7 @@ internal class SsoPacker(BotContext context) : StructBase(context)
         head.Write(Keystore.Guid, Prefix.Int32 | Prefix.WithPrefix); // guid
         head.Write(ReadOnlySpan<byte>.Empty, Prefix.Int32 | Prefix.WithPrefix);
         head.Write(AppInfo.CurrentVersion, Prefix.Int16 | Prefix.WithPrefix);
-        head.Write([0], Prefix.Int32 | Prefix.WithPrefix); // sso_reserve_fields
+        WriteSsoReservedField(ref head, secInfo);
         
         var headSpan = head.CreateReadOnlySpan();
         var result = new BinaryPacket(headSpan.Length + sso.Data.Length + 2 * 4); // 2 * 4 for the length of the payload
@@ -37,7 +39,7 @@ internal class SsoPacker(BotContext context) : StructBase(context)
         
         head.Write(sso.Command, Prefix.Int32 | Prefix.WithPrefix); // command
         head.Write(ReadOnlySpan<byte>.Empty, Prefix.Int32 | Prefix.WithPrefix); // message_cookies
-        head.Write([0], Prefix.Int32 | Prefix.WithPrefix); // TODO:sso_reserve_fields
+        WriteSsoReservedField(ref head, null);
         
         var headSpan = head.CreateReadOnlySpan();
         var result = new BinaryPacket(headSpan.Length + sso.Data.Length + 2 * 4); // 2 * 4 for the length of the payload
@@ -73,5 +75,31 @@ internal class SsoPacker(BotContext context) : StructBase(context)
         return retCode == 0
             ? new SsoPacket(command, sequence, retCode, extra)
             : new SsoPacket(command, payload, sequence);
+    }
+
+    private void WriteSsoReservedField(ref BinaryPacket writer, SsoSecureInfo? secInfo)
+    {
+        Span<char> trace = stackalloc char[55];
+
+        trace[0] = '0';
+        trace[1] = '1';
+        trace[2] = '-';
+        for (int i = 3; i < 35; i++) trace[i] = Hex[Random.Shared.Next(0, Hex.Length)];
+        trace[35] = '-';
+        for (int i = 36; i < 52; i++) trace[i] = Hex[Random.Shared.Next(0, Hex.Length)];
+        trace[52] = '-';
+        trace[53] = '0';
+        trace[54] = '1';
+        
+        var reserved = new SsoReserveFields
+        {
+            TraceParent = new string(trace),
+            Uid = Keystore.Uid,
+            SecInfo = secInfo
+        };
+     
+        writer.EnterLengthBarrier<int>();
+        Protobuf.Serialize(ref writer, reserved);
+        writer.ExitLengthBarrier<int>(true);
     }
 }

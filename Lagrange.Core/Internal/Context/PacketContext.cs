@@ -12,7 +12,12 @@ internal class PacketContext(BotContext context)
     private readonly BotKeystore _keystore = context.Keystore;
     private readonly SsoPacker _ssoPacker = new(context);
     private readonly ServicePacker _servicePacker = new(context);
-    private readonly IBotSignProvider _signProvider = context.Config.SignProvider ?? new DefaultBotSignProvider(context.Config.Protocol, context.AppInfo);
+    private readonly IBotSignProvider _signProvider = context.Config.SignProvider ?? context.Config.Protocol switch
+    {
+        Protocols.Linux or Protocols.Windows or Protocols.MacOs => new DefaultBotSignProvider(context.Config.Protocol, context.AppInfo),
+        Protocols.AndroidPhone or Protocols.AndroidPad => new DefaultAndroidBotSignProvider(context),
+        _ => throw new ArgumentOutOfRangeException(nameof(context.Config.Protocol))
+    };
 
     public ValueTask<SsoPacket> SendPacket(SsoPacket packet, ServiceAttribute options)
     {

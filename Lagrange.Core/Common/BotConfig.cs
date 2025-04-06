@@ -50,9 +50,14 @@ public class BotConfig
 /// <summary>
 /// The Protocol for the client
 /// </summary>
-public enum Protocols
+[Flags]
+public enum Protocols : byte
 {
-    Windows = 0,
-    MacOs = 1,
-    Linux = 2
+    None         = 0b00000000,
+    
+    Windows      = 0b00000001,
+    MacOs        = 0b00000010,
+    Linux        = 0b00000100,
+    AndroidPhone = 0b00001000,
+    AndroidPad   = 0b00010000,
 }

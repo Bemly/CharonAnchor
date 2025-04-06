@@ -49,7 +49,7 @@ internal ref struct TlvQrCode(BotContext context)
         WriteTlv(0x1D);
         
         _writer.Write((byte)1u);
-        _writer.Write(_appInfo.MainSigMap);
+        _writer.Write(_appInfo.SdkInfo.MiscBitMap);
         _writer.Write(0u);
         _writer.Write((byte)0);
         
