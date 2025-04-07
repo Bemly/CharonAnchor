@@ -207,8 +207,8 @@ internal ref struct BinaryPacket
     
     public void ReadString(scoped Span<char> buffer)
     {
-        int byteCount = Encoding.UTF8.GetChars(_span[_offset..], buffer);
-        Encoding.UTF8.GetChars(_span[_offset..], buffer);
+        int byteCount = Encoding.UTF8.GetChars(_span.Slice(_offset, buffer.Length), buffer);
+        Encoding.UTF8.GetChars(_span.Slice(_offset, buffer.Length), buffer);
         Increment(byteCount);
     }
 
