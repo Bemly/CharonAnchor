@@ -19,7 +19,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
         _ssoHeartBeatTimer = new Timer(OnSsoHeartBeat);
     }
 
-    public async Task<bool> Login(string? password)
+    public async Task<bool> Login(long uin, string? password)
     {
         if (!_context.SocketContext.Connected) await _context.SocketContext.Connect();
 
