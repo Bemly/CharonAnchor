@@ -103,9 +103,9 @@ internal class ServicePacker(BotContext context) : StructBase(context)
 
 internal enum EncryptType : byte
 {
-    EncryptD2Key = 0x02,
-    EncryptEmpty = 0x01,
     NoEncrypt = 0x00,
+    EncryptD2Key = 0x01,
+    EncryptEmpty = 0x02,
 }
 
 internal enum RequestType

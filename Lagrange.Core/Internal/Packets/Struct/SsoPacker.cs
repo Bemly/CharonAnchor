@@ -20,7 +20,7 @@ internal class SsoPacker(BotContext context) : StructBase(context)
         head.Write(Keystore.WLoginSigs.A2, Prefix.Int32 | Prefix.WithPrefix); // tgt
         head.Write(sso.Command, Prefix.Int32 | Prefix.WithPrefix); // command
         head.Write(ReadOnlySpan<byte>.Empty, Prefix.Int32 | Prefix.WithPrefix); // message_cookies
-        head.Write(Keystore.Guid, Prefix.Int32 | Prefix.WithPrefix); // guid
+        head.Write(Convert.ToHexStringLower(Keystore.Guid), Prefix.Int32 | Prefix.WithPrefix); // guid
         head.Write(ReadOnlySpan<byte>.Empty, Prefix.Int32 | Prefix.WithPrefix);
         head.Write(AppInfo.CurrentVersion, Prefix.Int16 | Prefix.WithPrefix);
         WriteSsoReservedField(ref head, secInfo);
