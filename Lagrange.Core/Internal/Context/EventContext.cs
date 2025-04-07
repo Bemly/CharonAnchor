@@ -44,7 +44,7 @@ internal class EventContext : IDisposable
         _logics = logics.ToFrozenDictionary();
     }
     
-    public async ValueTask<T?> SendEvent<T>(T @event) where T : ProtocolEvent
+    public async ValueTask<T?> SendEvent<T>(ProtocolEvent @event) where T : ProtocolEvent
     {
         try
         {
