@@ -1,12 +1,15 @@
 using System.Buffers.Binary;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace Lagrange.Core.Utility.Cryptography;
 
 internal static class TeaProvider
 {
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int GetCipherLength(int data) => (10 - ((data + 1) & 7)) + data + 7;
     
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int GetPlainLength(int data) => data - ((data & 7) + 3) - 7;
     
     public static byte[] Encrypt(ReadOnlySpan<byte> data, ReadOnlySpan<byte> key)
@@ -145,4 +148,7 @@ internal static class TeaProvider
 
         return source.Length - fill - 7;
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ReadOnlySpan<byte> CreateDecryptSpan(ReadOnlySpan<byte> decrypted) => decrypted[((decrypted[0] & 7) + 3)..];
 }

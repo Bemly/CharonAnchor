@@ -86,12 +86,12 @@ internal class ServicePacker(BotContext context) : StructBase(context)
             case EncryptType.EncryptEmpty:
                 var span = MemoryMarshal.CreateSpan(ref MemoryMarshal.GetReference(decrypted), decrypted.Length);
                 TeaProvider.Decrypt(span, span, EmptyD2Key.Span);
-                decrypted = decrypted[((decrypted[0] & 7) + 3)..^7];
+                decrypted = TeaProvider.CreateDecryptSpan(span);
                 break;
             case EncryptType.EncryptD2Key:
                 span = MemoryMarshal.CreateSpan(ref MemoryMarshal.GetReference(decrypted), decrypted.Length);
                 TeaProvider.Decrypt(span, span, Keystore.WLoginSigs.D2Key);
-                decrypted = decrypted[((decrypted[0] & 7) + 3)..];
+                decrypted = TeaProvider.CreateDecryptSpan(span);
                 break;
             default:
                 throw new InvalidOperationException($"Unrecognized auth flag: {authFlag}");
