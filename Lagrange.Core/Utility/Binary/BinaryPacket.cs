@@ -55,7 +55,7 @@ internal ref struct BinaryPacket
         _capacity = buffer.Length;
 
         ref var reference = ref Unsafe.AsRef(in buffer.GetPinnableReference());
-        _span = buffer.ToArray();
+        _span = MemoryMarshal.CreateSpan(ref reference, buffer.Length);
         _buffer = ref reference;
     }
     
@@ -69,7 +69,8 @@ internal ref struct BinaryPacket
         _offset = 0;
         _capacity = capacity;
 
-        _span = ArrayPool<byte>.Shared.Rent(capacity).AsSpan();
+        _bytesToReturnToPool = ArrayPool<byte>.Shared.Rent(capacity);
+        _span = _bytesToReturnToPool.AsSpan();
         _buffer = ref _span.GetPinnableReference();
     }
     
