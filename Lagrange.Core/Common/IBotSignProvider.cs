@@ -83,14 +83,14 @@ internal class DefaultBotSignProvider(Protocols protocol, BotAppInfo appInfo) : 
             var response = await _client.PostAsJsonAsync(_url, payload);
             if (!response.IsSuccessStatusCode) return null;
             
-            var content = await response.Content.ReadFromJsonAsync<Response>();
+            var content = await response.Content.ReadFromJsonAsync<Root>();
             if (content == null) return null;
             
             return new SsoSecureInfo
             {
-                SecSign = Convert.FromHexString(content.Sign),
-                SecToken = Convert.FromHexString(content.Token), 
-                SecExtra = Convert.FromHexString(content.Extra)
+                SecSign = Convert.FromHexString(content.Value.Sign),
+                SecToken = Convert.FromHexString(content.Value.Token), 
+                SecExtra = Convert.FromHexString(content.Value.Extra)
             };
         }
         catch (Exception e)
@@ -103,6 +103,12 @@ internal class DefaultBotSignProvider(Protocols protocol, BotAppInfo appInfo) : 
     public void Dispose()
     {
         _client.Dispose();
+    }
+
+    [Serializable]
+    private class Root
+    {
+        [JsonPropertyName("value")] public Response Value { get; set; } = new();
     }
     
     [Serializable]
