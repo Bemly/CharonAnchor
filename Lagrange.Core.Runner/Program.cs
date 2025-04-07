@@ -18,6 +18,7 @@ internal static class Program
             Console.WriteLine(args);
         });
 
-        await context.SocketContext.Connect();
+        await context.Login();
+        await Task.Delay(-1);
     }
 }

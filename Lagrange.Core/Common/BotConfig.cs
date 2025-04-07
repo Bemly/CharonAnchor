@@ -60,4 +60,8 @@ public enum Protocols : byte
     Linux        = 0b00000100,
     AndroidPhone = 0b00001000,
     AndroidPad   = 0b00010000,
+    
+    PC           = Windows | MacOs | Linux,
+    Android      = AndroidPhone | AndroidPad,
+    All          = Windows | MacOs | Linux | AndroidPhone | AndroidPad,
 }

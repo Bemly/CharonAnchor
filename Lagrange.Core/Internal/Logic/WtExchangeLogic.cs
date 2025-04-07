@@ -1,3 +1,4 @@
+using Lagrange.Core.Internal.Events.System;
 using Lagrange.Core.Internal.Packets.Login;
 
 namespace Lagrange.Core.Internal.Logic;
@@ -21,7 +22,11 @@ internal class WtExchangeLogic : ILogic, IDisposable
 
     public async Task<bool> Login(long uin, string? password)
     {
-        if (!_context.SocketContext.Connected) await _context.SocketContext.Connect();
+        if (!_context.SocketContext.Connected)
+        {
+            await _context.SocketContext.Connect();
+            _heartBeatTimer.Change(0, 2000);
+        }
 
         if (_context.Keystore.WLoginSigs.D2.Length != 0)
         {
@@ -52,9 +57,9 @@ internal class WtExchangeLogic : ILogic, IDisposable
         return false;
     }
 
-    private void OnHeartBeat(object? state) => Task.Run(() =>
+    private void OnHeartBeat(object? state) => Task.Run(async () =>
     {
-        
+        await _context.EventContext.SendEvent<AliveEvent>(new AliveEvent());
     });
     
     private void OnSsoHeartBeat(object? state) => Task.Run(() =>
