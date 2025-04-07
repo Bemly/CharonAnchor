@@ -74,8 +74,8 @@ internal class SsoPacker(BotContext context) : StructBase(context)
         };
 
         return retCode == 0
-            ? new SsoPacket(command, sequence, retCode, extra)
-            : new SsoPacket(command, payload, sequence);
+            ? new SsoPacket(command, payload, sequence)
+            : new SsoPacket(command, sequence, retCode, extra);
     }
 
     private void WriteSsoReservedField(ref BinaryPacket writer, SsoSecureInfo? secInfo)
