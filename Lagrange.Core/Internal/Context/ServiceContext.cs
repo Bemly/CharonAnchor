@@ -21,6 +21,7 @@ internal class ServiceContext
     public ServiceContext(BotContext context)
     {
         _context = context;
+        
         var services = new Dictionary<string, IService>();
         var servicesEventType = new Dictionary<Type, (ServiceAttribute, IService)>();
 
