@@ -1,12 +1,23 @@
+using System.Runtime.InteropServices;
 using Lagrange.Core.Internal.Packets.Struct;
 using Lagrange.Core.Utility.Binary;
 using Lagrange.Core.Utility.Cryptography;
 
 namespace Lagrange.Core.Internal.Packets.Login;
 
-internal class WtLogin(BotContext context) : StructBase(context)
+internal class WtLogin : StructBase
 {
     private static readonly byte[] ServerPublicKey = [0x04, 0x92, 0x8D, 0x88, 0x50, 0x67, 0x30, 0x88, 0xB3, 0x43, 0x26, 0x4E, 0x0C, 0x6B, 0xAC, 0xB8, 0x49, 0x6D, 0x69, 0x77, 0x99, 0xF3, 0x72, 0x11, 0xDE, 0xB2, 0x5B, 0xB7, 0x39, 0x06, 0xCB, 0x08, 0x9F, 0xEA, 0x96, 0x39, 0xB4, 0xE0, 0x26, 0x04, 0x98, 0xB5, 0x1A, 0x99, 0x2D, 0x50, 0x81, 0x3D, 0xA8];
+
+    private readonly byte[] _shareKey;
+    
+    private readonly BotContext _context;
+    
+    public WtLogin(BotContext context) : base(context)
+    {
+        _context = context;
+        _shareKey = Keystore.Secp192K1.KeyExchange(ServerPublicKey, true);
+    }
     
     public ReadOnlyMemory<byte> BuildTransEmp31()
     {
@@ -18,7 +29,7 @@ internal class WtLogin(BotContext context) : StructBase(context)
         writer.Write<byte>(0);
         writer.Write(ReadOnlySpan<byte>.Empty, Prefix.Int16 | Prefix.LengthOnly);
         
-        var tlvs = new TlvQrCode(context);
+        var tlvs = new TlvQrCode(_context);
         tlvs.Tlv16();
         tlvs.Tlv18();
         tlvs.Tlv1D();
@@ -31,12 +42,24 @@ internal class WtLogin(BotContext context) : StructBase(context)
 
         return BuildCode2dPacket(0x31, writer.CreateReadOnlySpan());
     }
+
+    public ReadOnlyMemory<byte> BuildTransEmp12()
+    {
+        using var writer = new BinaryPacket(stackalloc byte[300]);
+        writer.Write<ushort>(0);
+        writer.Write(AppInfo.AppId);
+        writer.Write(Keystore.WLoginSigs.QrSig, Prefix.Int16 | Prefix.LengthOnly);
+        writer.Write<ulong>(0); // uin
+        writer.Write(ReadOnlySpan<byte>.Empty); // TGT
+        writer.Write<byte>(0);
+        writer.Write(ReadOnlySpan<byte>.Empty, Prefix.Int16 | Prefix.LengthOnly);
+        writer.Write<ushort>(0); // tlv count = 0
+        
+        return BuildCode2dPacket(0x12, writer.CreateReadOnlySpan());
+    }
     
     private ReadOnlyMemory<byte> BuildPacket(short command, scoped ReadOnlySpan<byte> payload) // corrected
     {
-        Console.WriteLine(Convert.ToHexString(payload));
-        
-        var sharedKey = Keystore.Secp192K1.KeyExchange(ServerPublicKey, true);
         int cipherLength = TeaProvider.GetCipherLength(payload.Length);
         var writer = new BinaryPacket(cipherLength + 80);
         
@@ -55,7 +78,7 @@ internal class WtLogin(BotContext context) : StructBase(context)
         writer.Write(AppInfo.AppClientVersion); // insId
         writer.Write(0); // retryTime
         BuildEncryptHead(ref writer);
-        TeaProvider.Encrypt(payload, writer.CreateSpan(cipherLength), sharedKey);
+        TeaProvider.Encrypt(payload, writer.CreateSpan(cipherLength), _shareKey);
         writer.Write((byte)3);
         
         writer.ExitLengthBarrier<short>(true, 1);
@@ -104,5 +127,42 @@ internal class WtLogin(BotContext context) : StructBase(context)
         writer.Write(random);
         writer.Write((short)0x102); // encrypt type
         writer.Write(Keystore.Secp192K1.PackPublic(true), Prefix.Int16 | Prefix.LengthOnly);
+    }
+
+    public ReadOnlySpan<byte> Parse(ReadOnlySpan<byte> input, out ushort command)
+    {
+        var reader = new BinaryPacket(input);
+        
+        byte header = reader.Read<byte>();
+        ushort length = reader.Read<ushort>();
+        ushort version = reader.Read<ushort>();
+        command = reader.Read<ushort>();
+        ushort sequence = reader.Read<ushort>();
+        uint uin = reader.Read<uint>();
+        byte flag = reader.Read<byte>();
+        ushort retryTime = reader.Read<ushort>();
+        
+        var encrypted = reader.ReadBytes();
+        var span = MemoryMarshal.CreateSpan(ref MemoryMarshal.GetReference(encrypted), encrypted.Length - 1);
+        TeaProvider.Decrypt(span, span, _shareKey);
+        return TeaProvider.CreateDecryptSpan(span);
+    }
+
+    public ReadOnlySpan<byte> ParseCode2dPacket(ReadOnlySpan<byte> input, out ushort command)
+    {
+        var reader = new BinaryPacket(input);
+        
+        reader.Skip(5);
+        byte header = reader.Read<byte>();
+        ushort length = reader.Read<ushort>();
+        command = reader.Read<ushort>();
+        reader.Skip(21);
+        byte flag = reader.Read<byte>();
+        ushort retryTime = reader.Read<ushort>();
+        ushort sequence = reader.Read<ushort>();
+        uint uin = reader.Read<uint>();
+        ulong timestamp = reader.Read<ulong>();
+
+        return reader.ReadBytes();
     }
 }

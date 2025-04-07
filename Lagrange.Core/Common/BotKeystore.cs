@@ -40,11 +40,13 @@ public class WLoginSigs
     
     public byte[] D2 { get; set; } = [];
     
-    public byte[] D2Key { get; set; } = [];
+    public byte[] D2Key { get; set; } = new byte[16];
     
     public byte[] EncryptedA1 { get; set; } = [];
     
-    public byte[]? NoPicSig { get; set; }
+    internal byte[]? NoPicSig { get; set; }
+    
+    internal byte[]? QrSig { get; set; }
     
     public byte[] TgtgtKey { get; set; } = [];
     
@@ -52,9 +54,10 @@ public class WLoginSigs
     {
         A2 = [];
         D2 = [];
-        D2Key = [];
+        D2Key = new byte[16];
         EncryptedA1 = [];
         NoPicSig = null;
+        QrSig = null;
         TgtgtKey = [];
     }
 }
