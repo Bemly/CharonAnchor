@@ -55,6 +55,7 @@ internal class ServiceContext
             return new ValueTask<ProtocolEvent?>(default(ProtocolEvent));
         }
         
+        _context.LogDebug(Tag, $"Incoming SSOFrame: {ssoPacket.Command}");
         return service.Parse(ssoPacket.Data, _context);
     }
 
@@ -63,6 +64,8 @@ internal class ServiceContext
         if (!_servicesEventType.TryGetValue(@event.GetType(), out var handler)) return default;
         
         var (attr, service) = handler;
+        _context.LogDebug(Tag, $"Outgoing SSOFrame: {handler.Attribute.Command}");
+        
         return (new SsoPacket(attr.Command, await service.Build(@event, _context), GetNewSequence()), attr);
     }
 
