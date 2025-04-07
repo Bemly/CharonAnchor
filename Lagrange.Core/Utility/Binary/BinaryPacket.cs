@@ -202,7 +202,7 @@ internal ref struct BinaryPacket
     
     public void ReadBytes(scoped Span<byte> buffer)
     {
-        _span[_offset..].CopyTo(buffer);
+        _span.Slice(_offset, buffer.Length).CopyTo(buffer);
         Increment(buffer.Length);
     }
     
