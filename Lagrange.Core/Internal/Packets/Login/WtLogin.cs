@@ -45,7 +45,7 @@ internal class WtLogin : StructBase
 
     public ReadOnlyMemory<byte> BuildTransEmp12()
     {
-        using var writer = new BinaryPacket(stackalloc byte[300]);
+        using var writer = new BinaryPacket(stackalloc byte[100]);
         writer.Write<ushort>(0);
         writer.Write(AppInfo.AppId);
         writer.Write(Keystore.WLoginSigs.QrSig, Prefix.Int16 | Prefix.LengthOnly);
@@ -62,6 +62,8 @@ internal class WtLogin : StructBase
     {
         int cipherLength = TeaProvider.GetCipherLength(payload.Length);
         var writer = new BinaryPacket(cipherLength + 80);
+        Span<byte> cipher = stackalloc byte[cipherLength];
+        TeaProvider.Encrypt(payload, cipher, _shareKey);
         
         writer.Write((byte)2);
         writer.EnterLengthBarrier<short>();
@@ -78,7 +80,7 @@ internal class WtLogin : StructBase
         writer.Write(AppInfo.AppClientVersion); // insId
         writer.Write(0); // retryTime
         BuildEncryptHead(ref writer);
-        TeaProvider.Encrypt(payload, writer.CreateSpan(cipherLength), _shareKey);
+        writer.Write(cipher);
         writer.Write((byte)3);
         
         writer.ExitLengthBarrier<short>(true, 1);
