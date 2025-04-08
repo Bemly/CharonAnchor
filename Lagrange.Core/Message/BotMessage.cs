@@ -22,6 +22,8 @@ public partial class BotMessage
 
     public List<IMessageEntity> Entities { get; } = [];
     
+    internal ulong MessageId { get; set; } = 0;
+    
     internal int Random { get; set; } = System.Random.Shared.Next();
     
     internal int Sequence { get; set; } = 0;

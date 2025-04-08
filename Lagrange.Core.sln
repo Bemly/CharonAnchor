@@ -8,6 +8,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lagrange.Codec", "Lagrange.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lagrange.Core.Runner", "Lagrange.Core.Runner\Lagrange.Core.Runner.csproj", "{CEB9D300-9337-420E-B2BD-772399D84051}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lagrange.OneBot", "Lagrange.OneBot\Lagrange.OneBot.csproj", "{DE220419-7254-4DEA-92BD-FABD87F052E2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{CEB9D300-9337-420E-B2BD-772399D84051}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CEB9D300-9337-420E-B2BD-772399D84051}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CEB9D300-9337-420E-B2BD-772399D84051}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DE220419-7254-4DEA-92BD-FABD87F052E2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DE220419-7254-4DEA-92BD-FABD87F052E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DE220419-7254-4DEA-92BD-FABD87F052E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DE220419-7254-4DEA-92BD-FABD87F052E2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
