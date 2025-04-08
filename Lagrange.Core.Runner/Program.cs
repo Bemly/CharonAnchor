@@ -17,6 +17,11 @@ internal static class Program
         {
             Console.WriteLine(args);
         });
+        
+        context.EventInvoker.RegisterEvent<BotQrCodeEvent>((_, args) =>
+        {
+            Console.WriteLine(args);
+        });
 
         await context.Login();
         await Task.Delay(-1);

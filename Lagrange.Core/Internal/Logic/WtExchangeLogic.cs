@@ -1,3 +1,4 @@
+using Lagrange.Core.Events.EventArgs;
 using Lagrange.Core.Internal.Events.Login;
 using Lagrange.Core.Internal.Events.System;
 
@@ -15,7 +16,11 @@ internal class WtExchangeLogic : ILogic, IDisposable
 
     private readonly Timer _queryStateTimer;
     
-    private readonly TaskCompletionSource<bool> _tcs = new();
+    private readonly TaskCompletionSource<bool> _transEmpSource = new();
+
+    private readonly TaskCompletionSource<(string, string)>? _captchaSource;
+
+    private readonly TaskCompletionSource<string>? _smsSource;
 
     public WtExchangeLogic(BotContext context)
     {
@@ -49,8 +54,11 @@ internal class WtExchangeLogic : ILogic, IDisposable
             var transEmp31 = await _context.EventContext.SendEvent<TransEmp31EventResp>(new TransEmp31EventReq());
             if (transEmp31 == null) return false; // TODO: Log error
             
+            _context.EventInvoker.PostEvent(new BotQrCodeEvent(transEmp31.Url, transEmp31.Image));
+            
             _context.Keystore.WLoginSigs.QrSig = transEmp31.QrSig;
             _queryStateTimer.Change(0, 2000);
+            return await _transEmpSource.Task;
         }
         else
         {
@@ -87,24 +95,28 @@ internal class WtExchangeLogic : ILogic, IDisposable
                 _context.Keystore.WLoginSigs.NoPicSig = data.NoPicSig;
                 _context.Keystore.WLoginSigs.EncryptedA1 = data.TempPassword;
             
-                _tcs.TrySetResult(true);
+                // TODO: DO LOGIN RESULT
+                _transEmpSource.TrySetResult(true);
                 _queryStateTimer.Change(Timeout.Infinite, Timeout.Infinite);
                 break;
             case { State: TransEmp12EventResp.TransEmpState.Canceled or TransEmp12EventResp.TransEmpState.Invalid or TransEmp12EventResp.TransEmpState.CodeExpired }:
                 _context.LogCritical(Tag, $"QR Code State: {transEmp12.State}");
                 
-                _tcs.TrySetResult(false);
+                _transEmpSource.TrySetResult(false);
                 _queryStateTimer.Change(Timeout.Infinite, Timeout.Infinite);
                 break;
             default:
                 _context.LogInfo(Tag, $"QRCode State: {transEmp12.State}");
                 break;
         }
-
     });
 
     public void Dispose()
     {
+        _transEmpSource.TrySetCanceled();
+        _captchaSource?.TrySetCanceled();
+        _smsSource?.TrySetCanceled();
+        
         _heartBeatTimer.Dispose();
         _ssoHeartBeatTimer.Dispose();
         _queryStateTimer.Dispose();
