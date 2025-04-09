@@ -1,4 +1,5 @@
 using System.Collections.Frozen;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Lagrange.Core.Events;
 using Lagrange.Core.Internal.Events;
@@ -15,6 +16,9 @@ internal class EventContext : IDisposable
 
     private readonly FrozenDictionary<Type, ILogic> _logics;
 
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "All the types are preserved in the csproj by using the TrimmerRootAssembly attribute")]
+    [UnconditionalSuppressMessage("Trimming", "IL2062", Justification = "All the types are preserved in the csproj by using the TrimmerRootAssembly attribute")]
+    [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "All the types are preserved in the csproj by using the TrimmerRootAssembly attribute")]
     public EventContext(BotContext context)
     {
         var events = new Dictionary<Type, List<ILogic>>();
@@ -22,7 +26,7 @@ internal class EventContext : IDisposable
         
         foreach (var type in typeof(ILogic).Assembly.GetTypes())
         {
-            if (type.GetInterfaces().Contains(typeof(ILogic)) && Activator.CreateInstance(type, context) is ILogic instance)
+            if (type.IsAssignableFrom(typeof(ILogic)) && Activator.CreateInstance(type, context) is ILogic instance)
             {
                 foreach (var @event in type.GetCustomAttributes<EventSubscribeAttribute>())
                 {

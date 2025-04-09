@@ -1,6 +1,8 @@
 ﻿using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using Lagrange.Core.Utility;
 
 namespace Lagrange.Core.Common;
 
@@ -155,7 +157,6 @@ internal class DefaultAndroidBotSignProvider(BotContext context) : IAndroidBotSi
 
     private readonly string _url = "";
     
-
     public async Task<SsoSecureInfo?> GetSecSign(long uin, string cmd, int seq, ReadOnlyMemory<byte> body)
     {
         try
@@ -170,10 +171,10 @@ internal class DefaultAndroidBotSignProvider(BotContext context) : IAndroidBotSi
                 ["version"] = context.AppInfo.CurrentVersion
             };
             
-            var response = await _client.PostAsJsonAsync($"{_url}/sign", payload);
+            var response = await _client.PostAsync($"{_url}/sign", new StringContent(payload.ToJsonString(), Encoding.UTF8, "application/json"));
             if (!response.IsSuccessStatusCode) return null;
             
-            var content = await response.Content.ReadFromJsonAsync<ResponseRoot<SignResponse>>();
+            var content = JsonHelper.Deserialize<ResponseRoot<SignResponse>>(await response.Content.ReadAsStringAsync());
             if (content == null) return null;
             
             return new SsoSecureInfo
@@ -203,10 +204,10 @@ internal class DefaultAndroidBotSignProvider(BotContext context) : IAndroidBotSi
                 ["version"] = context.AppInfo.CurrentVersion
             };
             
-            var response = await _client.PostAsJsonAsync($"{_url}/energy", payload);
+            var response = await _client.PostAsync($"{_url}/energy", new StringContent(payload.ToJsonString(), Encoding.UTF8, "application/json"));
             if (!response.IsSuccessStatusCode) return [];
             
-            var content = await response.Content.ReadFromJsonAsync<ResponseRoot<string>>();
+            var content = JsonHelper.Deserialize<ResponseRoot<string>>(await response.Content.ReadAsStringAsync());
             return content == null ? [] : Convert.FromHexString(content.Value);
         }
         catch (Exception e)
@@ -228,10 +229,10 @@ internal class DefaultAndroidBotSignProvider(BotContext context) : IAndroidBotSi
                 ["version"] = context.AppInfo.CurrentVersion
             };
             
-            var response = await _client.PostAsJsonAsync($"{_url}/get_tlv553", payload);
+            var response = await _client.PostAsync($"{_url}/get_tlv553", new StringContent(payload.ToJsonString(), Encoding.UTF8, "application/json"));
             if (!response.IsSuccessStatusCode) return [];
             
-            var content = await response.Content.ReadFromJsonAsync<ResponseRoot<string>>();
+            var content = JsonHelper.Deserialize<ResponseRoot<string>>(await response.Content.ReadAsStringAsync());
             return content == null ? [] : Convert.FromHexString(content.Value);
         }
         catch (Exception e)
@@ -247,13 +248,13 @@ internal class DefaultAndroidBotSignProvider(BotContext context) : IAndroidBotSi
     }
 
     [Serializable]
-    private class ResponseRoot<T>
+    internal class ResponseRoot<T>
     {
         [JsonPropertyName("value")] public T Value { get; set; } = default!;
     }
     
     [Serializable]
-    private class SignResponse
+    internal class SignResponse
     {
         [JsonPropertyName("sign")] public string Sign { get; set; } = string.Empty;
         

@@ -1,4 +1,5 @@
 using System.Collections.Frozen;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Lagrange.Core.Common;
 using Lagrange.Core.Internal.Events;
@@ -18,6 +19,9 @@ internal class ServiceContext
 
     private readonly BotContext _context;
     
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "All the types are preserved in the csproj by using the TrimmerRootAssembly attribute")]
+    [UnconditionalSuppressMessage("Trimming", "IL2062", Justification = "All the types are preserved in the csproj by using the TrimmerRootAssembly attribute")]
+    [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "All the types are preserved in the csproj by using the TrimmerRootAssembly attribute")]
     public ServiceContext(BotContext context)
     {
         _context = context;
@@ -27,7 +31,7 @@ internal class ServiceContext
 
         foreach (var type in typeof(IService).Assembly.GetTypes()) 
         {
-            if (type.GetCustomAttribute<ServiceAttribute>() is { } attr && type.GetInterfaces().Contains(typeof(IService)) && !type.IsAbstract)
+            if (type.GetCustomAttribute<ServiceAttribute>() is { } attr && type.IsAssignableFrom(typeof(IService)) && !type.IsAbstract)
             {
                 var service = (IService?)Activator.CreateInstance(type) ?? throw new InvalidOperationException("Failed to create service instance");
                 services[attr.Command] = service;

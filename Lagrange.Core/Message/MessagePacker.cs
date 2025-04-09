@@ -1,4 +1,4 @@
-using System.Reflection;
+using System.Diagnostics.CodeAnalysis;
 using Lagrange.Core.Message.Entities;
 
 namespace Lagrange.Core.Message;
@@ -7,13 +7,16 @@ internal class MessagePacker
 {
     private readonly List<IMessageEntity> _factory;
     
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "All the types are preserved in the csproj by using the TrimmerRootAssembly attribute")]
+    [UnconditionalSuppressMessage("Trimming", "IL2062", Justification = "All the types are preserved in the csproj by using the TrimmerRootAssembly attribute")]
+    [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "All the types are preserved in the csproj by using the TrimmerRootAssembly attribute")]
     public MessagePacker()
     {
         _factory = [];
-        
-        foreach (var type in Assembly.GetExecutingAssembly().GetTypes())
+
+        foreach (var type in typeof(MessagePacker).Assembly.GetTypes())
         {
-            if (type.GetInterfaces().Contains(typeof(IMessageEntity)))
+            if (type.IsAssignableFrom(typeof(IMessageEntity)))
             {
                 _factory.Add((IMessageEntity?)Activator.CreateInstance(type) ?? throw new InvalidOperationException());
             }

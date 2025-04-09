@@ -1,6 +1,8 @@
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using Lagrange.Core.Utility;
 using ProtoBuf;
 
 namespace Lagrange.Core.Common;
@@ -80,10 +82,10 @@ internal class DefaultBotSignProvider(Protocols protocol, BotAppInfo appInfo) : 
                 ["src"] = Convert.ToHexString(body.Span),
             };
             
-            var response = await _client.PostAsJsonAsync(_url, payload);
+            var response = await _client.PostAsync(_url, new StringContent(payload.ToJsonString(), Encoding.UTF8, "application/json"));
             if (!response.IsSuccessStatusCode) return null;
             
-            var content = await response.Content.ReadFromJsonAsync<Root>();
+            var content = JsonHelper.Deserialize<Root>(await response.Content.ReadAsStringAsync());
             if (content == null) return null;
             
             return new SsoSecureInfo
@@ -106,13 +108,13 @@ internal class DefaultBotSignProvider(Protocols protocol, BotAppInfo appInfo) : 
     }
 
     [Serializable]
-    private class Root
+    internal class Root
     {
         [JsonPropertyName("value")] public Response Value { get; set; } = new();
     }
     
     [Serializable]
-    private class Response
+    internal class Response
     {
         [JsonPropertyName("sign")] public string Sign { get; set; } = string.Empty;
         
