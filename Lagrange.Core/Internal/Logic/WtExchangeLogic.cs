@@ -17,12 +17,12 @@ internal class WtExchangeLogic : ILogic, IDisposable
     private readonly Timer _queryStateTimer;
 
     private CancellationToken? _token;
-    
-    private readonly TaskCompletionSource<bool> _transEmpSource = new();
 
-    private readonly TaskCompletionSource<(string, string)>? _captchaSource;
+    private TaskCompletionSource<bool>? _transEmpSource;
 
-    private readonly TaskCompletionSource<string>? _smsSource;
+    private TaskCompletionSource<(string, string)>? _captchaSource;
+
+    private TaskCompletionSource<string>? _smsSource;
 
     public WtExchangeLogic(BotContext context)
     {
@@ -35,6 +35,14 @@ internal class WtExchangeLogic : ILogic, IDisposable
     public async Task<bool> Login(long uin, string? password, CancellationToken token)
     {
         _token = token;
+
+        token.UnsafeRegister(_ =>
+        {
+            _transEmpSource?.TrySetCanceled();
+            _captchaSource?.TrySetCanceled();
+            _smsSource?.TrySetCanceled();
+        }, null);
+        
         if (!_context.SocketContext.Connected)
         {
             await _context.SocketContext.Connect();
@@ -56,7 +64,8 @@ internal class WtExchangeLogic : ILogic, IDisposable
         {
             var transEmp31 = await _context.EventContext.SendEvent<TransEmp31EventResp>(new TransEmp31EventReq());
             if (transEmp31 == null) return false; // TODO: Log error
-            
+
+            _transEmpSource = new TaskCompletionSource<bool>();
             _context.EventInvoker.PostEvent(new BotQrCodeEvent(transEmp31.Url, transEmp31.Image));
             
             _context.Keystore.WLoginSigs.QrSig = transEmp31.QrSig;
@@ -88,7 +97,9 @@ internal class WtExchangeLogic : ILogic, IDisposable
     
     private void OnQueryState(object? state) => Task.Run(async () =>
     {
+        if (_transEmpSource == null) return;
         var transEmp12 = await _context.EventContext.SendEvent<TransEmp12EventResp>(new TransEmp12EventReq());
+        
         switch (transEmp12)
         {
             case null:
@@ -116,7 +127,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
 
     public void Dispose()
     {
-        _transEmpSource.TrySetCanceled();
+        _transEmpSource?.TrySetCanceled();
         _captchaSource?.TrySetCanceled();
         _smsSource?.TrySetCanceled();
         
