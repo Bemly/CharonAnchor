@@ -15,6 +15,8 @@ internal class WtExchangeLogic : ILogic, IDisposable
     private readonly Timer _ssoHeartBeatTimer;
 
     private readonly Timer _queryStateTimer;
+
+    private CancellationToken? _token;
     
     private readonly TaskCompletionSource<bool> _transEmpSource = new();
 
@@ -30,8 +32,9 @@ internal class WtExchangeLogic : ILogic, IDisposable
         _queryStateTimer = new Timer(OnQueryState);
     }
 
-    public async Task<bool> Login(long uin, string? password)
+    public async Task<bool> Login(long uin, string? password, CancellationToken token)
     {
+        _token = token;
         if (!_context.SocketContext.Connected)
         {
             await _context.SocketContext.Connect();

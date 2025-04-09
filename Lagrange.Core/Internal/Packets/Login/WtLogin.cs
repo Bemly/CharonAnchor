@@ -29,7 +29,7 @@ internal class WtLogin : StructBase
         writer.Write<byte>(0);
         writer.Write(ReadOnlySpan<byte>.Empty, Prefix.Int16 | Prefix.LengthOnly);
         
-        var tlvs = new TlvQrCode(_context);
+        using var tlvs = new TlvQrCode(_context);
         tlvs.Tlv16();
         tlvs.Tlv18();
         tlvs.Tlv1D();
@@ -57,6 +57,29 @@ internal class WtLogin : StructBase
         
         return BuildCode2dPacket(0x12, writer.CreateReadOnlySpan());
     }
+
+    public ReadOnlyMemory<byte> BuildOicq09()
+    {
+        using var tlvs = new Tlv(0x09, _context);
+        
+        tlvs.Tlv106EncryptedA1();
+        tlvs.Tlv144();
+        tlvs.Tlv116();
+        tlvs.Tlv142();
+        tlvs.Tlv145();
+        tlvs.Tlv018();
+        tlvs.Tlv141();
+        tlvs.Tlv177();
+        tlvs.Tlv191();
+        tlvs.Tlv100();
+        tlvs.Tlv107();
+        tlvs.Tlv318();
+        tlvs.Tlv16A();
+        tlvs.Tlv166();
+        tlvs.Tlv521();
+        
+        return BuildPacket(0x810, tlvs.CreateReadOnlySpan());
+    }
     
     private ReadOnlyMemory<byte> BuildPacket(short command, scoped ReadOnlySpan<byte> payload) // corrected
     {
@@ -68,12 +91,12 @@ internal class WtLogin : StructBase
         writer.Write((byte)2);
         writer.EnterLengthBarrier<short>();
         
-        writer.Write((short)8001);
+        writer.Write((short)8001); // version
         writer.Write(command);
         writer.Write((short)0); // sequence
         writer.Write((uint)Keystore.Uin);
         writer.Write((byte)3);
-        writer.Write((byte)135);
+        writer.Write((byte)EncryptMethod.EM_ECDH_ST);
         writer.Write(0);
         writer.Write((byte)19);
         writer.Write((short)0); // insId
@@ -166,5 +189,13 @@ internal class WtLogin : StructBase
         ulong timestamp = reader.Read<ulong>();
 
         return reader.ReadBytes();
+    }
+    
+    public enum EncryptMethod : byte
+    {
+        EM_ST = 0x45,
+        EM_ECDH = 0x07,
+        EM_ECDH_ST = 0x87,
+        EM_NULL = 0xff
     }
 }

@@ -5,7 +5,7 @@ using ProtoBuf;
 
 namespace Lagrange.Core.Internal.Packets.Login;
 
-internal ref struct TlvQrCode
+internal ref struct TlvQrCode : IDisposable
 {
     private BinaryPacket _writer;
 
@@ -123,6 +123,11 @@ internal ref struct TlvQrCode
         _writer.Write(tag);
         _writer.EnterLengthBarrier<short>();
         _count++;
+    }
+
+    public void Dispose()
+    {
+        _writer.Dispose();
     }
 }
 
