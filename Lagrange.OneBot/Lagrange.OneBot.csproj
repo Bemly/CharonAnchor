@@ -18,4 +18,8 @@
       <ProjectReference Include="..\Lagrange.Core\Lagrange.Core.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <EmbeddedResource Include="Resources\appsettings.json" />
+    </ItemGroup>
+
 </Project>
