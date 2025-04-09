@@ -6,6 +6,7 @@ using Lagrange.Core;
 using Lagrange.OneBot.Entity.Action;
 using Lagrange.OneBot.Entity.Meta;
 using Lagrange.OneBot.Network.Options;
+using Lagrange.OneBot.Utility;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -39,7 +40,7 @@ public partial class HttpPostService(IOptionsSnapshot<HttpPostServiceOptions> op
 
         if (payload is OneBotResult) return; // ignore api result
 
-        string json = JsonSerializer.Serialize(payload);
+        string json = JsonHelper.Serialize(payload);
         Log.LogSendingData(_logger, Tag, _url.ToString(), json);
         using var request = new HttpRequestMessage(HttpMethod.Post, _url)
         {

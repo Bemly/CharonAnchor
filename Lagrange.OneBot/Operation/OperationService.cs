@@ -3,9 +3,10 @@ using Lagrange.Core;
 using Lagrange.OneBot.Entity.Action;
 using Lagrange.OneBot.Network;
 using Lagrange.OneBot.Database;
+using Lagrange.OneBot.Utility;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using JsonSerializer = System.Text.Json.JsonSerializer;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Lagrange.OneBot.Operation;
 
@@ -16,6 +17,8 @@ public sealed class OperationService
     private readonly Dictionary<string, Type> _operations;
     private readonly ServiceProvider _service;
 
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "All the types are preserved in the csproj by using the TrimmerRootAssembly attribute")]
+    [UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "All the types are preserved in the csproj by using the TrimmerRootAssembly attribute")]
     public OperationService(BotContext bot, ILogger<OperationService> logger, StorageService storage)
     {
         _bot = bot;
@@ -42,7 +45,7 @@ public sealed class OperationService
     {
         try
         {
-            if (JsonSerializer.Deserialize<OneBotAction>(e.Data) is { } action)
+            if (JsonHelper.Deserialize<OneBotAction>(e.Data) is { } action)
             {
                 try
                 {

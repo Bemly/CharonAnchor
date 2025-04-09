@@ -3,10 +3,10 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.WebSockets;
 using System.Text;
-using System.Text.Json;
 using Lagrange.Core;
 using Lagrange.OneBot.Entity.Meta;
 using Lagrange.OneBot.Network.Options;
+using Lagrange.OneBot.Utility;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -274,7 +274,7 @@ public partial class ForwardWSService(ILogger<ForwardWSService> logger, IOptions
             if (!isCanceled) Log.LogWaitCloseException(logger, identifier, e);
 
             var status = WebSocketCloseStatus.NormalClosure;
-            var t = default(CancellationToken);
+            var t = CancellationToken.None;
             if (!isCanceled)
             {
                 status = WebSocketCloseStatus.InternalServerError;
@@ -346,7 +346,7 @@ public partial class ForwardWSService(ILogger<ForwardWSService> logger, IOptions
     #region Send
     public async ValueTask SendJsonAsync<T>(T json, string? identifier = null, CancellationToken token = default)
     {
-        byte[] payload = JsonSerializer.SerializeToUtf8Bytes(json);
+        byte[] payload = JsonHelper.SerializeToUtf8Bytes(json);
         if (identifier != null)
         {
             await SendBytesAsync(payload, identifier, token);

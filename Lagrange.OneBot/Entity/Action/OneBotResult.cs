@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
 namespace Lagrange.OneBot.Entity.Action;
@@ -11,7 +12,7 @@ public class OneBotResult(object? data, int retCode, string status)
 
     [JsonPropertyName("data")] public object? Data { get; set; } = data;
 
-    [JsonPropertyName("echo")] public object? Echo { get; set; }
+    [JsonPropertyName("echo")] public JsonNode? Echo { get; set; }
 
     [JsonIgnore] public string? Identifier { get; internal set; }
 }

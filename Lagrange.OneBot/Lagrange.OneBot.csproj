@@ -5,6 +5,11 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <PublishAot>true</PublishAot>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
     </PropertyGroup>
 
     <ItemGroup>
@@ -22,5 +27,11 @@
     <ItemGroup>
         <EmbeddedResource Include="Resources\appsettings.json" />
     </ItemGroup>
+    
+    <ItemGroup>
+        <TrimmerRootAssembly Include="Lagrange.Core" />
+        <TrimmerRootAssembly Include="Lagrange.OneBot" />
+    </ItemGroup>
+
 
 </Project>

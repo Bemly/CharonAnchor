@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using Lagrange.OneBot.Network.Options;
+using Lagrange.OneBot.Utility;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -81,7 +82,6 @@ public sealed partial class HttpService(
         var response = context.Response; // no using cause we might need to use it in SendJsonAsync
         var query = request.QueryString; // avoid creating a new nvc every get
 
-
         try
         {
             string identifier = Guid.NewGuid().ToString();
@@ -109,7 +109,7 @@ public sealed partial class HttpService(
                 }
             }
 
-            var action = request.Url!.AbsolutePath[1..];
+            string action = request.Url!.AbsolutePath[1..];
             string payload;
 
             switch (request.HttpMethod)
@@ -120,7 +120,7 @@ public sealed partial class HttpService(
                         .OfType<string>()
                         .ToDictionary(key => key, key => query[key]);
                     Log.LogReceived(_logger, identifier, request.Url.Query);
-                    payload = JsonSerializer.Serialize(new { action, @params });
+                    payload = JsonHelper.Serialize(new { action, @params });
                     break;
                 }
                 case "POST":
@@ -153,7 +153,7 @@ public sealed partial class HttpService(
                                 .Where(pair => !string.IsNullOrEmpty(pair))
                                 .Select(pair => pair.Split('=', 2))
                                 .ToDictionary(pair => pair[0], pair => Uri.UnescapeDataString(pair[1]));
-                            payload = JsonSerializer.Serialize(new { action, @params });
+                            payload = JsonHelper.Serialize(new { action, @params });
                             break;
                         }
                         default:
@@ -196,7 +196,7 @@ public sealed partial class HttpService(
     {
         if (identifier is null) return;
 
-        string payload = JsonSerializer.Serialize(json);
+        string payload = JsonHelper.Serialize(json);
         Log.LogSend(_logger, identifier, payload);
 
         if (_responses.TryRemove(identifier, out var response))

@@ -1,12 +1,11 @@
 using System.Diagnostics;
 using System.Net.WebSockets;
-using System.Reflection.Metadata;
 using System.Text;
-using System.Text.Json;
 using Lagrange.Core;
 using Lagrange.OneBot.Entity.Action;
 using Lagrange.OneBot.Entity.Meta;
 using Lagrange.OneBot.Network.Options;
+using Lagrange.OneBot.Utility;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -77,7 +76,7 @@ public partial class ReverseWSService(IOptionsSnapshot<ReverseWSServiceOptions> 
 
     protected async ValueTask SendJsonAsync<T>(ClientWebSocket ws, T payload, CancellationToken token)
     {
-        var json = JsonSerializer.Serialize(payload);
+        string json = JsonHelper.Serialize(payload);
         var buffer = Encoding.UTF8.GetBytes(json);
         Log.LogSendingData(_logger, Tag, _identifier, json);
         await _semaphore.WaitAsync(token);

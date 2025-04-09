@@ -9,10 +9,7 @@ namespace Lagrange.OneBot.Network.Service
         ILagrangeWebService? Create();
     }
 
-    public interface ILagrangeWebServiceFactory<TService> : ILagrangeWebServiceFactory where TService : ILagrangeWebService
-    {
-
-    }
+    public interface ILagrangeWebServiceFactory<TService> : ILagrangeWebServiceFactory where TService : ILagrangeWebService;
 
     public abstract class LagrangeWebServiceFactory(IServiceProvider services) : ILagrangeWebServiceFactory
     {
