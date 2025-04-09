@@ -99,11 +99,12 @@ internal class WtExchangeLogic : ILogic, IDisposable
     {
         if (_transEmpSource == null) return;
         var transEmp12 = await _context.EventContext.SendEvent<TransEmp12EventResp>(new TransEmp12EventReq());
+        if (transEmp12 == null) return;
+        
+        _context.EventInvoker.PostEvent(new BotQrCodeQueryEvent((BotQrCodeQueryEvent.TransEmpState)transEmp12.State));
         
         switch (transEmp12)
         {
-            case null:
-                return;
             case { State: TransEmp12EventResp.TransEmpState.Confirmed, Data: { } data }:
                 _context.Keystore.WLoginSigs.TgtgtKey = data.TgtgtKey;
                 _context.Keystore.WLoginSigs.NoPicSig = data.NoPicSig;
