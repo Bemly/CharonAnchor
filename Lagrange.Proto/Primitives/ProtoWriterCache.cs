@@ -4,9 +4,9 @@ using System.Diagnostics;
 namespace Lagrange.Proto.Primitives;
 
 /// <summary>
-/// Defines a thread-local cache for JsonSerializer to store reusable Utf8JsonWriter/IBufferWriter instances.
+/// Defines a thread-local cache for ProtoSerializer to store reusable ProtoWriterCache instances.
 /// </summary>
-internal static class Utf8JsonWriterCache
+internal static class ProtoWriterCache
 {
     [ThreadStatic]
     private static ThreadLocalState? _threadLocalState;
@@ -18,13 +18,11 @@ internal static class Utf8JsonWriterCache
 
         if (state.RentedWriters++ == 0)
         {
-            // First JsonSerializer call in the stack -- initialize & return the cached instance.
             writer = state.Writer;
             writer.Reset(bufferWriter);
         }
         else
         {
-            // We're in a recursive JsonSerializer call -- return a fresh instance.
             writer = new ProtoWriter(bufferWriter);
         }
 
