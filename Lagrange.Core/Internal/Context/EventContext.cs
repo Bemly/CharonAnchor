@@ -5,6 +5,7 @@ using Lagrange.Core.Events;
 using Lagrange.Core.Internal.Events;
 using Lagrange.Core.Internal.Logic;
 using Lagrange.Core.Internal.Packets.Struct;
+using Lagrange.Core.Utility.Extension;
 
 namespace Lagrange.Core.Internal.Context;
 
@@ -26,7 +27,7 @@ internal class EventContext : IDisposable
         
         foreach (var type in typeof(ILogic).Assembly.GetTypes())
         {
-            if (type.IsAssignableFrom(typeof(ILogic)) && Activator.CreateInstance(type, context) is ILogic instance)
+            if (type.HasImplemented<ILogic>() && Activator.CreateInstance(type, context) is ILogic instance)
             {
                 foreach (var @event in type.GetCustomAttributes<EventSubscribeAttribute>())
                 {

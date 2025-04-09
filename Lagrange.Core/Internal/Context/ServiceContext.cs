@@ -5,6 +5,7 @@ using Lagrange.Core.Common;
 using Lagrange.Core.Internal.Events;
 using Lagrange.Core.Internal.Packets.Struct;
 using Lagrange.Core.Internal.Services;
+using Lagrange.Core.Utility.Extension;
 
 namespace Lagrange.Core.Internal.Context;
 
@@ -31,7 +32,7 @@ internal class ServiceContext
 
         foreach (var type in typeof(IService).Assembly.GetTypes()) 
         {
-            if (type.GetCustomAttribute<ServiceAttribute>() is { } attr && type.IsAssignableFrom(typeof(IService)) && !type.IsAbstract)
+            if (type.GetCustomAttribute<ServiceAttribute>() is { } attr && type.HasImplemented<IService>())
             {
                 var service = (IService?)Activator.CreateInstance(type) ?? throw new InvalidOperationException("Failed to create service instance");
                 services[attr.Command] = service;

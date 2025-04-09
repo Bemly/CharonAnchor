@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Lagrange.Core.Message.Entities;
+using Lagrange.Core.Utility.Extension;
 
 namespace Lagrange.Core.Message;
 
@@ -16,7 +17,7 @@ internal class MessagePacker
 
         foreach (var type in typeof(MessagePacker).Assembly.GetTypes())
         {
-            if (type.IsAssignableFrom(typeof(IMessageEntity)))
+            if (type.HasImplemented<IMessageEntity>())
             {
                 _factory.Add((IMessageEntity?)Activator.CreateInstance(type) ?? throw new InvalidOperationException());
             }
