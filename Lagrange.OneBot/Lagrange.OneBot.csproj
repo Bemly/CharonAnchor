@@ -14,6 +14,7 @@
 
     <ItemGroup>
       <PackageReference Include="Dapper" Version="2.1.66" />
+      <PackageReference Include="Dapper.AOT" Version="1.0.48" />
       <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.3" />
       <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.3" />
       <PackageReference Include="Net.Codecrete.QrCodeGenerator" Version="2.0.6" />
@@ -23,6 +24,10 @@
       <ProjectReference Include="..\Lagrange.Codec\Lagrange.Codec.csproj" />
       <ProjectReference Include="..\Lagrange.Core\Lagrange.Core.csproj" />
     </ItemGroup>
+
+    <PropertyGroup> <!-- For Dapper.AOT -->
+        <InterceptorsPreviewNamespaces>$(InterceptorsPreviewNamespaces);Dapper.AOT</InterceptorsPreviewNamespaces>
+    </PropertyGroup>
 
     <ItemGroup>
         <EmbeddedResource Include="Resources\appsettings.json" />

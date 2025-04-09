@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Lagrange.OneBot.Database;
 
+[DapperAot]
 public partial class StorageService
 {
     private readonly ILogger<StorageService> _logger;
