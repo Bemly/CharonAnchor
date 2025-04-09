@@ -9,10 +9,25 @@ using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace Lagrange.OneBot.Core;
 
-public partial class BotService(ILogger<BotService> logger, BotContext context, IConfiguration config) : IHostedService
+public partial class BotService(ILogger<BotService> logger, ILogger<BotContext> botLogger, BotContext context, IConfiguration config) : IHostedService
 {
     public async Task StartAsync(CancellationToken cancellationToken)
     {
+        context.EventInvoker.RegisterEvent<BotLogEvent>((_, @event) =>
+        {
+            var level = @event.Level switch
+            {
+                Lagrange.Core.Events.EventArgs.LogLevel.Critical => LogLevel.Critical,
+                Lagrange.Core.Events.EventArgs.LogLevel.Error => LogLevel.Error,
+                Lagrange.Core.Events.EventArgs.LogLevel.Warning => LogLevel.Warning,
+                Lagrange.Core.Events.EventArgs.LogLevel.Information => LogLevel.Information,
+                Lagrange.Core.Events.EventArgs.LogLevel.Debug => LogLevel.Debug,
+                Lagrange.Core.Events.EventArgs.LogLevel.Trace => LogLevel.Trace,
+                _ => throw new ArgumentOutOfRangeException()
+            };
+            botLogger.Log(level, @event.Message);
+        });
+        
         context.EventInvoker.RegisterEvent<BotQrCodeEvent>(async (_, @event) =>
         {
             await File.WriteAllBytesAsync("qrcode.png", @event.Image, cancellationToken);

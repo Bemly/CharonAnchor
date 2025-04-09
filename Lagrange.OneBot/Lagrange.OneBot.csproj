@@ -28,6 +28,11 @@
     <PropertyGroup> <!-- For Dapper.AOT -->
         <InterceptorsPreviewNamespaces>$(InterceptorsPreviewNamespaces);Dapper.AOT</InterceptorsPreviewNamespaces>
     </PropertyGroup>
+    
+    <!--Surpass IL3053 and IL2104 Warnings during the compilation-->
+    <PropertyGroup>
+        <NoWarn>$(WarningsAsErrors);IL3053;IL2104</NoWarn>
+    </PropertyGroup>
 
     <ItemGroup>
         <EmbeddedResource Include="Resources\appsettings.json" />

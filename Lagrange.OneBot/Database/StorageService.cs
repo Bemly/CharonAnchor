@@ -49,7 +49,7 @@ public partial class StorageService
         var record = await _database.QuerySingleOrDefaultAsync<MessageRecord>(sql, new { SelfUin = _context.BotUin, MessageId = CalcMessageHash(messageId, seq) });
         if (record == null) return null;
 
-        throw new NotImplementedException(); // TODO: Reconstruct the message
+        return _context.MessagePacker.Parse(record.Data);
     }
     
     public async Task<BotMessage?> GetMessageBySequence(long groupUin, int seq)
@@ -58,7 +58,7 @@ public partial class StorageService
         var record = await _database.QuerySingleOrDefaultAsync<MessageRecord>(sql, new { SelfUin = _context.BotUin, GroupUin = groupUin, Sequence = seq });
         if (record == null) return null;
 
-        throw new NotImplementedException(); // TODO: Reconstruct the message
+        return _context.MessagePacker.Parse(record.Data);
     }
     
     public static int CalcMessageHash(ulong msgId, int seq) => ((ushort)seq << 16) | (ushort)msgId;

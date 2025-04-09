@@ -4,6 +4,7 @@ using Lagrange.Core.Common;
 using Lagrange.Core.Common.Interface;
 using Lagrange.OneBot.Core;
 using Lagrange.OneBot.Database;
+using Lagrange.OneBot.Message;
 using Lagrange.OneBot.Network;
 using Lagrange.OneBot.Network.Service;
 using Microsoft.Data.Sqlite;
@@ -55,6 +56,7 @@ public static class HostApplicationBuilderExtension
     public static HostApplicationBuilder ConfigureOneBot(this HostApplicationBuilder builder)
     {
         builder.Services
+            .AddSingleton<MessageService>()
             .AddSingleton<LagrangeWebSvcCollection>()
 
             .AddScoped<ILagrangeWebServiceFactory<ForwardWSService>, ForwardWSServiceFactory>()

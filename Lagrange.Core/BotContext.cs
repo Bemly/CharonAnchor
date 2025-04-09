@@ -2,6 +2,7 @@
 using Lagrange.Core.Events;
 using Lagrange.Core.Events.EventArgs;
 using Lagrange.Core.Internal.Context;
+using Lagrange.Core.Message;
 
 namespace Lagrange.Core;
 
@@ -20,6 +21,7 @@ public class BotContext : IDisposable
         ServiceContext = new ServiceContext(this);
         SocketContext = new SocketContext(this);
         EventContext = new EventContext(this);
+        MessagePacker = new MessagePacker(this);
     }
 
     public BotConfig Config { get; }
@@ -37,6 +39,7 @@ public class BotContext : IDisposable
     internal ServiceContext ServiceContext { get; }
     internal SocketContext SocketContext { get; }
     internal EventContext EventContext { get; }
+    internal MessagePacker MessagePacker { get; }
 
     #region Shortcut Methods
 
