@@ -1,7 +1,4 @@
-﻿using System.Reflection;
-using Lagrange.OneBot.Services;
-using Lagrange.OneBot.Utility.Extension;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Lagrange.OneBot.Utility.Extension;
 using Microsoft.Extensions.Hosting;
 
 namespace Lagrange.OneBot;
@@ -14,8 +11,7 @@ internal static class Program
         {
             Console.WriteLine("No exist config file, create it now...");
 
-            var assm = Assembly.GetExecutingAssembly();
-            await using var istr = assm.GetManifestResourceStream("Lagrange.OneBot.Resources.appsettings.json")!;
+            await using var istr = typeof(Program).Assembly.GetManifestResourceStream("Lagrange.OneBot.Resources.appsettings.json")!;
             await using var temp = File.Create("appsettings.json");
             await istr.CopyToAsync(temp);
 

@@ -2,7 +2,7 @@ using System.Reflection;
 using Lagrange.Core;
 using Lagrange.OneBot.Entity.Action;
 using Lagrange.OneBot.Network;
-using Lagrange.OneBot.Services;
+using Lagrange.OneBot.Database;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using JsonSerializer = System.Text.Json.JsonSerializer;

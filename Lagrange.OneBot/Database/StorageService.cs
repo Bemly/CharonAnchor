@@ -2,10 +2,9 @@ using System.Data.Common;
 using Dapper;
 using Lagrange.Core;
 using Lagrange.Core.Message;
-using Lagrange.OneBot.Database;
 using Microsoft.Extensions.Logging;
 
-namespace Lagrange.OneBot.Services;
+namespace Lagrange.OneBot.Database;
 
 public partial class StorageService
 {

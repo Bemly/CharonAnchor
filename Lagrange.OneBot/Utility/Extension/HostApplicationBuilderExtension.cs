@@ -3,9 +3,9 @@ using Lagrange.Core;
 using Lagrange.Core.Common;
 using Lagrange.Core.Common.Interface;
 using Lagrange.OneBot.Core;
+using Lagrange.OneBot.Database;
 using Lagrange.OneBot.Network;
 using Lagrange.OneBot.Network.Service;
-using Lagrange.OneBot.Services;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,6 +28,7 @@ public static class HostApplicationBuilderExtension
             Protocol = option.Protocol,
             AutoReLogin = option.AutoReLogin
         }));
+        builder.Services.AddHostedService<BotService>();
         
         return builder;
     }
