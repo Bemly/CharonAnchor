@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 using System.Text;
+using Lagrange.Proto.Utility;
 
 namespace Lagrange.Proto.Primitives;
 
@@ -13,7 +14,7 @@ namespace Lagrange.Proto.Primitives;
 public class ProtoWriter : IDisposable
 {
     private static readonly Vector128<sbyte> Ascend = Vector128.Create(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
-
+    
     private const int DefaultGrowthSize = 1024;
     private const int InitialGrowthSize = DefaultGrowthSize >> 4;
     
@@ -34,13 +35,28 @@ public class ProtoWriter : IDisposable
 
     public void EncodeString(ReadOnlySpan<char> str)
     {
-        int length = Encoding.UTF8.GetByteCount(str); // 傻逼Protobuf
-        if (_memory.Length - BytesPending < length) Grow(length);
+        int count = ProtoHelper.GetVarIntLength(str.Length);
+        var (min, max) = ProtoHelper.GetVarIntRange(count);
+        int utf16Max = ProtoConstants.MaxExpansionFactorWhileTranscoding * str.Length;
+        if (_memory.Length < utf16Max) Grow(utf16Max);
         
-        EncodeVarInt(length);
-        var status = ProtoWriteHelper.ToUtf8(str, _memory.Span[BytesPending..], out int written);
-        Debug.Assert(status == OperationStatus.Done);
-        BytesPending += written;
+        if (str.Length > min && str.Length < max) // falls within the range
+        {
+            BytesPending += count;
+            var status = ProtoWriteHelper.ToUtf8(str, _memory.Span[BytesPending..], out int written);
+            Debug.Assert(status == OperationStatus.Done);
+            BytesPending += written;
+
+            ref byte dest = ref Unsafe.Subtract(ref MemoryMarshal.GetReference(_memory.Span), BytesPending - written - count);
+            EncodeVarIntUnsafe(written, ref dest);
+        }
+        else
+        {
+            EncodeVarInt(Encoding.UTF8.GetByteCount(str));
+            var status = ProtoWriteHelper.ToUtf8(str, _memory.Span[BytesPending..], out int written);
+            Debug.Assert(status == OperationStatus.Done);
+            BytesPending += written;
+        }
     }
     
     public void EncodeBytes(ReadOnlySpan<byte> bytes)
@@ -136,29 +152,40 @@ public class ProtoWriter : IDisposable
             BytesPending += bytes;
         }
     }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private unsafe void EncodeVarIntUnsafe<TT, TU>(TT v1, TU v2)
-        where TT : unmanaged, INumber<TT>
-        where TU : unmanaged, INumber<TU>
-    {
-        if (!Ssse3.X64.IsSupported) throw new PlatformNotSupportedException();
-        
-        if (sizeof(TT) + sizeof(TU) > 12) throw new NotSupportedException();
-
-        if (sizeof(TT) <= 4 && sizeof(TU) <= 4) // try to use fast path of lookup table
-        {
-            EncodeTwo32VarIntUnsafe(v1, v2);
-            return;
-        } 
-    }
     
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private unsafe void EncodeTwo32VarIntUnsafe<T1, T2>(T1 v1, T2 v2)
-        where T1 : unmanaged, INumber<T1>
-        where T2 : unmanaged, INumber<T2>
+    private unsafe void EncodeVarIntUnsafe<T>(T value, ref byte dest) where T : unmanaged, INumberBase<T>
     {
-        throw new NotImplementedException();
+        if (!Sse2.IsSupported) throw new PlatformNotSupportedException();
+        
+        ulong v = ulong.CreateTruncating(value);
+
+        if (sizeof(T) <= 4)
+        {
+            ulong stage1 = PackScalar<T>(v);
+            int leading = BitOperations.LeadingZeroCount(stage1);
+            int bytesNeeded = 8 - ((leading - 1) >> 3);
+            
+            ulong msbMask = 0xFFFFFFFFFFFFFFFF >> ((8 - bytesNeeded + 1) * 8 - 1);
+            ulong merged = stage1 | (0x8080808080808080 & msbMask);
+            
+            Unsafe.As<byte, ulong>(ref dest) = merged;
+        }
+        else
+        {
+            var stage1 = PackVector<T>(v).AsSByte();
+            var minimum = Vector128.Create(-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            var exists = Sse2.Or(Sse2.CompareGreaterThan(stage1, Vector128<sbyte>.Zero), minimum);
+            uint bits = (uint)Sse2.MoveMask(exists);
+            
+            byte bytes = (byte)(32 - BitOperations.LeadingZeroCount(bits));
+            var mask = Sse2.CompareLessThan(Ascend, Vector128.Create((sbyte)bytes));
+            
+            var shift = Sse2.ShiftRightLogical128BitLane(mask, 1);
+            var msbmask = Sse2.And(shift, Vector128.Create((sbyte)-128));
+            var merged = Sse2.Or(stage1, msbmask);
+            
+            Unsafe.As<byte, Vector128<sbyte>>(ref dest) = merged;
+        }
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
