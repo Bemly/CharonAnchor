@@ -106,29 +106,7 @@ public class ProtoWriter : IDisposable
 
         if (sizeof(T) <= 4)
         {
-            ulong stage1;
-            
-            if (Bmi2.X64.IsSupported)
-            {
-                stage1 = sizeof(T) switch
-                {
-                    sizeof(byte) => Bmi2.X64.ParallelBitDeposit(v, 0x000000000000017f),
-                    sizeof(ushort) => Bmi2.X64.ParallelBitDeposit(v, 0x0000000000037f7f),
-                    sizeof(uint) => Bmi2.X64.ParallelBitDeposit(v, 0x0000000f7f7f7f7f),
-                    _ => throw new NotSupportedException()
-                };
-            }
-            else
-            {
-                stage1 = sizeof(T) switch
-                {
-                    sizeof(byte) => (v & 0x000000000000007f) | ((v & 0x0000000000000080) << 1),
-                    sizeof(ushort) => (v & 0x000000000000007f) | ((v & 0x0000000000003f80) << 1) | ((v & 0x000000000000c000) << 2),
-                    sizeof(uint) => (v & 0x000000000000007f) | ((v & 0x0000000000003f80) << 1) | ((v & 0x00000000001fc000) << 2) | ((v & 0x000000000fe00000) << 3) | ((v & 0x00000000f0000000) << 4),
-                    _ => throw new NotSupportedException()
-                };
-            }
-            
+            ulong stage1 = PackScalar<T>(v);
             int leading = BitOperations.LeadingZeroCount(stage1);
             int bytesNeeded = 8 - ((leading - 1) >> 3);
             
@@ -141,37 +119,8 @@ public class ProtoWriter : IDisposable
         }
         else
         {
-            ulong x, y;
-            if (Bmi2.X64.IsSupported)
-            {
-                x = Bmi2.X64.ParallelBitDeposit(v, 0x7f7f7f7f7f7f7f7f);
-                y = Bmi2.X64.ParallelBitDeposit(v >> 56, 0x000000000000017f);
-            }
-            else if (Avx2.IsSupported)
-            {
-                var b = Vector128.Create(v);
-                var c = Sse2.Or(
-                    Sse2.Or(
-                        Avx2.ShiftLeftLogicalVariable(Sse2.And(b, Vector128.Create(0x00000007f0000000ul, 0x000003f800000000ul)), Vector128.Create(4ul, 5ul)),
-                        Avx2.ShiftLeftLogicalVariable(Sse2.And(b, Vector128.Create(0x0001fc0000000000ul, 0x00fe000000000000ul)), Vector128.Create(6ul, 7ul))
-                    ),
-                    Sse2.Or(
-                        Avx2.ShiftLeftLogicalVariable(Sse2.And(b, Vector128.Create(0x000000000000007ful, 0x0000000000003f80ul)), Vector128.Create(0ul, 1ul)),
-                        Avx2.ShiftLeftLogicalVariable(Sse2.And(b, Vector128.Create(0x00000000001fc000ul, 0x000000000fe00000ul)), Vector128.Create(2ul, 3ul))
-                    )
-                );
-                var d = Sse2.Or(c, Sse2.ShiftRightLogical128BitLane(c, 8));
-                x = Sse41.X64.Extract(d, 0);
-                y = (v & 0x7f00000000000000) >> 56 | (v & 0x8000000000000000) >> 55;
-            }
-            else
-            {
-                x = (v & 0x000000000000007f) | ((v & 0x0000000000003f80) << 1) | ((v & 0x00000000001fc000) << 2) | ((v & 0x000000000fe00000) << 3) | ((v & 0x00000007f0000000) << 4) | ((v & 0x000003f800000000) << 5) | ((v & 0x0001fc0000000000) << 6) | ((v & 0x00fe000000000000) << 7);
-                y = ((v & 0x7f00000000000000) >> 56) | ((v & 0x8000000000000000) >> 55);
-            }
-            
-            var stage1 = Vector128.Create(x, y).AsSByte();
-            var minimum = Vector128.Create(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1);
+            var stage1 = PackVector<T>(v).AsSByte();
+            var minimum = Vector128.Create(-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
             var exists = Sse2.Or(Sse2.CompareGreaterThan(stage1, Vector128<sbyte>.Zero), minimum);
             uint bits = (uint)Sse2.MoveMask(exists);
             
@@ -186,6 +135,92 @@ public class ProtoWriter : IDisposable
             Unsafe.As<byte, Vector128<sbyte>>(ref Unsafe.Add(ref destination, BytesPending)) = merged;
             BytesPending += bytes;
         }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private unsafe void EncodeVarIntUnsafe<TT, TU>(TT v1, TU v2)
+        where TT : unmanaged, INumber<TT>
+        where TU : unmanaged, INumber<TU>
+    {
+        if (!Ssse3.X64.IsSupported) throw new PlatformNotSupportedException();
+        
+        if (sizeof(TT) + sizeof(TU) > 12) throw new NotSupportedException();
+
+        if (sizeof(TT) <= 4 && sizeof(TU) <= 4) // try to use fast path of lookup table
+        {
+            EncodeTwo32VarIntUnsafe(v1, v2);
+            return;
+        } 
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private unsafe void EncodeTwo32VarIntUnsafe<T1, T2>(T1 v1, T2 v2)
+        where T1 : unmanaged, INumber<T1>
+        where T2 : unmanaged, INumber<T2>
+    {
+        throw new NotImplementedException();
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static unsafe ulong PackScalar<T>(ulong v) where T : unmanaged, INumberBase<T>
+    {
+        if (Bmi2.X64.IsSupported)
+        {
+            return sizeof(T) switch
+            {
+                sizeof(byte) => Bmi2.X64.ParallelBitDeposit(v, 0x000000000000017f),
+                sizeof(ushort) => Bmi2.X64.ParallelBitDeposit(v, 0x0000000000037f7f),
+                sizeof(uint) => Bmi2.X64.ParallelBitDeposit(v, 0x0000000f7f7f7f7f),
+                _ => throw new NotSupportedException()
+            };
+        }
+        else
+        {
+            return sizeof(T) switch
+            {
+                sizeof(byte) => (v & 0x000000000000007f) | ((v & 0x0000000000000080) << 1),
+                sizeof(ushort) => (v & 0x000000000000007f) | ((v & 0x0000000000003f80) << 1) | ((v & 0x000000000000c000) << 2),
+                sizeof(uint) => (v & 0x000000000000007f) | ((v & 0x0000000000003f80) << 1) | ((v & 0x00000000001fc000) << 2) | ((v & 0x000000000fe00000) << 3) | ((v & 0x00000000f0000000) << 4),
+                _ => throw new NotSupportedException()
+            };
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static unsafe Vector128<ulong> PackVector<T>(ulong v) where T : unmanaged, INumberBase<T>
+    {
+        if (sizeof(T) < 8) throw new InvalidOperationException("Vector is too small");
+        
+        ulong x, y;
+        if (Bmi2.X64.IsSupported)
+        {
+            x = Bmi2.X64.ParallelBitDeposit(v, 0x7f7f7f7f7f7f7f7f);
+            y = Bmi2.X64.ParallelBitDeposit(v >> 56, 0x000000000000017f);
+        }
+        else if (Avx2.IsSupported)
+        {
+            var b = Vector128.Create(v);
+            var c = Sse2.Or(
+                Sse2.Or(
+                    Avx2.ShiftLeftLogicalVariable(Sse2.And(b, Vector128.Create(0x00000007f0000000ul, 0x000003f800000000ul)), Vector128.Create(4ul, 5ul)),
+                    Avx2.ShiftLeftLogicalVariable(Sse2.And(b, Vector128.Create(0x0001fc0000000000ul, 0x00fe000000000000ul)), Vector128.Create(6ul, 7ul))
+                ),
+                Sse2.Or(
+                    Avx2.ShiftLeftLogicalVariable(Sse2.And(b, Vector128.Create(0x000000000000007ful, 0x0000000000003f80ul)), Vector128.Create(0ul, 1ul)),
+                    Avx2.ShiftLeftLogicalVariable(Sse2.And(b, Vector128.Create(0x00000000001fc000ul, 0x000000000fe00000ul)), Vector128.Create(2ul, 3ul))
+                )
+            );
+            var d = Sse2.Or(c, Sse2.ShiftRightLogical128BitLane(c, 8));
+            x = Sse41.X64.Extract(d, 0);
+            y = (v & 0x7f00000000000000) >> 56 | (v & 0x8000000000000000) >> 55;
+        }
+        else
+        {
+            x = (v & 0x000000000000007f) | ((v & 0x0000000000003f80) << 1) | ((v & 0x00000000001fc000) << 2) | ((v & 0x000000000fe00000) << 3) | ((v & 0x00000007f0000000) << 4) | ((v & 0x000003f800000000) << 5) | ((v & 0x0001fc0000000000) << 6) | ((v & 0x00fe000000000000) << 7);
+            y = ((v & 0x7f00000000000000) >> 56) | ((v & 0x8000000000000000) >> 55);
+        }
+
+        return Vector128.Create(x, y);
     }
     
     [MethodImpl(MethodImplOptions.NoInlining)]

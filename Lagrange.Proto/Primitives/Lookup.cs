@@ -106,7 +106,7 @@ internal static class Lookup
         
         for (int i = 0; i < 90; i++)
         {
-            DoubleVec[i] = Unsafe.ReadUnaligned<Vector128<sbyte>>(ref MemoryMarshal.GetReference(data.AsSpan()));
+            DoubleVec[i] = Unsafe.ReadUnaligned<Vector128<sbyte>>(ref MemoryMarshal.GetReference(data.AsSpan(i * 16, 16)));
         }
     }
 

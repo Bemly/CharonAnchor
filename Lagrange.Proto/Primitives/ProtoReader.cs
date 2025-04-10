@@ -38,7 +38,7 @@ public ref struct ProtoReader
     /// Max VarInt Bytes for u64: 10
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public unsafe T DecodeUnsafe<T>() where T : unmanaged, INumber<T>
+    public unsafe T DecodeVarIntUnsafe<T>() where T : unmanaged, INumber<T>
     {
         if (sizeof(T) <= 4) // indicate that the byte can be handled in the 64-bit reg
         {
@@ -130,7 +130,7 @@ public ref struct ProtoReader
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public unsafe (TT, TU) DecodeUnsafe<TT, TU>(ReadOnlySpan<byte> src) 
+    public unsafe (TT, TU) DecodeVarIntUnsafe<TT, TU>(ReadOnlySpan<byte> src) 
         where TT : unmanaged, INumber<TT> 
         where TU : unmanaged, INumber<TU>
     {
@@ -138,7 +138,7 @@ public ref struct ProtoReader
         
         if (sizeof(TT) + sizeof(TU) > 12) throw new NotSupportedException();
 
-        if (sizeof(TT) <= 4 && sizeof(TU) <= 4) return DecodeTwo32Unsafe<TT, TU>(src); // try to use fast path of lookup table
+        if (sizeof(TT) <= 4 && sizeof(TU) <= 4) return DecodeTwo32VarIntUnsafe<TT, TU>(src); // try to use fast path of lookup table
         
         var b = Unsafe.As<byte, Vector128<sbyte>>(ref MemoryMarshal.GetReference(src));
         uint bitmask = (uint)Sse2.MoveMask(b);
@@ -226,7 +226,7 @@ public ref struct ProtoReader
     
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private unsafe (TT, TU) DecodeTwo32Unsafe<TT, TU>(ReadOnlySpan<byte> src)
+    private unsafe (TT, TU) DecodeTwo32VarIntUnsafe<TT, TU>(ReadOnlySpan<byte> src)
         where TT : unmanaged, INumber<TT>
         where TU : unmanaged, INumber<TU>
     {
