@@ -3,13 +3,13 @@ using System.Runtime.CompilerServices;
 
 namespace Lagrange.Proto.Utility;
 
-internal static class ProtoHelper
+public static class ProtoHelper
 {
     /// <summary>
     /// This function should only be used when writing the string.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static (int, int) GetVarIntRange(int length) => length switch
+    internal static (int, int) GetVarIntRange(int length) => length switch
     {
         1 => (1 << 0, (1 << 7) - 1),
         2 => (1 << 7, (1 << 14) - 1),
@@ -19,9 +19,23 @@ internal static class ProtoHelper
     };
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int GetVarIntLength<T>(T value) where T : unmanaged, INumberBase<T>
+    internal static int GetVarIntLength<T>(T value) where T : unmanaged, INumberBase<T>
     {
         ulong v = ulong.CreateTruncating(value);
         return BitOperations.LeadingZeroCount(v) / 7 + 1;
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe T ZigZagEncode<T>(T value) 
+        where T : unmanaged, INumber<T>, IShiftOperators<T, int, T>, IBitwiseOperators<T, T, T>
+    {
+        return (value << 1) ^ (value >> (sizeof(T) * 8 - 1));
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static T ZigZagDecode<T>(T value) 
+        where T : unmanaged, INumber<T>, IShiftOperators<T, int, T>, IBitwiseOperators<T, T, T>
+    {
+        return (value >> 1) ^ -(value & T.One);
     }
 }

@@ -302,6 +302,7 @@ public class ProtoWriter : IDisposable
         if (_memory.Length < sizeHint) ThrowHelper.ThrowInvalidOperationException_NeedLargerSpan();
     }
 
+    [MethodImpl(MethodImplOptions.NoInlining)]
     private void FirstCallToGetMemory(int requiredSize)
     {
         Debug.Assert(_memory.Length == 0);
