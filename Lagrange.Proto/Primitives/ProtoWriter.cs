@@ -69,6 +69,24 @@ public class ProtoWriter : IDisposable
         BytesPending += length;
     }
     
+    public void EncodeFixed32<T>(T value) where T : unmanaged, INumber<T>
+    {
+        if (_memory.Length - BytesPending < 4) Grow(4);
+        
+        ref byte destination = ref MemoryMarshal.GetReference(_memory.Span);
+        Unsafe.As<byte, uint>(ref Unsafe.Add(ref destination, BytesPending)) = uint.CreateTruncating(value);
+        BytesPending += 4;
+    }
+    
+    public void EncodeFixed64<T>(T value) where T : unmanaged, INumber<T>
+    {
+        if (_memory.Length - BytesPending < 8) Grow(8);
+        
+        ref byte destination = ref MemoryMarshal.GetReference(_memory.Span);
+        Unsafe.As<byte, ulong>(ref Unsafe.Add(ref destination, BytesPending)) = ulong.CreateTruncating(value);
+        BytesPending += 8;
+    }
+    
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void EncodeVarInt<T>(T value) where T : unmanaged, INumber<T>
     {
@@ -104,6 +122,15 @@ public class ProtoWriter : IDisposable
         if (_memory.Length - BytesPending < 1) Grow(1);
         
         Unsafe.Add(ref MemoryMarshal.GetReference(_memory.Span), BytesPending++) = value;
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void WriteRawBytes(ReadOnlySpan<byte> bytes)
+    {
+        if (_memory.Length - BytesPending < bytes.Length) Grow(bytes.Length);
+        
+        bytes.CopyTo(_memory.Span[BytesPending..]);
+        BytesPending += bytes.Length;
     }
     
     /// <summary>
