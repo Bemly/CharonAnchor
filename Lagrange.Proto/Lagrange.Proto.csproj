@@ -11,6 +11,7 @@
 
     <ItemGroup>
       <Folder Include="Utility\" />
+        <ProjectReference Include="..\Lagrange.Proto.Generator\Lagrange.Proto.Generator.csproj" ReferenceOutputAssembly="false" PackAsAnalyzer="true" />
     </ItemGroup>
 
 </Project>
