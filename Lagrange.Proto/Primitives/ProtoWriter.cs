@@ -47,8 +47,8 @@ public class ProtoWriter : IDisposable
             Debug.Assert(status == OperationStatus.Done);
             BytesPending += written;
 
-            ref byte dest = ref Unsafe.Subtract(ref MemoryMarshal.GetReference(_memory.Span), BytesPending - written - count);
-            EncodeVarIntUnsafe(written, ref dest);
+            ref byte dest = ref Unsafe.AddByteOffset(ref MemoryMarshal.GetReference(_memory.Span), BytesPending - written - count);
+            EncodeVarIntLengthTo(written, ref dest);
         }
         else
         {
@@ -74,7 +74,7 @@ public class ProtoWriter : IDisposable
         if (_memory.Length - BytesPending < 4) Grow(4);
         
         ref byte destination = ref MemoryMarshal.GetReference(_memory.Span);
-        Unsafe.As<byte, uint>(ref Unsafe.Add(ref destination, BytesPending)) = uint.CreateTruncating(value);
+        Unsafe.As<byte, T>(ref Unsafe.Add(ref destination, BytesPending)) = value;
         BytesPending += 4;
     }
     
@@ -83,7 +83,7 @@ public class ProtoWriter : IDisposable
         if (_memory.Length - BytesPending < 8) Grow(8);
         
         ref byte destination = ref MemoryMarshal.GetReference(_memory.Span);
-        Unsafe.As<byte, ulong>(ref Unsafe.Add(ref destination, BytesPending)) = ulong.CreateTruncating(value);
+        Unsafe.As<byte, T>(ref Unsafe.Add(ref destination, BytesPending)) = value;
         BytesPending += 8;
     }
     
@@ -114,6 +114,31 @@ public class ProtoWriter : IDisposable
             v >>= 7;
         }
         WriteRawByte((byte)v);
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void EncodeVarIntLengthTo(int value, ref byte dest)
+    {
+        if (value < 0x80) 
+        {
+            dest = (byte)value;
+            return;
+        }
+        
+        ref byte first = ref dest;
+        int position = 0;
+        
+        while (true)
+        {
+            if (value < 0x80)
+            {
+                Unsafe.Add(ref first, position) = (byte)value;
+                break;
+            }
+            Unsafe.Add(ref first, position) = (byte)(value | 0x80);
+            position++;
+            value >>= 7;
+        }
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -177,41 +202,6 @@ public class ProtoWriter : IDisposable
             ref byte destination = ref MemoryMarshal.GetReference(_memory.Span);
             Unsafe.As<byte, Vector128<sbyte>>(ref Unsafe.Add(ref destination, BytesPending)) = merged;
             BytesPending += bytes;
-        }
-    }
-    
-    private unsafe void EncodeVarIntUnsafe<T>(T value, ref byte dest) where T : unmanaged, INumberBase<T>
-    {
-        if (!Sse2.IsSupported) throw new PlatformNotSupportedException();
-        
-        ulong v = ulong.CreateTruncating(value);
-
-        if (sizeof(T) <= 4)
-        {
-            ulong stage1 = PackScalar<T>(v);
-            int leading = BitOperations.LeadingZeroCount(stage1);
-            int bytesNeeded = 8 - ((leading - 1) >> 3);
-            
-            ulong msbMask = 0xFFFFFFFFFFFFFFFF >> ((8 - bytesNeeded + 1) * 8 - 1);
-            ulong merged = stage1 | (0x8080808080808080 & msbMask);
-            
-            Unsafe.As<byte, ulong>(ref dest) = merged;
-        }
-        else
-        {
-            var stage1 = PackVector<T>(v).AsSByte();
-            var minimum = Vector128.Create(-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-            var exists = Sse2.Or(Sse2.CompareGreaterThan(stage1, Vector128<sbyte>.Zero), minimum);
-            uint bits = (uint)Sse2.MoveMask(exists);
-            
-            byte bytes = (byte)(32 - BitOperations.LeadingZeroCount(bits));
-            var mask = Sse2.CompareLessThan(Ascend, Vector128.Create((sbyte)bytes));
-            
-            var shift = Sse2.ShiftRightLogical128BitLane(mask, 1);
-            var msbmask = Sse2.And(shift, Vector128.Create((sbyte)-128));
-            var merged = Sse2.Or(stage1, msbmask);
-            
-            Unsafe.As<byte, Vector128<sbyte>>(ref dest) = merged;
         }
     }
     

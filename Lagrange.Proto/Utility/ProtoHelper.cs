@@ -22,7 +22,7 @@ public static class ProtoHelper
     internal static int GetVarIntLength<T>(T value) where T : unmanaged, INumberBase<T>
     {
         ulong v = ulong.CreateTruncating(value);
-        return BitOperations.LeadingZeroCount(v) / 7 + 1;
+        return BitOperations.TrailingZeroCount(v) / 7 + 1;
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
