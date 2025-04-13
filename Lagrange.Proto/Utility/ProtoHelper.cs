@@ -1,5 +1,6 @@
 ﻿using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Text;
 
 namespace Lagrange.Proto.Utility;
 
@@ -19,7 +20,7 @@ public static class ProtoHelper
     };
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static int GetVarIntLength<T>(T value) where T : unmanaged, INumberBase<T>
+    public static int GetVarIntLength<T>(T value) where T : unmanaged, INumberBase<T>
     {
         ulong v = ulong.CreateTruncating(value);
         return BitOperations.TrailingZeroCount(v) / 7 + 1;
@@ -37,5 +38,25 @@ public static class ProtoHelper
         where T : unmanaged, INumber<T>, IShiftOperators<T, int, T>, IBitwiseOperators<T, T, T>
     {
         return (value >> 1) ^ -(value & T.One);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int CountString(ReadOnlySpan<char> str)
+    {
+        int length = Encoding.UTF8.GetByteCount(str);
+        return GetVarIntLength(length) + length;
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int CountBytes(ReadOnlySpan<byte> str)
+    {
+        return GetVarIntLength(str.Length) + str.Length;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int CountProtoPackable<T>(T obj) where T : IProtoSerializer<T>
+    {
+        int length = T.MeasureHandler(obj);
+        return GetVarIntLength(length) + length;
     }
 }

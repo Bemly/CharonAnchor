@@ -20,7 +20,8 @@ public partial class ProtoSourceGenerator
             var classDeclaration = SF.ClassDeclaration(parser.Identifier)
                 .AddModifiers(SF.Token(SK.PartialKeyword))
                 .AddAttributeLists(SF.AttributeList().AddAttributes(EmitGeneratedCodeAttribute()))
-                .AddMembers(EmitSerializeHandlerMethod());
+                .AddMembers(EmitSerializeHandlerMethod(), EmitMeasureHandlerMethod())
+                .AddBaseListTypes(SF.SimpleBaseType(SF.ParseName($"global::Lagrange.Proto.IProtoSerializer<{parser.Identifier}>")));
             
             var namespaceDeclaration = SF.FileScopedNamespaceDeclaration(SF.ParseName(parser.Namespace ?? string.Empty))
                 .AddMembers(classDeclaration);
@@ -41,15 +42,11 @@ public partial class ProtoSourceGenerator
             string code = compilationUnit.NormalizeWhitespace().ToFullString();
             context.AddSource($"{parser.Identifier}.g.cs", code);
         }
-        
+
+        #region SerializeHandler
+
         private MethodDeclarationSyntax EmitSerializeHandlerMethod()
         {
-            string methodName = $"{parser.Identifier}SerializeHandler";
-            string classFullName = $"global::{parser.Namespace}.{parser.Identifier}?";
-            var parameters = SF.ParameterList()
-                .AddParameters(SF.Parameter(SF.Identifier("obj")).WithType(SF.ParseTypeName(classFullName)))
-                .AddParameters(SF.Parameter(SF.Identifier("writer")).WithType(SF.ParseTypeName(WriterFullName)));
-
             var syntax = new List<StatementSyntax> { EmitNullableCheckStatement(true, "obj", SF.ReturnStatement()) };
             
             foreach (var t in parser.Fields)
@@ -82,33 +79,40 @@ public partial class ProtoSourceGenerator
                 if (parser.Model.GetTypeSymbol(type).IsValueType && !type.IsNullableType())
                 {
                     syntax.Add(tag);
-                    syntax.Add(field.AddBlankLine());
+                    syntax.AddRange(field);
+                    syntax[syntax.Count - 1] = syntax[syntax.Count - 1].WithTrailingTrivia(SF.Comment("\n"));
                 }
                 else
                 {
-                    var block = SF.Block(SF.List<StatementSyntax>([tag, field]));
+                    var block = SF.Block(SF.List<StatementSyntax>([tag, ..field]));
                     syntax.Add(EmitNullableCheckStatement(false, $"obj.{name}", block, false));
                 }
             }
 
-            return SF.MethodDeclaration(SF.PredefinedType(SF.Token(SK.VoidKeyword)), methodName)
-                .AddModifiers(SF.Token(SK.PrivateKeyword), SF.Token(SK.StaticKeyword))
+            string classFullName = $"global::{parser.Namespace}.{parser.Identifier}?";
+            var parameters = SF.ParameterList()
+                .AddParameters(SF.Parameter(SF.Identifier("obj")).WithType(SF.ParseTypeName(classFullName)))
+                .AddParameters(SF.Parameter(SF.Identifier("writer")).WithType(SF.ParseTypeName(WriterFullName)));
+
+            return SF.MethodDeclaration(SF.PredefinedType(SF.Token(SK.VoidKeyword)), "SerializeHandler")
+                .AddModifiers(SF.Token(SK.PublicKeyword), SF.Token(SK.StaticKeyword))
                 .WithParameterList(parameters)
                 .WithBody(SF.Block(SF.List(syntax)));
         }
-
-        private StatementSyntax EmitMemberStatement(WireType wireType, string identifier, TypeSyntax type, bool isSigned)
+        
+        private StatementSyntax[] EmitMemberStatement(WireType wireType, string identifier, TypeSyntax type, bool isSigned)
         {
-            bool isValueType = parser.Model.GetTypeSymbol(type).IsValueType;
-            if (type.IsNullableType() && isValueType) identifier += ".Value";
+            var symbol = parser.Model.GetTypeSymbol(type);
+            if (type.IsNullableType() && symbol.IsValueType) identifier += ".Value";
 
             return wireType switch
             {
-                WireType.VarInt => EmitVarIntSerializeStatement(identifier, isSigned),
-                WireType.Fixed32 => EmitFixed32SerializeStatement(identifier, isSigned),
-                WireType.Fixed64 => EmitFixed64SerializeStatement(identifier, isSigned),
-                WireType.LengthDelimited when type.IsStringType() => EmitStringSerializeStatement(identifier),
-                WireType.LengthDelimited when type.IsByteArrayType() => EmitBytesSerializeStatement(identifier),
+                WireType.VarInt => [EmitVarIntSerializeStatement(identifier, isSigned)],
+                WireType.Fixed32 => [EmitFixed32SerializeStatement(identifier, isSigned)],
+                WireType.Fixed64 => [EmitFixed64SerializeStatement(identifier, isSigned)],
+                WireType.LengthDelimited when type.IsStringType() => [EmitStringSerializeStatement(identifier)],
+                WireType.LengthDelimited when type.IsByteArrayType() => [EmitBytesSerializeStatement(identifier)],
+                WireType.LengthDelimited when symbol.IsUserDefinedType() => EmitProtoPackableSerializeStatement(type.ToString(), identifier),
                 _ => throw new Exception($"Unsupported wire type: {wireType} for {identifier}")
             };
         }
@@ -171,6 +175,19 @@ public partial class ProtoSourceGenerator
             return SF.ExpressionStatement(SF.InvocationExpression(access).AddArgumentListArguments(SF.Argument(arg)));
         }
         
+        private static StatementSyntax[] EmitProtoPackableSerializeStatement(string typeName, string name)
+        {
+            var measure = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName(typeName), SF.IdentifierName($"MeasureHandler"));
+            var invocation = SF.InvocationExpression(measure).AddArgumentListArguments(SF.Argument(SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("obj"), SF.IdentifierName(name))));
+            var access = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("writer"), SF.IdentifierName("EncodeVarInt"));
+            var serialize = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName(typeName), SF.IdentifierName("SerializeHandler"));
+            return
+            [
+                SF.ExpressionStatement(SF.InvocationExpression(access).AddArgumentListArguments(SF.Argument(invocation))),
+                SF.ExpressionStatement(SF.InvocationExpression(serialize).AddArgumentListArguments(SF.Argument(SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("obj"), SF.IdentifierName(name))), SF.Argument(SF.IdentifierName("writer"))))
+            ];
+        }
+        
         private static StatementSyntax EmitBytesSerializeStatement(string name)
         {
             var arg = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("obj"), SF.IdentifierName(name));
@@ -195,5 +212,123 @@ public partial class ProtoSourceGenerator
                     SF.AttributeArgument(SF.LiteralExpression(SK.StringLiteralExpression, SF.Literal("Lagrange.Proto.Generator"))),
                     SF.AttributeArgument(SF.LiteralExpression(SK.StringLiteralExpression, SF.Literal("1.0.0"))));
         }
+
+        #endregion
+
+        #region MeasureHandler
+
+        private MethodDeclarationSyntax EmitMeasureHandlerMethod()
+        {
+            ExpressionSyntax syntax;
+            if (parser.Fields.Count == 0)
+            {
+                syntax = SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(0));
+            }
+            else
+            {
+                int constant = 0;
+                var expressions = new List<ExpressionSyntax>();
+
+                foreach (var kv in parser.Fields)
+                {
+                    TypeSyntax type;
+                    string name;
+                    switch (kv.Value.Syntax)
+                    {
+                        case FieldDeclarationSyntax fieldDeclaration:
+                        {
+                            type = fieldDeclaration.Declaration.Type;
+                            name = fieldDeclaration.Declaration.Variables[0].Identifier.ToString();
+                            break;
+                        }
+                        case PropertyDeclarationSyntax propertyDeclaration:
+                        {
+                            type = propertyDeclaration.Type;
+                            name = propertyDeclaration.Identifier.ToString();
+                            break;
+                        }
+                        default:
+                        {
+                            throw new Exception($"Unsupported member type: {kv.Value.GetType()}");
+                        }
+                    }
+                    var symbol = parser.Model.GetTypeSymbol(type);
+                    string identifier = symbol.IsValueType && type.IsNullableType() ? name + ".Value" : name;
+                    
+                    var expr = kv.Value.WireType switch        
+                    {
+                        WireType.VarInt => EmitVarIntLengthExpression(identifier),
+                        WireType.Fixed32 => SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(4)),
+                        WireType.Fixed64 => SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(8)),
+                        WireType.LengthDelimited when type.IsStringType() => EmitStringLengthExpression(identifier),
+                        WireType.LengthDelimited when type.IsByteArrayType() => EmitBytesLengthExpression(identifier),
+                        WireType.LengthDelimited when symbol.IsUserDefinedType() => EmitProtoPackableLengthExpression(identifier),
+                        _ => throw new Exception($"Unsupported wire type: {kv.Value.WireType} for {type.ToString()}")
+                    };
+                    
+                    if (symbol.IsValueType && !type.IsNullableType())
+                    {
+                        constant += ProtoHelper.EncodeVarInt((kv.Key << 3) | (byte)kv.Value.WireType).Length;
+                    }
+                    else // null check with obj.{identifier}
+                    {
+                        var tag = ProtoHelper.EncodeVarInt((kv.Key << 3) | (byte)kv.Value.WireType);
+                        var right = SF.BinaryExpression(SK.AddExpression, SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(tag.Length)), expr);
+                        var left = SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(0));
+                        expr = EmitNullableCheckExpression(name, left, right);
+                    }
+                    
+                    expressions.Add(expr);
+                }
+                
+                syntax = SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(constant));
+                syntax = expressions.Aggregate(syntax, (current, expr) => SF.BinaryExpression(SK.AddExpression, current, expr));
+            }
+
+            string classFullName = $"global::{parser.Namespace}.{parser.Identifier}";
+            var parameters = SF.ParameterList()
+                .AddParameters(SF.Parameter(SF.Identifier("obj")).WithType(SF.ParseTypeName(classFullName)));
+            
+            return SF.MethodDeclaration(SF.PredefinedType(SF.Token(SK.IntKeyword)), "MeasureHandler")
+                .AddModifiers(SF.Token(SK.PublicKeyword), SF.Token(SK.StaticKeyword))
+                .WithParameterList(parameters)
+                .WithBody(SF.Block(SF.ReturnStatement(syntax)));
+        }
+        
+        private static ExpressionSyntax EmitVarIntLengthExpression(string identifier)
+        {
+            var obj = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("obj"), SF.IdentifierName(identifier));
+            var access = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("global::Lagrange.Proto.Utility.ProtoHelper"), SF.IdentifierName("GetVarIntLength"));
+            return SF.InvocationExpression(access).AddArgumentListArguments(SF.Argument(obj));
+        }
+
+        private static ExpressionSyntax EmitStringLengthExpression(string identifier)
+        {
+            var obj = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("obj"), SF.IdentifierName(identifier));
+            var access = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("global::Lagrange.Proto.Utility.ProtoHelper"), SF.IdentifierName("CountString"));
+            return SF.InvocationExpression(access).AddArgumentListArguments(SF.Argument(obj));
+        }
+        
+        private static ExpressionSyntax EmitBytesLengthExpression(string identifier)
+        {
+            var obj = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("obj"), SF.IdentifierName(identifier));
+            var access = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("global::Lagrange.Proto.Utility.ProtoHelper"), SF.IdentifierName("CountBytes"));
+            return SF.InvocationExpression(access).AddArgumentListArguments(SF.Argument(obj));
+        }
+        
+        private static ExpressionSyntax EmitProtoPackableLengthExpression(string name)
+        {
+            var obj = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("obj"), SF.IdentifierName(name));
+            var access = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("global::Lagrange.Proto.Utility.ProtoHelper"), SF.IdentifierName("CountProtoPackable"));
+            return SF.InvocationExpression(access).AddArgumentListArguments(SF.Argument(obj));
+        }
+        
+        /// <summary>
+        /// (obj == null ? left : right)
+        /// </summary>
+        private static ExpressionSyntax EmitNullableCheckExpression(string identifier, ExpressionSyntax left, ExpressionSyntax right) => SF.ParenthesizedExpression(
+                SF.ConditionalExpression(SF.BinaryExpression(SK.EqualsExpression, SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("obj"), SF.IdentifierName(identifier)), SF.LiteralExpression(SK.NullLiteralExpression)), left, right)
+            );
+        #endregion
     }
 }

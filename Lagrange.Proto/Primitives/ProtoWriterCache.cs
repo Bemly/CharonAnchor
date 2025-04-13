@@ -1,13 +1,17 @@
 using System.Buffers;
+using System.Collections.Concurrent;
 using System.Diagnostics;
+using Lagrange.Proto.Utility;
 
 namespace Lagrange.Proto.Primitives;
 
 /// <summary>
 /// Defines a thread-local cache for ProtoSerializer to store reusable ProtoWriterCache instances.
 /// </summary>
-internal static class ProtoWriterCache
+public static class ProtoWriterCache
 {
+    private static readonly ConcurrentQueue<SegmentBufferWriter> BufferPool = new();
+    
     [ThreadStatic]
     private static ThreadLocalState? _threadLocalState;
     
@@ -28,7 +32,10 @@ internal static class ProtoWriterCache
 
         return writer;
     }
-        
+    
+    public static SegmentBufferWriter RentSegmentWriter() => 
+        BufferPool.TryDequeue(out var writer) ? writer : new SegmentBufferWriter();
+
     public static void ReturnWriter(ProtoWriter writer)
     {
         Debug.Assert(_threadLocalState != null);
@@ -37,6 +44,12 @@ internal static class ProtoWriterCache
 
         int rentedWriters = --_threadLocalState.RentedWriters;
         Debug.Assert((rentedWriters == 0) == ReferenceEquals(_threadLocalState.Writer, writer));
+    }
+    
+    public static void ReturnSegmentWriter(SegmentBufferWriter writer)
+    {
+        writer.Clear();
+        BufferPool.Enqueue(writer);
     }
 
     private sealed class ThreadLocalState

@@ -4,11 +4,14 @@ using Lagrange.Proto.Generator.Utility.Extension;
 using Lagrange.Proto.Serialization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using static Lagrange.Proto.Generator.DiagnosticDescriptors;
 
 namespace Lagrange.Proto.Generator;
 
 public partial class ProtoSourceGenerator
 {
+    private const string ProtoPackableAttributeFullName = "Lagrange.Proto.ProtoPackableAttribute";
+    
     private class Parser(ClassDeclarationSyntax context, SemanticModel model)
     {
         public SemanticModel Model { get; } = model;
@@ -28,7 +31,7 @@ public partial class ProtoSourceGenerator
             
             if (!context.IsPartial())
             {
-                ReportDiagnostics(DiagnosticDescriptors.MustBePartialClass, context.GetLocation(), context.Identifier.Text);
+                ReportDiagnostics(MustBePartialClass, context.GetLocation(), context.Identifier.Text);
                 return;
             }
 
@@ -50,8 +53,24 @@ public partial class ProtoSourceGenerator
                     PropertyDeclarationSyntax propertyDeclaration => propertyDeclaration.Type,
                     _ => throw new InvalidOperationException("Unsupported member type.")
                 };
+                var typeSymbol = symbol switch
+                {
+                    IPropertySymbol propertySymbol => propertySymbol.Type,
+                    IFieldSymbol fieldSymbol => fieldSymbol.Type,
+                    _ => throw new InvalidOperationException("Unsupported member type.")
+                };
                 var wireType = type.GetWireType();
                 bool signed = false;
+
+                if (wireType == WireType.LengthDelimited && typeSymbol.IsUserDefinedType())
+                {
+                    var typeAttribute = typeSymbol.GetAttributes().FirstOrDefault(x => x.AttributeClass?.ToDisplayString() == ProtoPackableAttributeFullName);
+                    if (typeAttribute == null)
+                    { 
+                        ReportDiagnostics(NestedTypeMustBeProtoPackable, member.GetLocation(), typeSymbol.Name, Identifier);
+                        continue;
+                    }
+                }
                 
                 foreach (var argument in attribute.NamedArguments)
                 {
@@ -59,6 +78,12 @@ public partial class ProtoSourceGenerator
                     {
                         case "NumberHandling":
                         {
+                            if (wireType != WireType.VarInt)
+                            {
+                                ReportDiagnostics(InvalidNumberHandling, member.GetLocation(), field, Identifier);
+                                continue;
+                            }
+                            
                             var value = (ProtoNumberHandling)(argument.Value.Value ?? throw new InvalidOperationException("Unable to get number handling."));
                             if (value.HasFlag(ProtoNumberHandling.Signed)) signed = true;
                             if (value.HasFlag(ProtoNumberHandling.Fixed32)) wireType = WireType.Fixed32;
@@ -70,7 +95,7 @@ public partial class ProtoSourceGenerator
                 
                 if (Fields.ContainsKey(field))
                 {
-                    ReportDiagnostics(DiagnosticDescriptors.DuplicateFieldNumber, member.GetLocation(), field, Identifier);
+                    ReportDiagnostics(DuplicateFieldNumber, member.GetLocation(), field, Identifier);
                     continue;
                 }
                 

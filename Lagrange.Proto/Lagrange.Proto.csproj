@@ -13,4 +13,8 @@
         <ProjectReference Include="..\Lagrange.Proto.Generator\Lagrange.Proto.Generator.csproj" ReferenceOutputAssembly="false" PackAsAnalyzer="true" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Serialization\Metadata\" />
+    </ItemGroup>
+
 </Project>
