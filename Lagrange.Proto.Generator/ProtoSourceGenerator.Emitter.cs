@@ -23,7 +23,7 @@ public partial class ProtoSourceGenerator
                 .AddMembers(EmitSerializeHandlerMethod(), EmitMeasureHandlerMethod())
                 .AddBaseListTypes(SF.SimpleBaseType(SF.ParseName($"global::Lagrange.Proto.IProtoSerializer<{parser.Identifier}>")));
             
-            var namespaceDeclaration = SF.FileScopedNamespaceDeclaration(SF.ParseName(parser.Namespace ?? string.Empty))
+            var namespaceDeclaration = SF.NamespaceDeclaration(SF.ParseName(parser.Namespace ?? string.Empty))
                 .AddMembers(classDeclaration);
 
             var compilationUnit = SF.CompilationUnit()
@@ -76,15 +76,23 @@ public partial class ProtoSourceGenerator
                 var tag = EmitTagSerializeStatement(t.Key, t.Value.WireType);
                 var field = EmitMemberStatement(t.Value.WireType, name, type, t.Value.IsSigned);
 
+                var block = SF.Block(SF.List<StatementSyntax>([tag, ..field]));
+
                 if (parser.Model.GetTypeSymbol(type).IsValueType && !type.IsNullableType())
                 {
-                    syntax.Add(tag);
-                    syntax.AddRange(field);
-                    syntax[syntax.Count - 1] = syntax[syntax.Count - 1].WithTrailingTrivia(SF.Comment("\n"));
+                    if (parser.IgnoreDefaultFields)
+                    {
+                        syntax.Add(EmitDefaultCheckStatement(false, $"obj.{name}", block, false));
+                    }
+                    else
+                    {
+                        syntax.Add(tag);
+                        syntax.AddRange(field);
+                        syntax[syntax.Count - 1] = syntax[syntax.Count - 1].WithTrailingTrivia(SF.Comment("\n"));
+                    }
                 }
                 else
                 {
-                    var block = SF.Block(SF.List<StatementSyntax>([tag, ..field]));
                     syntax.Add(EmitNullableCheckStatement(false, $"obj.{name}", block, false));
                 }
             }
@@ -204,6 +212,9 @@ public partial class ProtoSourceGenerator
         
         private static StatementSyntax EmitNullableCheckStatement(bool equals, string identifier, StatementSyntax statement, bool isBlock = true) => 
             SF.IfStatement(SF.BinaryExpression(equals ? SK.EqualsExpression : SK.NotEqualsExpression, SF.IdentifierName(identifier), SF.LiteralExpression(SK.NullLiteralExpression)), isBlock ? SF.Block(statement) : statement);
+        
+        private static StatementSyntax EmitDefaultCheckStatement(bool equals, string identifier, StatementSyntax statement, bool isBlock = true) => 
+            SF.IfStatement(SF.BinaryExpression(equals ? SK.EqualsExpression : SK.NotEqualsExpression, SF.IdentifierName(identifier), SF.LiteralExpression(SK.DefaultLiteralExpression)), isBlock ? SF.Block(statement) : statement);
 
         private static AttributeSyntax EmitGeneratedCodeAttribute()
         {
@@ -266,15 +277,24 @@ public partial class ProtoSourceGenerator
                         _ => throw new Exception($"Unsupported wire type: {kv.Value.WireType} for {type.ToString()}")
                     };
                     
+                    var tag = ProtoHelper.EncodeVarInt((kv.Key << 3) | (byte)kv.Value.WireType);
                     if (symbol.IsValueType && !type.IsNullableType())
                     {
-                        constant += ProtoHelper.EncodeVarInt((kv.Key << 3) | (byte)kv.Value.WireType).Length;
+                        if (parser.IgnoreDefaultFields)
+                        {
+                            var left = SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(0));
+                            var right = SF.BinaryExpression(SK.AddExpression, SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(tag.Length)), expr);
+                            expr = EmitDefaultCheckExpression(name, left, right);
+                        }
+                        else
+                        {
+                            constant += tag.Length;
+                        }
                     }
                     else // null check with obj.{identifier}
                     {
-                        var tag = ProtoHelper.EncodeVarInt((kv.Key << 3) | (byte)kv.Value.WireType);
-                        var right = SF.BinaryExpression(SK.AddExpression, SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(tag.Length)), expr);
                         var left = SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(0));
+                        var right = SF.BinaryExpression(SK.AddExpression, SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(tag.Length)), expr);
                         expr = EmitNullableCheckExpression(name, left, right);
                     }
                     
@@ -329,6 +349,10 @@ public partial class ProtoSourceGenerator
         private static ExpressionSyntax EmitNullableCheckExpression(string identifier, ExpressionSyntax left, ExpressionSyntax right) => SF.ParenthesizedExpression(
                 SF.ConditionalExpression(SF.BinaryExpression(SK.EqualsExpression, SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("obj"), SF.IdentifierName(identifier)), SF.LiteralExpression(SK.NullLiteralExpression)), left, right)
             );
+        
+        private static ExpressionSyntax EmitDefaultCheckExpression(string identifier, ExpressionSyntax left, ExpressionSyntax right) => SF.ParenthesizedExpression(
+            SF.ConditionalExpression(SF.BinaryExpression(SK.EqualsExpression, SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("obj"), SF.IdentifierName(identifier)), SF.LiteralExpression(SK.DefaultLiteralExpression)), left, right)
+        );
         #endregion
     }
 }

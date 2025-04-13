@@ -39,4 +39,13 @@ public static class DiagnosticDescriptors
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true
     );
+    
+    public static DiagnosticDescriptor UnableToGetSymbol { get; } = new(
+        id: "PROTO005",
+        title: "Unable to get symbol for {0}",
+        messageFormat: "Unable to get symbol for {0}",
+        category: "Usage",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true
+    );
 }

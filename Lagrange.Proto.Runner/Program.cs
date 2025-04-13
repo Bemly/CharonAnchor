@@ -62,7 +62,7 @@ public partial class Test
 }
 
 
-[ProtoPackable]
+[ProtoPackable(IgnoreDefaultFields = true)]
 public partial class Test_2
 {
     [ProtoMember(1, NumberHandling = ProtoNumberHandling.Fixed64 | ProtoNumberHandling.Signed)] 

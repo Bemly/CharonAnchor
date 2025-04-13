@@ -21,13 +21,33 @@ public partial class ProtoSourceGenerator
         public string? Namespace { get; private set; }
         
         public string Identifier { get; private set; } = string.Empty;
-
+        
+        public bool IgnoreDefaultFields { get; private set; }
+        
         public Dictionary<int, ProtoFieldInfo> Fields { get; } = new();
         
         public void Parse(CancellationToken token = default)
         {
             Namespace = context.GetNamespace()?.ToString();
             Identifier = context.Identifier.Text;
+
+            if (Model.GetDeclaredSymbol(context) is not INamedTypeSymbol { } classSymbol)
+            {
+                ReportDiagnostics(UnableToGetSymbol, context.GetLocation(), context.Identifier.Text);
+                return;
+            }
+            
+            foreach (var argument in classSymbol.GetAttributes().SelectMany(x => x.NamedArguments))
+            {
+                switch (argument.Key)
+                {
+                    case "IgnoreDefaultFields":
+                    { 
+                        IgnoreDefaultFields = (bool)(argument.Value.Value ?? false);
+                        break;
+                    }
+                }
+            }
             
             if (!context.IsPartial())
             {
