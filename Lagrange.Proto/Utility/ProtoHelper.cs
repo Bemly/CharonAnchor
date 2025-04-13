@@ -54,7 +54,7 @@ public static class ProtoHelper
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int CountProtoPackable<T>(T obj) where T : IProtoSerializer<T>
+    public static int CountProtoPackable<T>(T obj) where T : IProtoSerializable<T>
     {
         int length = T.MeasureHandler(obj);
         return GetVarIntLength(length) + length;

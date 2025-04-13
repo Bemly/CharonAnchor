@@ -2,7 +2,7 @@
 
 namespace Lagrange.Proto;
 
-public interface IProtoSerializer<in T>
+public interface IProtoSerializable<in T>
 {
     public static abstract void SerializeHandler(T obj, ProtoWriter writer);
     

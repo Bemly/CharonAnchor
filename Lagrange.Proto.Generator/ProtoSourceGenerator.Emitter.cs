@@ -16,7 +16,7 @@ public partial class ProtoSourceGenerator
                 .AddModifiers(SF.Token(SK.PartialKeyword))
                 .AddAttributeLists(SF.AttributeList().AddAttributes(EmitGeneratedCodeAttribute()))
                 .AddMembers(EmitSerializeHandlerMethod(), EmitMeasureHandlerMethod())
-                .AddBaseListTypes(SF.SimpleBaseType(SF.ParseName($"global::Lagrange.Proto.IProtoSerializer<{parser.Identifier}>")));
+                .AddBaseListTypes(SF.SimpleBaseType(SF.ParseName($"global::Lagrange.Proto.IProtoSerializable<{parser.Identifier}>")));
             
             var namespaceDeclaration = SF.NamespaceDeclaration(SF.ParseName(parser.Namespace ?? string.Empty))
                 .AddMembers(classDeclaration);
