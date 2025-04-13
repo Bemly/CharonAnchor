@@ -1,4 +1,4 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Buffers;
 using Lagrange.Proto.Primitives;
 using Lagrange.Proto.Serialization;
 
@@ -8,7 +8,7 @@ internal static class Program
 {
     private static void Main(string[] args)
     {
-        var bufferWriter = new SegmentBufferWriter();
+        var bufferWriter = new ArrayBufferWriter<byte>();
         
         var writer = new ProtoWriter(bufferWriter);
         var test = new Test
@@ -35,7 +35,8 @@ internal static class Program
         Test.SerializeHandler(test, writer);
         writer.Flush();
         
-        Console.WriteLine(Convert.ToHexString(bufferWriter.CreateReadOnlyMemory().Span));
+        Console.WriteLine(Convert.ToHexString(bufferWriter.WrittenSpan));
+        bufferWriter.Clear();
     }
 }
 

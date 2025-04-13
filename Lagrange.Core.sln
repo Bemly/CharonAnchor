@@ -20,6 +20,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{798B7680-2
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lagrange.Proto.Runner", "Lagrange.Proto.Runner\Lagrange.Proto.Runner.csproj", "{D8B893D8-44B1-47E8-8513-9E3E1F9FD391}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{3C682B4B-3C8D-4D4A-AF0D-8E188D421605}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+		Proto.md = Proto.md
+		OneBot.md = OneBot.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
