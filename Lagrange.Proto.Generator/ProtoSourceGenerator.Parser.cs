@@ -16,6 +16,8 @@ public partial class ProtoSourceGenerator
     {
         public SemanticModel Model { get; } = model;
         
+        public TypesResolver Resolver { get; } = new(model);
+        
         public List<Diagnostic> Diagnostics { get; } = [];
         
         public string? Namespace { get; private set; }
