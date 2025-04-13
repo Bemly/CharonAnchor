@@ -63,9 +63,13 @@ namespace Lagrange.Proto.Generator
                         }).Cast<ExpressionSyntax>().ToArray()
                     ));
                 var fieldsAssignment = SF.AssignmentExpression(SK.SimpleAssignmentExpression, SF.IdentifierName("Fields"), dictionaryInitialize);
+                
+                var lambda = SF.ParenthesizedLambdaExpression(SF.ParameterList(), SF.ObjectCreationExpression(SF.ParseTypeName(parser.Identifier)).WithArgumentList(SF.ArgumentList()));
+                var objectCreatorAssignment = SF.AssignmentExpression(SK.SimpleAssignmentExpression, SF.IdentifierName("ObjectCreator"), lambda);
+                
                 var returnStatement = SF.ReturnStatement(SF.ObjectCreationExpression(SF.ParseTypeName(_protoTypeInfoFullName))
                     .WithArgumentList(SF.ArgumentList())
-                    .WithInitializer(SF.InitializerExpression(SK.ObjectInitializerExpression).AddExpressions(fieldsAssignment))
+                    .WithInitializer(SF.InitializerExpression(SK.ObjectInitializerExpression).AddExpressions(fieldsAssignment, objectCreatorAssignment))
                 );
 
                 return SF.MethodDeclaration(SF.ParseTypeName(_protoTypeInfoFullName), "CreateTypeInfo")

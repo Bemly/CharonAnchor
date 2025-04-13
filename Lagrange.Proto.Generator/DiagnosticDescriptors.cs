@@ -48,4 +48,13 @@ public static class DiagnosticDescriptors
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true
     );
+    
+    public static DiagnosticDescriptor MustContainParameterlessConstructor { get; } = new(
+        id: "PROTO006",
+        title: "ProtoPackable class {0} must contain public parameterless constructor",
+        messageFormat: "ProtoPackable class {0} must contain public parameterless constructor",
+        category: "Usage",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true
+    );
 }

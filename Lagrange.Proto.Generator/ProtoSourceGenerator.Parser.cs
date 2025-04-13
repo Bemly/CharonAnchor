@@ -33,9 +33,15 @@ public partial class ProtoSourceGenerator
             Namespace = context.GetNamespace()?.ToString();
             Identifier = context.Identifier.Text;
 
-            if (Model.GetDeclaredSymbol(context) is not INamedTypeSymbol { } classSymbol)
+            if (Model.GetDeclaredSymbol(context) is not INamedTypeSymbol classSymbol)
             {
                 ReportDiagnostics(UnableToGetSymbol, context.GetLocation(), context.Identifier.Text);
+                return;
+            }
+            
+            if (!classSymbol.Constructors.Any(x => x is { Parameters.Length: 0, DeclaredAccessibility: Accessibility.Public }))
+            {
+                ReportDiagnostics(MustContainParameterlessConstructor, context.GetLocation(), context.Identifier.Text);
                 return;
             }
             
