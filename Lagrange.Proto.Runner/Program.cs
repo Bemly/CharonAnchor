@@ -31,7 +31,8 @@ internal static class Program
                 Test7 = [1, 2, 3],
             }
         };
-        
+
+        Console.WriteLine(Test.TypeInfo);
         Test.SerializeHandler(test, writer);
         writer.Flush();
         

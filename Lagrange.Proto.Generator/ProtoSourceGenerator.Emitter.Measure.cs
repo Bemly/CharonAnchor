@@ -25,27 +25,9 @@ public partial class ProtoSourceGenerator
 
                 foreach (var kv in parser.Fields)
                 {
-                    TypeSyntax type;
-                    string name;
-                    switch (kv.Value.Syntax)
-                    {
-                        case FieldDeclarationSyntax fieldDeclaration:
-                        {
-                            type = fieldDeclaration.Declaration.Type;
-                            name = fieldDeclaration.Declaration.Variables[0].Identifier.ToString();
-                            break;
-                        }
-                        case PropertyDeclarationSyntax propertyDeclaration:
-                        {
-                            type = propertyDeclaration.Type;
-                            name = propertyDeclaration.Identifier.ToString();
-                            break;
-                        }
-                        default:
-                        {
-                            throw new Exception($"Unsupported member type: {kv.Value.GetType()}");
-                        }
-                    }
+                    var type = kv.Value.TypeSyntax;
+                    string name = kv.Value.Name;
+                    
                     var symbol = parser.Model.GetTypeSymbol(type);
                     string identifier = symbol.IsValueType && type.IsNullableType() ? name + ".Value" : name;
                     

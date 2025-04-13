@@ -75,6 +75,12 @@ public partial class ProtoSourceGenerator
                     PropertyDeclarationSyntax propertyDeclaration => propertyDeclaration.Type,
                     _ => throw new InvalidOperationException("Unsupported member type.")
                 };
+                string name = member switch
+                {
+                    FieldDeclarationSyntax fieldDeclaration => fieldDeclaration.Declaration.Variables[0].Identifier.ToString(),
+                    PropertyDeclarationSyntax propertyDeclaration => propertyDeclaration.Identifier.ToString(),
+                    _ => throw new InvalidOperationException("Unsupported member type.")
+                };
                 var typeSymbol = symbol switch
                 {
                     IPropertySymbol propertySymbol => propertySymbol.Type,
@@ -121,7 +127,7 @@ public partial class ProtoSourceGenerator
                     continue;
                 }
                 
-                Fields[field] = new ProtoFieldInfo(member, wireType, signed);
+                Fields[field] = new ProtoFieldInfo(member, name, type, wireType, signed);
             }
         }
         

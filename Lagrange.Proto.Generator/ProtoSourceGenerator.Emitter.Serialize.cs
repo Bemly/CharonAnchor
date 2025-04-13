@@ -17,32 +17,12 @@ public partial class ProtoSourceGenerator
         {
             var syntax = new List<StatementSyntax> { EmitNullableCheckStatement(true, "obj", SF.ReturnStatement()) };
                 
-            foreach (var t in parser.Fields)
+            foreach (var kv in parser.Fields)
             {
-                TypeSyntax type;
-                string name;
-                switch (t.Value.Syntax)
-                {
-                    case FieldDeclarationSyntax fieldDeclaration:
-                    {
-                        type = fieldDeclaration.Declaration.Type;
-                        name = fieldDeclaration.Declaration.Variables[0].Identifier.ToString();
-                        break;
-                    }
-                    case PropertyDeclarationSyntax propertyDeclaration:
-                    {
-                        type = propertyDeclaration.Type;
-                        name = propertyDeclaration.Identifier.ToString();
-                        break;
-                    }
-                    default:
-                    {
-                        throw new Exception($"Unsupported member type: {t.Value.GetType()}");
-                    }
-                }
-
-                var tag = EmitTagSerializeStatement(t.Key, t.Value.WireType);
-                var field = EmitMemberStatement(t.Value.WireType, name, type, t.Value.IsSigned);
+                var type = kv.Value.TypeSyntax;
+                string name = kv.Value.Name;
+                var tag = EmitTagSerializeStatement(kv.Key, kv.Value.WireType);
+                var field = EmitMemberStatement(kv.Value.WireType, name, type, kv.Value.IsSigned);
 
                 var block = SF.Block(SF.List<StatementSyntax>([tag, ..field]));
 

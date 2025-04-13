@@ -1,4 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SF = Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using SK = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
 
@@ -12,10 +13,19 @@ public partial class ProtoSourceGenerator
         
         public void Emit(SourceProductionContext context)
         {
+            MemberDeclarationSyntax[] members =
+            [
+                EmitTypeInfoField(), 
+                EmitTypeInfoProperty(), 
+                EmitTypeInfoCreationMethod(),
+                EmitSerializeHandlerMethod(),
+                EmitMeasureHandlerMethod()
+            ];
+            
             var classDeclaration = SF.ClassDeclaration(parser.Identifier)
                 .AddModifiers(SF.Token(SK.PartialKeyword))
                 .AddAttributeLists(SF.AttributeList().AddAttributes(EmitGeneratedCodeAttribute()))
-                .AddMembers(EmitSerializeHandlerMethod(), EmitMeasureHandlerMethod())
+                .AddMembers(members)
                 .AddBaseListTypes(SF.SimpleBaseType(SF.ParseName($"global::Lagrange.Proto.IProtoSerializable<{parser.Identifier}>")));
             
             var namespaceDeclaration = SF.NamespaceDeclaration(SF.ParseName(parser.Namespace ?? string.Empty))
