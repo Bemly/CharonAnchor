@@ -40,7 +40,7 @@ namespace Lagrange.Proto.Generator
             private MethodDeclarationSyntax EmitTypeInfoCreationMethod()
             {
                 var fields = parser.Fields.ToDictionary(
-                    kv => kv.Key,
+                    kv => (kv.Key << 3) | (byte)kv.Value.WireType,
                     kv => SF.ObjectCreationExpression(SF.ParseTypeName($"global::Lagrange.Proto.Serialization.Metadata.ProtoFieldInfo<{kv.Value.TypeSyntax}>"))
                         .WithArgumentList(SF.ArgumentList(
                             SF.SeparatedList<ArgumentSyntax>(
