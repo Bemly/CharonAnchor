@@ -31,6 +31,66 @@ public ref struct ProtoReader
         _length = src.Length;
     }
     
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public T DecodeVarInt<T>() where T : unmanaged, INumber<T>
+    {
+        if (_length - _offset < 16)
+        {
+            return DecodeVarIntSlowPath<T>();
+        }
+        
+        return DecodeVarIntUnsafe<T>();
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public T DecodeFixed32<T>() where T : unmanaged, INumber<T>
+    {
+        if (_length - _offset < 4) throw new ArgumentOutOfRangeException(nameof(_length), "Not enough bytes to decode a fixed32");
+        
+        var result = Unsafe.ReadUnaligned<T>(ref Unsafe.Add(ref _first, _offset));
+        _offset += 4;
+        return result;
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public T DecodeFixed64<T>() where T : unmanaged, INumber<T>
+    {
+        if (_length - _offset < 8) throw new ArgumentOutOfRangeException(nameof(_length), "Not enough bytes to decode a fixed64");
+        
+        var result = Unsafe.ReadUnaligned<T>(ref Unsafe.Add(ref _first, _offset));
+        _offset += 8;
+        return result;
+    }
+    
+    public ReadOnlySpan<byte> CreateSpan(int length)
+    {
+        if (_length - _offset < length) throw new ArgumentOutOfRangeException(nameof(_length), "Not enough bytes to create a span");
+        
+        var result = MemoryMarshal.CreateSpan(ref Unsafe.Add(ref _first, _offset), length);
+        _offset += length;
+        return result;
+    }
+    
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private unsafe T DecodeVarIntSlowPath<T>() where T : unmanaged, INumber<T>
+    {
+        int shift = 0;
+        T result = T.Zero;
+        do
+        {
+            byte b = Unsafe.Add(ref _first, _offset++);
+            result += T.CreateTruncating((ulong)(b & 0x7Fu) << shift);
+            if (b <= 0x7F)
+            {
+                return result;
+            }
+            shift += 7;
+        }
+        while (shift < sizeof(T) << 3);
+        // ThrowMalformedMessage();
+        return result;
+    }
+    
     /// <summary>
     /// Max VarInt Bytes for u8: 2
     /// Max VarInt Bytes for u16: 3

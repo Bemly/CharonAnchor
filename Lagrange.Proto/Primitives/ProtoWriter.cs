@@ -142,7 +142,7 @@ public class ProtoWriter : IDisposable
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void WriteRawByte(byte value)
+    public void WriteRawByte(byte value)
     {
         if (_memory.Length - BytesPending < 1) Grow(1);
         
