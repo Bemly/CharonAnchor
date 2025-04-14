@@ -1,7 +1,9 @@
 ﻿using System.Diagnostics;
+using Lagrange.Proto.Primitives;
 
 namespace Lagrange.Proto.Serialization.Metadata;
 
+[DebuggerDisplay("{DebuggerDisplay,nq}")]
 public abstract class ProtoFieldInfo(int field, WireType wireType, Type declared, Type property)
 {
     public int Field { get; } = field;
@@ -30,10 +32,23 @@ public abstract class ProtoFieldInfo(int field, WireType wireType, Type declared
     private protected ProtoConverter? _effectiveConverter;
     private protected abstract void SetGetter(Delegate? getter);
     private protected abstract void SetSetter(Delegate? setter);
+
+    public abstract void Read(ref ProtoReader reader, object target);
+        
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+    private string DebuggerDisplay => $"Field = {Field}, WireType = {WireType}, PropertyType = {PropertyType}, DeclaredType = {DeclaredType}";
+    
 }
 
-public class ProtoFieldInfo<T>(int field, WireType wireType, Type declared) : ProtoFieldInfo(field, wireType, declared, typeof(T))
+public class ProtoFieldInfo<T> : ProtoFieldInfo
 {
+    public ProtoFieldInfo(int field, WireType wireType, Type declared) : base(field, wireType, declared, typeof(T))
+    {
+        var converter = ProtoTypeResolver.GetConverter<T>();
+        _effectiveConverter = converter;
+        _typedEffectiveConverter = converter;
+    }
+    
     private Func<object, T>? _typedGet;
     private Action<object, T>? _typedSet;
 
@@ -59,7 +74,7 @@ public class ProtoFieldInfo<T>(int field, WireType wireType, Type declared) : Pr
     }
 
     private ProtoConverter<T>? _typedEffectiveConverter;
-    
+
     private protected override void SetGetter(Delegate? getter)
     {
         Debug.Assert(getter is null or Func<object, object?> or Func<object, T>);
@@ -102,5 +117,13 @@ public class ProtoFieldInfo<T>(int field, WireType wireType, Type declared) : Pr
                 _untypedSet = untypedSet;
                 break;
         }
+    }
+    
+    public override void Read(ref ProtoReader reader, object target)
+    {
+        Debug.Assert(_typedEffectiveConverter != null);
+        
+        T value = _typedEffectiveConverter.Read(Field, ref reader);
+        _typedSet?.Invoke(target, value);
     }
 }

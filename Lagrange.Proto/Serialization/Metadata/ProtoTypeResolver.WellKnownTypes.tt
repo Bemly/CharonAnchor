@@ -1,0 +1,53 @@
+<#@ template language="C#" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#
+Type[] varintTypes = [
+    typeof(sbyte),
+    typeof(byte),
+    typeof(short),
+    typeof(ushort),
+    typeof(int),
+    typeof(uint),
+    typeof(long),
+    typeof(ulong)
+    ];
+
+Type[] fixed32Types = [
+    typeof(float),
+    typeof(uint),
+    typeof(int)
+    ];
+
+Type[] fixed64Types = [
+    typeof(double),
+    typeof(ulong),
+    typeof(long)
+    ];
+#>
+using Lagrange.Proto.Serialization.Converter;
+
+namespace Lagrange.Proto.Serialization.Metadata;
+
+public static partial class ProtoTypeResolver
+{
+    private static void RegisterWellKnownTypes()
+    {
+<# foreach(var item in varintTypes) { #>
+        Register(new ProtoVarIntConverter<<#= item.Name #>>());
+<# } #>
+
+<# foreach(var item in fixed32Types) { #>
+        Register(new ProtoFixed32Converter<<#= item.Name #>>());
+<# } #>
+
+<# foreach(var item in fixed64Types) { #>
+        Register(new ProtoFixed64Converter<<#= item.Name #>>());
+<# } #>
+
+        Register(new ProtoBooleanConverter());
+        Register(new ProtoStringConverter());
+        Register(new ProtoBytesConverter());
+        Register(new ProtoReadOnlyMemoryByteConverter());
+    }
+}

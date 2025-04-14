@@ -37,7 +37,7 @@ public static partial class ProtoSerializer
     /// <typeparam name="T">The type of the object to serialize</typeparam>
     [RequiresUnreferencedCode(SerializationUnreferencedCodeMessage)]
     [RequiresDynamicCode(SerializationRequiresDynamicCodeMessage)]
-    public static void Serialize<T>(IBufferWriter<byte> dest, T obj) 
+    public static void Serialize<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(IBufferWriter<byte> dest, T obj) 
     {
         throw new NotImplementedException();
     }
