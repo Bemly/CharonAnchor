@@ -49,7 +49,7 @@ public static partial class ProtoSerializer
     /// <returns>The serialized object as a byte array</returns>
     [RequiresUnreferencedCode(SerializationUnreferencedCodeMessage)]
     [RequiresDynamicCode(SerializationRequiresDynamicCodeMessage)]
-    public static byte[] Serialize<T>(T obj) 
+    public static byte[] Serialize<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(T obj) 
     {
         throw new NotImplementedException();
     }

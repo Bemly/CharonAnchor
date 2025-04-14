@@ -24,7 +24,7 @@ public static partial class ProtoSerializer
     /// <returns>The deserialized object</returns>
     [RequiresUnreferencedCode(SerializationUnreferencedCodeMessage)]
     [RequiresDynamicCode(SerializationRequiresDynamicCodeMessage)]
-    public static T Deserialize<T>(ReadOnlySpan<byte> data)
+    public static T Deserialize<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]  T>(ReadOnlySpan<byte> data)
     {
         throw new NotImplementedException();
     }
