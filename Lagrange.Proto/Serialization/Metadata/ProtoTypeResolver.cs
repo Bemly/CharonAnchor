@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Lagrange.Proto.Serialization.Converter.Generic;
+using Lagrange.Proto.Serialization.Converter.Object;
 
 namespace Lagrange.Proto.Serialization.Metadata;
 
@@ -9,6 +10,26 @@ namespace Lagrange.Proto.Serialization.Metadata;
 public static partial class ProtoTypeResolver
 {
     private static readonly ConcurrentDictionary<Type, ProtoConverter> Converters = new(Environment.ProcessorCount, 150);
+    
+    private static MemberAccessor? _memberAccessor;
+
+    internal static MemberAccessor MemberAccessor
+    {
+        [RequiresUnreferencedCode(ProtoSerializer.SerializationRequiresDynamicCodeMessage)]
+        [RequiresDynamicCode(ProtoSerializer.SerializationRequiresDynamicCodeMessage)]
+        get
+        {
+            return _memberAccessor ?? Initialize();
+            static MemberAccessor Initialize()
+            {
+                MemberAccessor value = RuntimeFeature.IsDynamicCodeSupported ?
+                    new ReflectionEmitCachingMemberAccessor() : 
+                    new ReflectionMemberAccessor();
+
+                return Interlocked.CompareExchange(ref _memberAccessor, value, null) ?? value;
+            }
+        }
+    }
 
     static ProtoTypeResolver()
     {
@@ -18,6 +39,11 @@ public static partial class ProtoTypeResolver
     private static readonly Dictionary<Type, Type> KnownGenericTypeConverters = new(3)
     {
         { typeof(Nullable<>), typeof(ProtoNullableConverter<>) },
+    };
+    
+    private static readonly Dictionary<Type, Type> KnownGenericInterfaceConverters = new(3)
+    {
+        { typeof(IProtoSerializable<>), typeof(ProtoSerializableConverter<>) },
     };
     
     public static void Register<T>(ProtoConverter<T> converter)
@@ -56,13 +82,21 @@ public static partial class ProtoTypeResolver
             if (Check<T>.Registered) return;
 
             var type = typeof(T);
-            if ((type.IsGenericType) && ResolveGenericConverter<T>(type) is { } converter)
+            if (type.IsGenericType && ResolveGenericConverter<T>(type) is { } converter)
             {
                 Converters[type] = converter;
                 Converter = converter;
+                Check<T>.Registered = true;
+                return;
             }
-
-            Check<T>.Registered = true;
+            
+            if (ResolveInterfaceConverter<T>(type) is { } interfaceConverter)
+            {
+                Converters[type] = interfaceConverter;
+                Converter = interfaceConverter;
+                Check<T>.Registered = true;
+                return;
+            }
         }
     }
 
@@ -74,6 +108,25 @@ public static partial class ProtoTypeResolver
             var args = type.GenericTypeArguments;
             var converter = converterType.MakeGenericType(args);
             return (ProtoConverter<T>)Activator.CreateInstance(converter)!;
+        }
+
+        return null;
+    }
+    
+    [UnconditionalSuppressMessage("Trimmer", "IL3050", Justification = "The generic type definition would always appear in metadata as it is a member in class serialized.")]
+    [UnconditionalSuppressMessage("Trimmer", "IL2070", Justification = "The interface would always be preserve")]
+    private static ProtoConverter<T>? ResolveInterfaceConverter<T>(Type type)
+    {
+        var interfaces = type.GetInterfaces();
+        
+        foreach (var i in interfaces)
+        {
+            if (i.IsGenericType && KnownGenericInterfaceConverters.TryGetValue(i.GetGenericTypeDefinition(), out var converterType))
+            {
+                var args = i.GenericTypeArguments;
+                var converter = converterType.MakeGenericType(args);
+                return (ProtoConverter<T>)Activator.CreateInstance(converter)!;
+            }
         }
 
         return null;

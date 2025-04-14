@@ -23,6 +23,8 @@ public ref struct ProtoReader
     private static readonly Vector128<ulong> Shift4 = Vector128.Create(2ul, 1ul);
     
     private static readonly Vector128<sbyte> Ascend = Vector128.Create(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
+    
+    public bool IsCompleted => _offset == _length;
 
     public ProtoReader(ReadOnlySpan<byte> src)
     {

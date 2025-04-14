@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using Lagrange.Proto.Primitives;
 
 namespace Lagrange.Proto.Serialization.Metadata;
@@ -33,7 +34,7 @@ public abstract class ProtoFieldInfo(int field, WireType wireType, Type declared
     private protected abstract void SetGetter(Delegate? getter);
     private protected abstract void SetSetter(Delegate? setter);
 
-    public abstract void Read(ref ProtoReader reader, object target);
+    public abstract void Read(WireType wireType, ref ProtoReader reader, object target);
         
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private string DebuggerDisplay => $"Field = {Field}, WireType = {WireType}, PropertyType = {PropertyType}, DeclaredType = {DeclaredType}";
@@ -52,13 +53,13 @@ public class ProtoFieldInfo<T> : ProtoFieldInfo
     private Func<object, T>? _typedGet;
     private Action<object, T>? _typedSet;
 
-    internal new Func<object, T>? Get
+    public new Func<object, T>? Get
     {
         get => _typedGet;
         set => SetGetter(value);
     }
 
-    internal new Action<object, T>? Set
+    public new Action<object, T>? Set
     {
         get => _typedSet;
         set => SetSetter(value);
@@ -119,11 +120,11 @@ public class ProtoFieldInfo<T> : ProtoFieldInfo
         }
     }
     
-    public override void Read(ref ProtoReader reader, object target)
+    public override void Read(WireType wireType, ref ProtoReader reader, object target)
     {
         Debug.Assert(_typedEffectiveConverter != null);
         
-        T value = _typedEffectiveConverter.Read(Field, ref reader);
+        T value = _typedEffectiveConverter.Read(Field, wireType, ref reader);
         _typedSet?.Invoke(target, value);
     }
 }

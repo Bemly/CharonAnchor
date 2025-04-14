@@ -5,14 +5,12 @@ namespace Lagrange.Proto.Serialization.Converter;
 
 internal class ProtoStringConverter : ProtoConverter<string>
 {
-    public override WireType WireType => WireType.LengthDelimited;
-    
-    public override void Write(int field, ProtoWriter writer, string value)
+    public override void Write(int field, WireType wireType, ProtoWriter writer, string value)
     { 
         writer.EncodeString(value);
     }
 
-    public override string Read(int field, ref ProtoReader reader)
+    public override string Read(int field, WireType wireType, ref ProtoReader reader)
     {
         int length = reader.DecodeVarInt<int>();
         var span = reader.CreateSpan(length);

@@ -4,15 +4,13 @@ namespace Lagrange.Proto.Serialization.Converter;
 
 public class ProtoBytesConverter : ProtoConverter<byte[]>
 {
-    public override WireType WireType => WireType.LengthDelimited;
-    
-    public override void Write(int field, ProtoWriter writer, byte[] value)
+    public override void Write(int field, WireType wireType, ProtoWriter writer, byte[] value)
     {
         writer.EncodeVarInt(value.Length);
         writer.WriteRawBytes(value);
     }
 
-    public override byte[] Read(int field, ref ProtoReader reader)
+    public override byte[] Read(int field, WireType wireType, ref ProtoReader reader)
     {
         int length = reader.DecodeVarInt<int>();
         if (length == 0) return [];

@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis.CSharp;
 using SF = Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using SK = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
 
@@ -51,6 +52,11 @@ namespace Lagrange.Proto.Generator
                                 ]
                             )
                         ))
+                        .WithInitializer(SF.InitializerExpression(SK.ObjectInitializerExpression).AddExpressions(
+                                SF.AssignmentExpression(SK.SimpleAssignmentExpression, SF.IdentifierName("Get"), EmitTypeInfoGetter(kv.Value.Name)),
+                                SF.AssignmentExpression(SK.SimpleAssignmentExpression, SF.IdentifierName("Set"), EmitTypeInfoSetter(kv.Value.Name))
+                                )
+                    )
                 );
                 var dictionaryInitialize = SF.ObjectCreationExpression(SF.ParseTypeName("global::System.Collections.Generic.Dictionary<int, global::Lagrange.Proto.Serialization.Metadata.ProtoFieldInfo>"))
                     .WithArgumentList(SF.ArgumentList())
@@ -75,6 +81,26 @@ namespace Lagrange.Proto.Generator
                 return SF.MethodDeclaration(SF.ParseTypeName(_protoTypeInfoFullName), "CreateTypeInfo")
                     .AddModifiers(SF.Token(SK.PrivateKeyword), SF.Token(SK.StaticKeyword))
                     .WithBody(SF.Block(returnStatement));
+            }
+            
+            private ExpressionSyntax EmitTypeInfoGetter(string prop)
+            {
+                var cast = SF.CastExpression(SF.ParseTypeName(parser.Identifier), SF.IdentifierName("obj"));
+                var access = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.ParenthesizedExpression(cast), SF.IdentifierName(prop));
+
+                return SF.SimpleLambdaExpression(SF.Parameter(SF.Identifier("obj")), access);
+            }
+        
+            private ExpressionSyntax EmitTypeInfoSetter(string prop)
+            {
+                var parameters = SF.ParameterList().AddParameters(SF.Parameter(SF.Identifier("obj")), SF.Parameter(SF.Identifier("value")));
+                var cast = SF.CastExpression(SF.ParseTypeName(parser.Identifier), SF.IdentifierName("obj"));
+                var left = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.ParenthesizedExpression(cast), SF.IdentifierName(prop));
+                var right = SF.IdentifierName("value");
+            
+                return SF.ParenthesizedLambdaExpression(parameters,
+                    SF.AssignmentExpression(SK.SimpleAssignmentExpression, left, right)
+                );
             }
         }
     }

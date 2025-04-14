@@ -14,7 +14,22 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Serialization\Metadata\" />
+      <Folder Include="Serialization\Converter\Collection\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="Serialization\Metadata\ProtoTypeResolver.WellKnownTypes.tt">
+        <Generator>TextTemplatingFileGenerator</Generator>
+        <LastGenOutput>ProtoTypeResolver.WellKnownTypes.cs</LastGenOutput>
+      </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Update="Serialization\Metadata\ProtoTypeResolver.WellKnownTypes.cs">
+        <AutoGen>True</AutoGen>
+        <DesignTime>True</DesignTime>
+        <DependentUpon>ProtoTypeResolver.WellKnownTypes.tt</DependentUpon>
+      </Compile>
     </ItemGroup>
 
 </Project>
