@@ -29,5 +29,8 @@ public static partial class ProtoTypeResolver
         Register(new ProtoStringConverter());
         Register(new ProtoBytesConverter());
         Register(new ProtoReadOnlyMemoryByteConverter());
+        Register(new ProtoReadOnlyMemoryCharConverter());
+        Register(new ProtoMemoryByteConverter());
+        Register(new ProtoMemoryCharConverter());
     }
 }
