@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using Lagrange.Proto.Primitives;
+using Lagrange.Proto.Utility;
 
 namespace Lagrange.Proto.Serialization.Converter;
 
@@ -15,6 +16,11 @@ public unsafe class ProtoEnumConverter<T> : ProtoConverter<T> where T : unmanage
             case sizeof(long): writer.EncodeVarInt(Unsafe.As<T, long>(ref value)); break;
             default: throw new ArgumentOutOfRangeException(nameof(wireType), wireType, null);
         }
+    }
+    
+    public override int Measure(WireType wireType, T value)
+    {
+        return ProtoHelper.GetVarIntLength(Unsafe.As<T, long>(ref value));
     }
 
     public override T Read(int field, WireType wireType, ref ProtoReader reader)

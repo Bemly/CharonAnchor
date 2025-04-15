@@ -1,5 +1,6 @@
 using System.Numerics;
 using Lagrange.Proto.Primitives;
+using Lagrange.Proto.Utility;
 
 namespace Lagrange.Proto.Serialization.Converter;
 
@@ -21,6 +22,17 @@ internal class ProtoNumberConverter<T> : ProtoConverter<T> where T : unmanaged, 
             default:
                 throw new ArgumentOutOfRangeException(nameof(wireType), wireType, null);
         }
+    }
+
+    public override int Measure(WireType wireType, T value)
+    {
+        return wireType switch
+        {
+            WireType.Fixed32 => sizeof(float),
+            WireType.Fixed64 => sizeof(double),
+            WireType.VarInt => ProtoHelper.GetVarIntLength(value),
+            _ => throw new ArgumentOutOfRangeException(nameof(wireType), wireType, null)
+        };
     }
 
     public override T Read(int field, WireType wireType, ref ProtoReader reader)

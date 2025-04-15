@@ -9,6 +9,11 @@ public class ProtoErrorConverter<T> : ProtoConverter<T>
         throw new InvalidOperationException($"Unable to determine the type of the object to serialize for {typeof(T).Name}");
     }
 
+    public override int Measure(WireType wireType, T value)
+    {
+        throw new InvalidOperationException($"Unable to determine the type of the object to serialize for {typeof(T).Name}");
+    }
+
     public override T Read(int field, WireType wireType, ref ProtoReader reader)
     {
         throw new InvalidOperationException($"Unable to determine the type of the object to serialize for {typeof(T).Name}");

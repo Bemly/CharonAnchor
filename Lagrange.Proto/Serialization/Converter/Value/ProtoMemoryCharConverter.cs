@@ -1,6 +1,7 @@
 using System.Buffers;
 using System.Text.Unicode;
 using Lagrange.Proto.Primitives;
+using Lagrange.Proto.Utility;
 
 namespace Lagrange.Proto.Serialization.Converter;
 
@@ -9,6 +10,11 @@ public class ProtoMemoryCharConverter : ProtoConverter<Memory<char>>
     public override void Write(int field, WireType wireType, ProtoWriter writer, Memory<char> value)
     {
         writer.EncodeString(value.Span);
+    }
+
+    public override int Measure(WireType wireType, Memory<char> value)
+    {
+        return ProtoHelper.CountString(value.Span);
     }
 
     public override Memory<char> Read(int field, WireType wireType, ref ProtoReader reader)

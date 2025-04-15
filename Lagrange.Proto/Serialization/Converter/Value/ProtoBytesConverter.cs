@@ -1,4 +1,5 @@
 using Lagrange.Proto.Primitives;
+using Lagrange.Proto.Utility;
 
 namespace Lagrange.Proto.Serialization.Converter;
 
@@ -8,6 +9,11 @@ public class ProtoBytesConverter : ProtoConverter<byte[]>
     {
         writer.EncodeVarInt(value.Length);
         writer.WriteRawBytes(value);
+    }
+
+    public override int Measure(WireType wireType, byte[] value)
+    {
+        return ProtoHelper.CountBytes(value);
     }
 
     public override byte[] Read(int field, WireType wireType, ref ProtoReader reader)

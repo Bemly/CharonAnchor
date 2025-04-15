@@ -12,6 +12,11 @@ internal class ProtoNullableConverter<T> : ProtoConverter<T?> where T : struct
         if (value.HasValue) _converter.Write(0, wireType, writer, value.Value);
     }
 
+    public override int Measure(WireType wireType, T? value)
+    {
+        return value.HasValue ? _converter.Measure(wireType, value.Value) : 0;
+    }
+
     public override T? Read(int field, WireType wireType, ref ProtoReader reader)
     {
         return _converter.Read(field, wireType, ref reader);

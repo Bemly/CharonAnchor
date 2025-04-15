@@ -10,6 +10,11 @@ internal class ProtoBooleanConverter : ProtoConverter<bool>
         writer.WriteRawByte(Unsafe.As<bool, byte>(ref value));
     }
 
+    public override int Measure(WireType wireType, bool value)
+    {
+        return 1;
+    }
+
     public override bool Read(int field, WireType wireType, ref ProtoReader reader)
     {
         byte b = reader.DecodeVarInt<byte>();

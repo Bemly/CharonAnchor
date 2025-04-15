@@ -1,5 +1,6 @@
 using System.Text;
 using Lagrange.Proto.Primitives;
+using Lagrange.Proto.Utility;
 
 namespace Lagrange.Proto.Serialization.Converter;
 
@@ -10,12 +11,15 @@ internal class ProtoStringConverter : ProtoConverter<string>
         writer.EncodeString(value);
     }
 
+    public override int Measure(WireType wireType, string value)
+    {
+        return ProtoHelper.CountString(value);
+    }
+
     public override string Read(int field, WireType wireType, ref ProtoReader reader)
     {
         int length = reader.DecodeVarInt<int>();
         var span = reader.CreateSpan(length);
-        if (span.IsEmpty) return string.Empty;
-        
-        return Encoding.UTF8.GetString(span);
+        return span.IsEmpty ? string.Empty : Encoding.UTF8.GetString(span);
     }
 }
