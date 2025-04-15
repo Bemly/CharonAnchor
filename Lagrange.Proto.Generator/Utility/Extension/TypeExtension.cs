@@ -22,7 +22,7 @@ public static class TypeExtension
     {
         if (symbol.IsNullable())
         {
-            return symbol.NullableAnnotation == NullableAnnotation.Annotated && symbol is INamedTypeSymbol { IsGenericType: true, ConstructedFrom.SpecialType: SpecialType.System_Nullable_T } namedTypeSymbol && namedTypeSymbol.TypeArguments[0].IsIntegerType();
+            return symbol is INamedTypeSymbol { IsGenericType: true, ConstructedFrom.SpecialType: SpecialType.System_Nullable_T } namedTypeSymbol && namedTypeSymbol.TypeArguments[0].IsIntegerType();
         }
         
         return symbol.SpecialType is SpecialType.System_SByte or SpecialType.System_Byte or SpecialType.System_Int16 or
@@ -37,7 +37,14 @@ public static class TypeExtension
     
     public static bool IsNullable(this ITypeSymbol symbol)
     {
-        return symbol is { IsValueType: true, NullableAnnotation: NullableAnnotation.Annotated };
+        return symbol is INamedTypeSymbol { IsGenericType: true, ConstructedFrom.SpecialType: SpecialType.System_Nullable_T };
+    }
+
+    public static ITypeSymbol GetUnderlyingType(this ITypeSymbol symbol)
+    {
+        return symbol is INamedTypeSymbol { IsGenericType: true, ConstructedFrom.SpecialType: SpecialType.System_Nullable_T } namedTypeSymbol 
+            ? namedTypeSymbol.TypeArguments[0]
+            : throw new InvalidOperationException();
     }
     
     public static bool IsStringType(this TypeSyntax type)

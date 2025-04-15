@@ -44,32 +44,53 @@ namespace Lagrange.Proto.Generator
 
             private StatementSyntax[] EmitTypeInfoRegisteredStatements()
             {
-                var statements = new Dictionary<ProtoFieldInfo, StatementSyntax>();
+                var statements = new Dictionary<ProtoFieldInfo, (StatementSyntax, TypeSyntax)>();
                 
                 foreach (var kv in parser.Fields)
                 {
                     var symbol = parser.Model.GetTypeSymbol(kv.Value.TypeSyntax);
+                    var method = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.ParseTypeName("global::Lagrange.Proto.Serialization.Metadata.ProtoTypeResolver"), SF.IdentifierName("Register"));
 
                     if (symbol.IsEnumType())
                     {
-                        var method = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.ParseTypeName("global::Lagrange.Proto.Serialization.Metadata.ProtoTypeResolver"), SF.IdentifierName("Register"));
                         var type = SF.ParseTypeName($"global::Lagrange.Proto.Serialization.Converter.ProtoEnumConverter<{kv.Value.TypeSyntax}>");
                         var @object = SF.ObjectCreationExpression(type).WithArgumentList(SF.ArgumentList());
-                        statements.Add(kv.Value, SF.ExpressionStatement(
+                        statements.Add(kv.Value, (SF.ExpressionStatement(
                             SF.InvocationExpression(method).WithArgumentList(SF.ArgumentList(SF.SingletonSeparatedList(SF.Argument(@object))))
-                        ));
+                        ), type));
+                    }
+                    else if (symbol.IsNullable())
+                    {
+                        var underlyingType = symbol.GetUnderlyingType();
+                        var type = SF.ParseTypeName($"global::Lagrange.Proto.Serialization.Converter.ProtoNullableConverter<{underlyingType}>");
+                        var @object = SF.ObjectCreationExpression(type).WithArgumentList(SF.ArgumentList());
+                        statements.Add(kv.Value, (SF.ExpressionStatement(
+                            SF.InvocationExpression(method).WithArgumentList(SF.ArgumentList(SF.SingletonSeparatedList(SF.Argument(@object))))
+                        ), type));
+                    }
+                    else if (symbol.GetAttributes().Any(x => x.AttributeClass?.ToDisplayString() == ProtoPackableAttributeFullName))
+                    {
+                        var type = SF.ParseTypeName($"global::Lagrange.Proto.Serialization.Converter.ProtoSerializableConverter<{kv.Value.TypeSyntax}>");
+                        var @object = SF.ObjectCreationExpression(type).WithArgumentList(SF.ArgumentList());
+                        statements.Add(kv.Value, (SF.ExpressionStatement(
+                            SF.InvocationExpression(method).WithArgumentList(SF.ArgumentList(SF.SingletonSeparatedList(SF.Argument(@object))))
+                        ), type));
                     }
                 }
+
+                var branched = new StatementSyntax[statements.Count];
+                int i = 0;
                 
                 foreach (var kv in statements)
                 {
-                    var type = SF.ParseTypeName($"global::Lagrange.Proto.Serialization.Converter.ProtoEnumConverter<{kv.Key.TypeSyntax}>");
+                    var type = kv.Value.Item2;
                     var method = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.ParseTypeName("global::Lagrange.Proto.Serialization.Metadata.ProtoTypeResolver"), SF.IdentifierName($"IsRegistered<{type}>"));
                     var invocation = SF.InvocationExpression(method).WithArgumentList(SF.ArgumentList());
-                    statements[kv.Key] = SF.IfStatement(SF.PrefixUnaryExpression(SK.LogicalNotExpression, invocation), SF.Block(kv.Value));
+                    branched[i] = SF.IfStatement(SF.PrefixUnaryExpression(SK.LogicalNotExpression, invocation), SF.Block(kv.Value.Item1));
+                    i++;
                 }
-                
-                return [..statements.Values];
+
+                return branched;
             }
             
             private MethodDeclarationSyntax EmitTypeInfoCreationMethod()

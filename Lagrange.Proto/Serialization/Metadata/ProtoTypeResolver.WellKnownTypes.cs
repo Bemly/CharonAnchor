@@ -17,6 +17,17 @@ public static partial class ProtoTypeResolver
         Register(new ProtoNumberConverter<Single>());
         Register(new ProtoNumberConverter<Double>());
 
+        Register(new ProtoNullableConverter<SByte>());
+        Register(new ProtoNullableConverter<Byte>());
+        Register(new ProtoNullableConverter<Int16>());
+        Register(new ProtoNullableConverter<UInt16>());
+        Register(new ProtoNullableConverter<Int32>());
+        Register(new ProtoNullableConverter<UInt32>());
+        Register(new ProtoNullableConverter<Int64>());
+        Register(new ProtoNullableConverter<UInt64>());
+        Register(new ProtoNullableConverter<Single>());
+        Register(new ProtoNullableConverter<Double>());
+
         Register(new ProtoBooleanConverter());
         Register(new ProtoStringConverter());
         Register(new ProtoBytesConverter());

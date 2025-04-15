@@ -1,9 +1,9 @@
 using Lagrange.Proto.Primitives;
 using Lagrange.Proto.Serialization.Metadata;
 
-namespace Lagrange.Proto.Serialization.Converter.Generic;
+namespace Lagrange.Proto.Serialization.Converter;
 
-internal class ProtoNullableConverter<T> : ProtoConverter<T?> where T : struct
+public class ProtoNullableConverter<T> : ProtoConverter<T?> where T : struct
 {
     private readonly ProtoConverter<T> _converter = ProtoTypeResolver.GetConverter<T>();
 

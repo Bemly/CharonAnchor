@@ -1,6 +1,6 @@
 using Lagrange.Proto.Primitives;
 
-namespace Lagrange.Proto.Serialization.Converter.Object;
+namespace Lagrange.Proto.Serialization.Converter;
 
 public class ProtoErrorConverter<T> : ProtoConverter<T>
 {

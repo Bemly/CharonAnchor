@@ -1,10 +1,13 @@
 using Lagrange.Proto.Primitives;
+using Lagrange.Proto.Serialization.Metadata;
 using Lagrange.Proto.Utility;
 
-namespace Lagrange.Proto.Serialization.Converter.Object;
+namespace Lagrange.Proto.Serialization.Converter;
 
-internal class ProtoSerializableConverter<T> : ProtoConverter<T> where T : IProtoSerializable<T>
+public class ProtoSerializableConverter<T> : ProtoConverter<T> where T : IProtoSerializable<T>
 {
+    private readonly ProtoObjectInfo<T> _object = T.TypeInfo; // force the typeInfo to be initialized
+    
     public override void Write(int field, WireType wireType, ProtoWriter writer, T value)
     {
         int length = T.MeasureHandler(value);

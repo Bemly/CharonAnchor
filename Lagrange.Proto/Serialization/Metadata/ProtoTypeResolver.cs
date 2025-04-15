@@ -2,8 +2,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Lagrange.Proto.Serialization.Converter;
-using Lagrange.Proto.Serialization.Converter.Generic;
-using Lagrange.Proto.Serialization.Converter.Object;
 
 namespace Lagrange.Proto.Serialization.Metadata;
 
