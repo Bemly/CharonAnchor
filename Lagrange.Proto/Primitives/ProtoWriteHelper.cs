@@ -4,7 +4,7 @@ using System.Text.Unicode;
 
 namespace Lagrange.Proto.Primitives;
 
-public static class ProtoWriteHelper
+internal static class ProtoWriteHelper
 {
     internal static OperationStatus ToUtf8(ReadOnlySpan<char> source, Span<byte> destination, out int written)
     {

@@ -8,7 +8,7 @@ namespace Lagrange.Proto.Primitives;
 /// <summary>
 /// Defines a thread-local cache for ProtoSerializer to store reusable ProtoWriterCache instances.
 /// </summary>
-public static class ProtoWriterCache
+internal static class ProtoWriterCache
 {
     private static readonly ConcurrentQueue<SegmentBufferWriter> BufferPool = new();
     
