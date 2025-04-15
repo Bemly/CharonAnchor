@@ -78,11 +78,11 @@ public static partial class ProtoTypeResolver
 
     private static class Cache<T>
     {
-        public static ProtoConverter<T> Converter;
+        public static ProtoConverter<T> Converter = null!;
         
         static Cache()
         {
-            if (Check<T>.Registered && Converter != null) return;
+            if (Check<T>.Registered) return;
 
             var type = typeof(T);
             
@@ -135,6 +135,7 @@ public static partial class ProtoTypeResolver
 
     [UnconditionalSuppressMessage("Trimmer", "IL2055")]
     [UnconditionalSuppressMessage("Trimmer", "IL2067")]
+    [UnconditionalSuppressMessage("Trimmer", "IL2072")]
     [UnconditionalSuppressMessage("Trimmer", "IL3050", Justification = "The generic type definition would always appear in metadata as it is a member in class serialized.")]
     private static ProtoConverter<T>? ResolveGenericConverter<T>(Type type)
     {
