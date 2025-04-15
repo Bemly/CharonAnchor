@@ -65,7 +65,7 @@ public partial class Test
 [ProtoPackable(IgnoreDefaultFields = true)]
 public partial class Test_2
 {
-    [ProtoMember(1, NumberHandling = ProtoNumberHandling.Fixed64 | ProtoNumberHandling.Signed)] 
+    [ProtoMember(1, NumberHandling = ProtoNumberHandling.Signed)] 
     public int Test1 { get; set; }
         
     [ProtoMember(2)] public string Test2 { get; set; } = string.Empty;

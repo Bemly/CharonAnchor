@@ -30,7 +30,7 @@ public static partial class ProtoSerializer
             int tag = reader.DecodeVarIntUnsafe<int>();
             var fieldInfo = objectInfo.Fields[tag];
             fieldInfo.Read(fieldInfo.WireType, ref reader, target);
-        }
+        } // TODO: Handle unknown fields
         
         return target;
     }

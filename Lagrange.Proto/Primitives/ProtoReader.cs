@@ -93,6 +93,9 @@ public ref struct ProtoReader
         return result;
     }
     
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Rewind(int count) => _offset += count;
+    
     /// <summary>
     /// Max VarInt Bytes for u8: 2
     /// Max VarInt Bytes for u16: 3

@@ -15,10 +15,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Serialization\Converter\Collection\" />
-    </ItemGroup>
-
-    <ItemGroup>
       <None Update="Serialization\Metadata\ProtoTypeResolver.WellKnownTypes.tt">
         <Generator>TextTemplatingFileGenerator</Generator>
         <LastGenOutput>ProtoTypeResolver.WellKnownTypes.cs</LastGenOutput>
