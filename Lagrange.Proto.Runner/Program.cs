@@ -1,6 +1,4 @@
 ﻿using System.Buffers;
-using System.Text.Json;
-using Lagrange.Proto.Primitives;
 using Lagrange.Proto.Serialization;
 
 namespace Lagrange.Proto.Runner;
@@ -11,7 +9,6 @@ internal static class Program
     {
         var bufferWriter = new ArrayBufferWriter<byte>();
         
-        var writer = new ProtoWriter(bufferWriter);
         var test = new Test
         {
             Test1 = 1,
@@ -34,13 +31,12 @@ internal static class Program
             }
         };
 
-        Console.WriteLine(Test.TypeInfo);
-        Test.SerializeHandler(test, writer);
-        writer.Flush();
+        ProtoSerializer.SerializeProtoPackable(bufferWriter, test);
+        var bytes = bufferWriter.WrittenSpan.ToArray();
+        var test2 = ProtoSerializer.DeserializeProtoPackable<Test>(bytes);
         
-        Console.WriteLine(Convert.ToHexString(bufferWriter.WrittenSpan));
-        var back = ProtoSerializer.DeserializeProtoPackable<Test>(bufferWriter.WrittenSpan);
-        bufferWriter.Clear();
+        Console.WriteLine(Convert.ToHexString(bytes));
+        Console.WriteLine(test2.Test1);
     }
 }
 

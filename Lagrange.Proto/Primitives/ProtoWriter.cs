@@ -321,8 +321,6 @@ public class ProtoWriter : IDisposable
     
     public void Reset(IBufferWriter<byte> bufferWriter)
     {
-        CheckNotDisposed();
-
         _writer = bufferWriter ?? throw new ArgumentNullException(nameof(bufferWriter));
 
         ResetHelper();
