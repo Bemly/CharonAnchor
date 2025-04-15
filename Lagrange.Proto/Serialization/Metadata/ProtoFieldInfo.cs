@@ -15,6 +15,8 @@ public abstract class ProtoFieldInfo(int field, WireType wireType, Type declared
     
     public Type PropertyType { get; } = property;
     
+    public ProtoNumberHandling NumberHandling { get; init; } = ProtoNumberHandling.Default;
+    
     internal ProtoConverter EffectiveConverter
     {
         get

@@ -1,4 +1,4 @@
-using Microsoft.CodeAnalysis.CSharp;
+using Lagrange.Proto.Serialization;
 using SF = Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using SK = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
 
@@ -13,6 +13,8 @@ namespace Lagrange.Proto.Generator
             private readonly string _protoTypeInfoFullName = $"global::Lagrange.Proto.Serialization.Metadata.ProtoObjectInfo<{parser.Identifier}>";
             
             private readonly string _protoTypeInfoNullableFullName = $"global::Lagrange.Proto.Serialization.Metadata.ProtoObjectInfo<{parser.Identifier}>?";
+            
+            private const string ProtoNumberHandlingFullName = "global::Lagrange.Proto.Serialization.ProtoNumberHandling";
             
             private FieldDeclarationSyntax EmitTypeInfoField()
             {
@@ -42,22 +44,32 @@ namespace Lagrange.Proto.Generator
             {
                 var fields = parser.Fields.ToDictionary(
                     kv => (kv.Key << 3) | (byte)kv.Value.WireType,
-                    kv => SF.ObjectCreationExpression(SF.ParseTypeName($"global::Lagrange.Proto.Serialization.Metadata.ProtoFieldInfo<{kv.Value.TypeSyntax}>"))
-                        .WithArgumentList(SF.ArgumentList(
-                            SF.SeparatedList<ArgumentSyntax>(
-                                [
-                                    SF.Argument(SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(kv.Key))),
-                                    SF.Argument(SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("global::Lagrange.Proto.Serialization.WireType"), SF.IdentifierName(kv.Value.WireType.ToString()))),
-                                    SF.Argument(SF.TypeOfExpression(SF.ParseTypeName(parser.Identifier)))
-                                ]
-                            )
-                        ))
-                        .WithInitializer(SF.InitializerExpression(SK.ObjectInitializerExpression).AddExpressions(
-                                SF.AssignmentExpression(SK.SimpleAssignmentExpression, SF.IdentifierName("Get"), EmitTypeInfoGetter(kv.Value.Name)),
-                                SF.AssignmentExpression(SK.SimpleAssignmentExpression, SF.IdentifierName("Set"), EmitTypeInfoSetter(kv.Value.Name))
+                    kv =>
+                    {
+                        string first = kv.Value.WireType switch
+                        {
+                            WireType.Fixed32 or WireType.Fixed64 => $"{ProtoNumberHandlingFullName}.{kv.Value.WireType}",
+                            _ => $"{ProtoNumberHandlingFullName}.Default"
+                        };
+                        string numberHandling = $"{first}{(kv.Value.IsSigned ? $" | {ProtoNumberHandlingFullName}.Signed" : "")}";
+                        
+                        return SF.ObjectCreationExpression(SF.ParseTypeName($"global::Lagrange.Proto.Serialization.Metadata.ProtoFieldInfo<{kv.Value.TypeSyntax}>"))
+                            .WithArgumentList(SF.ArgumentList(
+                                SF.SeparatedList<ArgumentSyntax>(
+                                    [
+                                        SF.Argument(SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(kv.Key))),
+                                        SF.Argument(SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("global::Lagrange.Proto.Serialization.WireType"), SF.IdentifierName(kv.Value.WireType.ToString()))),
+                                        SF.Argument(SF.TypeOfExpression(SF.ParseTypeName(parser.Identifier)))
+                                    ]
                                 )
-                    )
-                );
+                            ))
+                            .WithInitializer(SF.InitializerExpression(SK.ObjectInitializerExpression).AddExpressions(
+                                    SF.AssignmentExpression(SK.SimpleAssignmentExpression, SF.IdentifierName("Get"), EmitTypeInfoGetter(kv.Value.Name)),
+                                    SF.AssignmentExpression(SK.SimpleAssignmentExpression, SF.IdentifierName("Set"), EmitTypeInfoSetter(kv.Value.Name)),
+                                    SF.AssignmentExpression(SK.SimpleAssignmentExpression, SF.IdentifierName("NumberHandling"), SF.IdentifierName(numberHandling))
+                                )
+                            );
+                    });
                 var dictionaryInitialize = SF.ObjectCreationExpression(SF.ParseTypeName("global::System.Collections.Generic.Dictionary<int, global::Lagrange.Proto.Serialization.Metadata.ProtoFieldInfo>"))
                     .WithArgumentList(SF.ArgumentList())
                     .WithInitializer(SF.InitializerExpression(SK.CollectionInitializerExpression).AddExpressions(
@@ -72,10 +84,11 @@ namespace Lagrange.Proto.Generator
                 
                 var lambda = SF.ParenthesizedLambdaExpression(SF.ParameterList(), SF.ObjectCreationExpression(SF.ParseTypeName(parser.Identifier)).WithArgumentList(SF.ArgumentList()));
                 var objectCreatorAssignment = SF.AssignmentExpression(SK.SimpleAssignmentExpression, SF.IdentifierName("ObjectCreator"), lambda);
+                var ignoreDefaultAssignment = SF.AssignmentExpression(SK.SimpleAssignmentExpression, SF.IdentifierName("IgnoreDefaultFields"), SF.LiteralExpression(parser.IgnoreDefaultFields ? SK.TrueLiteralExpression : SK.FalseLiteralExpression));
                 
                 var returnStatement = SF.ReturnStatement(SF.ObjectCreationExpression(SF.ParseTypeName(_protoTypeInfoFullName))
                     .WithArgumentList(SF.ArgumentList())
-                    .WithInitializer(SF.InitializerExpression(SK.ObjectInitializerExpression).AddExpressions(fieldsAssignment, objectCreatorAssignment))
+                    .WithInitializer(SF.InitializerExpression(SK.ObjectInitializerExpression).AddExpressions(fieldsAssignment, objectCreatorAssignment, ignoreDefaultAssignment))
                 );
 
                 return SF.MethodDeclaration(SF.ParseTypeName(_protoTypeInfoFullName), "CreateTypeInfo")

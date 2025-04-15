@@ -100,6 +100,8 @@ public static partial class ProtoTypeResolver
         }
     }
 
+    [UnconditionalSuppressMessage("Trimmer", "IL2055")]
+    [UnconditionalSuppressMessage("Trimmer", "IL2067")]
     [UnconditionalSuppressMessage("Trimmer", "IL3050", Justification = "The generic type definition would always appear in metadata as it is a member in class serialized.")]
     private static ProtoConverter<T>? ResolveGenericConverter<T>(Type type)
     {
@@ -113,8 +115,10 @@ public static partial class ProtoTypeResolver
         return null;
     }
     
-    [UnconditionalSuppressMessage("Trimmer", "IL3050", Justification = "The generic type definition would always appear in metadata as it is a member in class serialized.")]
+    [UnconditionalSuppressMessage("Trimmer", "IL2055")]
+    [UnconditionalSuppressMessage("Trimmer", "IL2067")]
     [UnconditionalSuppressMessage("Trimmer", "IL2070", Justification = "The interface would always be preserve")]
+    [UnconditionalSuppressMessage("Trimmer", "IL3050", Justification = "The generic type definition would always appear in metadata as it is a member in class serialized.")]
     private static ProtoConverter<T>? ResolveInterfaceConverter<T>(Type type)
     {
         var interfaces = type.GetInterfaces();
