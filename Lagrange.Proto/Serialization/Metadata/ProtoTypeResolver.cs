@@ -117,15 +117,15 @@ public static partial class ProtoTypeResolver
     
     [UnconditionalSuppressMessage("Trimmer", "IL2055")]
     [UnconditionalSuppressMessage("Trimmer", "IL2067")]
+    [UnconditionalSuppressMessage("Trimmer", "IL2072")]
     [UnconditionalSuppressMessage("Trimmer", "IL3050", Justification = "The generic type definition would always appear in metadata as it is a member in class serialized.")]
     private static ProtoConverter<T>? ResolveAssignableConverter<T>(Type type)
     {
-        foreach (var (t, conv) in Converters)
+        foreach (var (t, conv) in AssignableConverters)
         {
             if (t.IsAssignableFrom(type))
             {
-                var converterType = AssignableConverters[conv.GetType()];
-                var converter = converterType.MakeGenericType(t);
+                var converter = conv.MakeGenericType(type);
                 return (ProtoConverter<T>)Activator.CreateInstance(converter)!;
             }
         }
@@ -135,7 +135,6 @@ public static partial class ProtoTypeResolver
 
     [UnconditionalSuppressMessage("Trimmer", "IL2055")]
     [UnconditionalSuppressMessage("Trimmer", "IL2067")]
-    [UnconditionalSuppressMessage("Trimmer", "IL2072")]
     [UnconditionalSuppressMessage("Trimmer", "IL3050", Justification = "The generic type definition would always appear in metadata as it is a member in class serialized.")]
     private static ProtoConverter<T>? ResolveGenericConverter<T>(Type type)
     {
