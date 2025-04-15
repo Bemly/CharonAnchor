@@ -79,7 +79,7 @@ public static partial class ProtoTypeResolver
         
         static Cache()
         {
-            if (Check<T>.Registered) return;
+            if (Check<T>.Registered && Converter != null) return;
 
             var type = typeof(T);
             if (type.IsGenericType && ResolveGenericConverter<T>(type) is { } converter)
@@ -97,6 +97,9 @@ public static partial class ProtoTypeResolver
                 Check<T>.Registered = true;
                 return;
             }
+            
+            Converter = new ProtoErrorConverter<T>();
+            Check<T>.Registered = true;
         }
     }
 
