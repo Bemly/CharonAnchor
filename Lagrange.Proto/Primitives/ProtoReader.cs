@@ -47,7 +47,7 @@ public ref struct ProtoReader
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public T DecodeFixed32<T>() where T : unmanaged, INumber<T>
     {
-        if (_length - _offset < 4) throw new ArgumentOutOfRangeException(nameof(_length), "Not enough bytes to decode a fixed32");
+        if (_length - _offset < 4) ThrowHelper.ThrowArgumentOutOfRangeException_NoEnoughSpace(nameof(DecodeFixed32),4, _length - _offset);
         
         var result = Unsafe.ReadUnaligned<T>(ref Unsafe.Add(ref _first, _offset));
         _offset += 4;
@@ -57,7 +57,7 @@ public ref struct ProtoReader
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public T DecodeFixed64<T>() where T : unmanaged, INumber<T>
     {
-        if (_length - _offset < 8) throw new ArgumentOutOfRangeException(nameof(_length), "Not enough bytes to decode a fixed64");
+        if (_length - _offset < 8) ThrowHelper.ThrowArgumentOutOfRangeException_NoEnoughSpace(nameof(DecodeFixed64),8, _length - _offset);
         
         var result = Unsafe.ReadUnaligned<T>(ref Unsafe.Add(ref _first, _offset));
         _offset += 8;
@@ -66,7 +66,7 @@ public ref struct ProtoReader
     
     public ReadOnlySpan<byte> CreateSpan(int length)
     {
-        if (_length - _offset < length) throw new ArgumentOutOfRangeException(nameof(_length), "Not enough bytes to create a span");
+        if (_length - _offset < length) ThrowHelper.ThrowArgumentOutOfRangeException_NoEnoughSpace(nameof(CreateSpan), length, _length - _offset);
         
         var result = MemoryMarshal.CreateSpan(ref Unsafe.Add(ref _first, _offset), length);
         _offset += length;
@@ -89,7 +89,7 @@ public ref struct ProtoReader
             shift += 7;
         }
         while (shift < sizeof(T) << 3);
-        // ThrowMalformedMessage();
+        ThrowHelper.ThrowInvalidDataException_MalformedMessage();
         return result;
     }
     
