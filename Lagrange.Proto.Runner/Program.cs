@@ -1,4 +1,5 @@
 ﻿using System.Buffers;
+using System.Text.Json;
 using Lagrange.Proto.Primitives;
 using Lagrange.Proto.Serialization;
 
@@ -29,6 +30,7 @@ internal static class Program
                 Test5 = 5,
                 Test6 = "Test6",
                 Test7 = [1, 2, 3],
+                Test8 = TestEnum.Test8
             }
         };
 
@@ -37,6 +39,7 @@ internal static class Program
         writer.Flush();
         
         Console.WriteLine(Convert.ToHexString(bufferWriter.WrittenSpan));
+        var back = ProtoSerializer.DeserializeProtoPackable<Test>(bufferWriter.WrittenSpan);
         bufferWriter.Clear();
     }
 }
@@ -80,4 +83,18 @@ public partial class Test_2
     [ProtoMember(6)] public string? Test6 { get; set; }
     
     [ProtoMember(7)] public byte[] Test7 { get; set; } = [];
+    
+    [ProtoMember(8)] public TestEnum Test8 { get; set; } = TestEnum.Test1;
+}
+
+public enum TestEnum
+{
+    Test1 = 1,
+    Test2 = 2,
+    Test3 = 3,
+    Test4 = 4,
+    Test5 = 5,
+    Test6 = 6,
+    Test7 = 7,
+    Test8 = 8,
 }

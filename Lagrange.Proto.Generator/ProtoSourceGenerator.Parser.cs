@@ -16,8 +16,6 @@ public partial class ProtoSourceGenerator
     {
         public SemanticModel Model { get; } = model;
         
-        public TypesResolver Resolver { get; } = new(model);
-        
         public List<Diagnostic> Diagnostics { get; } = [];
         
         public string? Namespace { get; private set; }
@@ -93,7 +91,7 @@ public partial class ProtoSourceGenerator
                     IFieldSymbol fieldSymbol => fieldSymbol.Type,
                     _ => throw new InvalidOperationException("Unsupported member type.")
                 };
-                var wireType = type.GetWireType();
+                var wireType = ProtoHelper.GetWireType(typeSymbol);
                 bool signed = false;
 
                 if (wireType == WireType.LengthDelimited && typeSymbol.IsUserDefinedType())

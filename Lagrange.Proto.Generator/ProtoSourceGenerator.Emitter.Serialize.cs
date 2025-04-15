@@ -1,4 +1,5 @@
 ﻿using System.CodeDom.Compiler;
+using Lagrange.Proto.Generator.Entity;
 using Lagrange.Proto.Generator.Utility;
 using Lagrange.Proto.Generator.Utility.Extension;
 using Lagrange.Proto.Serialization;
@@ -22,7 +23,7 @@ public partial class ProtoSourceGenerator
                 var type = kv.Value.TypeSyntax;
                 string name = kv.Value.Name;
                 var tag = EmitTagSerializeStatement(kv.Key, kv.Value.WireType);
-                var field = EmitMemberStatement(kv.Value.WireType, name, type, kv.Value.IsSigned);
+                var field = EmitMemberStatement(kv.Value, kv.Key, name);
 
                 var block = SF.Block(SF.List<StatementSyntax>([tag, ..field]));
 
@@ -56,20 +57,22 @@ public partial class ProtoSourceGenerator
                 .WithBody(SF.Block(SF.List(syntax)));
         }
             
-        private StatementSyntax[] EmitMemberStatement(WireType wireType, string identifier, TypeSyntax type, bool isSigned)
+        private StatementSyntax[] EmitMemberStatement(ProtoFieldInfo fieldInfo, int field, string identifier)
         {
+            var type = fieldInfo.TypeSyntax;
             var symbol = parser.Model.GetTypeSymbol(type);
             if (type.IsNullableType() && symbol.IsValueType) identifier += ".Value";
 
-            return wireType switch
+            return fieldInfo.WireType switch
             {
-                WireType.VarInt => [EmitVarIntSerializeStatement(identifier, isSigned)],
-                WireType.Fixed32 => [EmitFixed32SerializeStatement(identifier, isSigned)],
-                WireType.Fixed64 => [EmitFixed64SerializeStatement(identifier, isSigned)],
+                WireType.VarInt when symbol.IsEnumType() => [EmitResolvableSerializeStatement(identifier, field, fieldInfo.WireType)],
+                WireType.VarInt => [EmitVarIntSerializeStatement(identifier, fieldInfo.IsSigned)],
+                WireType.Fixed32 => [EmitFixed32SerializeStatement(identifier, fieldInfo.IsSigned)],
+                WireType.Fixed64 => [EmitFixed64SerializeStatement(identifier, fieldInfo.IsSigned)],
                 WireType.LengthDelimited when type.IsStringType() => [EmitStringSerializeStatement(identifier)],
                 WireType.LengthDelimited when type.IsByteArrayType() => [EmitBytesSerializeStatement(identifier)],
                 WireType.LengthDelimited when symbol.IsUserDefinedType() => EmitProtoPackableSerializeStatement(type.ToString(), identifier),
-                _ => throw new Exception($"Unsupported wire type: {wireType} for {identifier}")
+                _ => [EmitResolvableSerializeStatement(identifier, field, fieldInfo.WireType)]
             };
         }
 
@@ -101,6 +104,15 @@ public partial class ProtoSourceGenerator
             }
                 
             return SF.ExpressionStatement(SF.InvocationExpression(access).AddArgumentListArguments(SF.Argument(arg)));
+        }
+        
+        private static StatementSyntax EmitResolvableSerializeStatement(string name, int field, WireType wireType)
+        {
+            var tagArg = SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(field));
+            var wireTypeArg = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("global::Lagrange.Proto.Serialization.WireType"), SF.IdentifierName(wireType.ToString()));
+            var arg = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("obj"), SF.IdentifierName(name));
+            var access = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("writer"), SF.IdentifierName("EncodeResolvable"));
+            return SF.ExpressionStatement(SF.InvocationExpression(access).AddArgumentListArguments(SF.Argument(tagArg), SF.Argument(wireTypeArg), SF.Argument(arg)));
         }
             
         private static StatementSyntax EmitFixed32SerializeStatement(string name, bool isSigned)

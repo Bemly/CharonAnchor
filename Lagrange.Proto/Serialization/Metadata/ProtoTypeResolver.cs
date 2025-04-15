@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using Lagrange.Proto.Serialization.Converter;
 using Lagrange.Proto.Serialization.Converter.Generic;
 using Lagrange.Proto.Serialization.Converter.Object;
 
@@ -35,6 +36,11 @@ public static partial class ProtoTypeResolver
     {
         RegisterWellKnownTypes();
     }
+    
+    private static readonly Dictionary<Type, Type> AssignableConverters = new(3)
+    {
+        { typeof(Enum), typeof(ProtoEnumConverter<>) }
+    };  
 
     private static readonly Dictionary<Type, Type> KnownGenericTypeConverters = new(3)
     {
@@ -57,11 +63,8 @@ public static partial class ProtoTypeResolver
     public static bool IsRegistered<T>() => Check<T>.Registered;
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static ProtoConverter<T> GetConverter<T>()
-    {
-        return Cache<T>.Converter;
-    }
-    
+    internal static ProtoConverter<T> GetConverter<T>() => Cache<T>.Converter;
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static ProtoConverter GetConverter(Type type)
     {
@@ -82,6 +85,15 @@ public static partial class ProtoTypeResolver
             if (Check<T>.Registered && Converter != null) return;
 
             var type = typeof(T);
+            
+            if (ResolveAssignableConverter<T>(type) is { } assignableConverter)
+            {
+                Converters[type] = assignableConverter;
+                Converter = assignableConverter;
+                Check<T>.Registered = true;
+                return;
+            }
+            
             if (type.IsGenericType && ResolveGenericConverter<T>(type) is { } converter)
             {
                 Converters[type] = converter;
@@ -101,6 +113,24 @@ public static partial class ProtoTypeResolver
             Converter = new ProtoErrorConverter<T>();
             Check<T>.Registered = true;
         }
+    }
+    
+    [UnconditionalSuppressMessage("Trimmer", "IL2055")]
+    [UnconditionalSuppressMessage("Trimmer", "IL2067")]
+    [UnconditionalSuppressMessage("Trimmer", "IL3050", Justification = "The generic type definition would always appear in metadata as it is a member in class serialized.")]
+    private static ProtoConverter<T>? ResolveAssignableConverter<T>(Type type)
+    {
+        foreach (var (t, conv) in Converters)
+        {
+            if (t.IsAssignableFrom(type))
+            {
+                var converterType = AssignableConverters[conv.GetType()];
+                var converter = converterType.MakeGenericType(t);
+                return (ProtoConverter<T>)Activator.CreateInstance(converter)!;
+            }
+        }
+
+        return null;
     }
 
     [UnconditionalSuppressMessage("Trimmer", "IL2055")]

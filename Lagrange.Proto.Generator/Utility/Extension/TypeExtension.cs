@@ -17,25 +17,27 @@ public static class TypeExtension
     {
         return SystemAssemblies.Contains(assembly.Name);
     }
-    
-    public static bool IsNumberType(this TypeSyntax type)
+
+    public static bool IsIntegerType(this ITypeSymbol symbol)
     {
-        return type switch
+        if (symbol.IsNullable())
         {
-            PredefinedTypeSyntax { Keyword.RawKind : >= 8304 and <= 8312 } => true,
-            NullableTypeSyntax nullableType => IsNumberType(nullableType.ElementType),
-            IdentifierNameSyntax identifierName => identifierName.Identifier.Text switch
-            {
-                "Boolean" or "Int8" or "Int16" or "Int32" or "Int64" or "UInt8" or "UInt16" or "UInt32" or "UInt64" => true,
-                _ => false
-            },
-            QualifiedNameSyntax qualifiedName => qualifiedName.Right switch
-            {
-                IdentifierNameSyntax identifierName when qualifiedName.Left.ToString() == "System" => IsNumberType(identifierName),
-                _ => false
-            },
-            _ => false
-        };
+            return symbol.NullableAnnotation == NullableAnnotation.Annotated && symbol is INamedTypeSymbol { IsGenericType: true, ConstructedFrom.SpecialType: SpecialType.System_Nullable_T } namedTypeSymbol && namedTypeSymbol.TypeArguments[0].IsIntegerType();
+        }
+        
+        return symbol.SpecialType is SpecialType.System_SByte or SpecialType.System_Byte or SpecialType.System_Int16 or
+               SpecialType.System_UInt16 or SpecialType.System_Int32 or SpecialType.System_UInt32 or
+               SpecialType.System_Int64 or SpecialType.System_UInt64;
+    }
+    
+    public static bool IsEnumType(this ITypeSymbol symbol)
+    {
+        return symbol.TypeKind == TypeKind.Enum;
+    }
+    
+    public static bool IsNullable(this ITypeSymbol symbol)
+    {
+        return symbol is { IsValueType: true, NullableAnnotation: NullableAnnotation.Annotated };
     }
     
     public static bool IsStringType(this TypeSyntax type)
@@ -64,38 +66,6 @@ public static class TypeExtension
             ArrayTypeSyntax { ElementType: QualifiedNameSyntax qualifiedName } => qualifiedName.Right switch
             {
                 IdentifierNameSyntax identifierName when qualifiedName.Left.ToString() == "System" => IsByteArrayType(identifierName),
-                _ => false
-            },
-            _ => false
-        };
-    }
-    
-    public static bool IsSingleType(this TypeSyntax type)
-    {
-        return type switch
-        {
-            PredefinedTypeSyntax predefinedType => predefinedType.Keyword.IsKind(SyntaxKind.FloatKeyword),
-            NullableTypeSyntax nullableType => IsSingleType(nullableType.ElementType),
-            IdentifierNameSyntax identifierName => identifierName.Identifier.Text == "Single",
-            QualifiedNameSyntax qualifiedName => qualifiedName.Right switch
-            {
-                IdentifierNameSyntax identifierName when qualifiedName.Left.ToString() == "System" => IsSingleType(identifierName),
-                _ => false
-            },
-            _ => false
-        };
-    }
-    
-    public static bool IsDoubleType(this TypeSyntax type)
-    {
-        return type switch
-        {
-            PredefinedTypeSyntax predefinedType => predefinedType.Keyword.IsKind(SyntaxKind.DoubleKeyword),
-            NullableTypeSyntax nullableType => IsDoubleType(nullableType.ElementType),
-            IdentifierNameSyntax identifierName => identifierName.Identifier.Text == "Double",
-            QualifiedNameSyntax qualifiedName => qualifiedName.Right switch
-            {
-                IdentifierNameSyntax identifierName when qualifiedName.Left.ToString() == "System" => IsDoubleType(identifierName),
                 _ => false
             },
             _ => false

@@ -1,3 +1,5 @@
+using Lagrange.Proto.Generator.Entity;
+using Lagrange.Proto.Generator.Utility.Extension;
 using Lagrange.Proto.Serialization;
 using SF = Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using SK = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
@@ -38,6 +40,36 @@ namespace Lagrange.Proto.Generator
                             )
                             .WithSemicolonToken(SF.Token(SK.SemicolonToken))
                     );
+            }
+
+            private StatementSyntax[] EmitTypeInfoRegisteredStatements()
+            {
+                var statements = new Dictionary<ProtoFieldInfo, StatementSyntax>();
+                
+                foreach (var kv in parser.Fields)
+                {
+                    var symbol = parser.Model.GetTypeSymbol(kv.Value.TypeSyntax);
+
+                    if (symbol.IsEnumType())
+                    {
+                        var method = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.ParseTypeName("global::Lagrange.Proto.Serialization.Metadata.ProtoTypeResolver"), SF.IdentifierName("Register"));
+                        var type = SF.ParseTypeName($"global::Lagrange.Proto.Serialization.Converter.ProtoEnumConverter<{kv.Value.TypeSyntax}>");
+                        var @object = SF.ObjectCreationExpression(type).WithArgumentList(SF.ArgumentList());
+                        statements.Add(kv.Value, SF.ExpressionStatement(
+                            SF.InvocationExpression(method).WithArgumentList(SF.ArgumentList(SF.SingletonSeparatedList(SF.Argument(@object))))
+                        ));
+                    }
+                }
+                
+                foreach (var kv in statements)
+                {
+                    var type = SF.ParseTypeName($"global::Lagrange.Proto.Serialization.Converter.ProtoEnumConverter<{kv.Key.TypeSyntax}>");
+                    var method = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.ParseTypeName("global::Lagrange.Proto.Serialization.Metadata.ProtoTypeResolver"), SF.IdentifierName($"IsRegistered<{type}>"));
+                    var invocation = SF.InvocationExpression(method).WithArgumentList(SF.ArgumentList());
+                    statements[kv.Key] = SF.IfStatement(SF.PrefixUnaryExpression(SK.LogicalNotExpression, invocation), SF.Block(kv.Value));
+                }
+                
+                return [..statements.Values];
             }
             
             private MethodDeclarationSyntax EmitTypeInfoCreationMethod()
@@ -93,7 +125,7 @@ namespace Lagrange.Proto.Generator
 
                 return SF.MethodDeclaration(SF.ParseTypeName(_protoTypeInfoFullName), "CreateTypeInfo")
                     .AddModifiers(SF.Token(SK.PrivateKeyword), SF.Token(SK.StaticKeyword))
-                    .WithBody(SF.Block(returnStatement));
+                    .WithBody(SF.Block().AddStatements(EmitTypeInfoRegisteredStatements()).AddStatements(returnStatement));
             }
             
             private ExpressionSyntax EmitTypeInfoGetter(string prop)
