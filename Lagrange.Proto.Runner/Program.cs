@@ -26,7 +26,12 @@ internal static class Program
                 Test6 = "Test6",
                 Test7 = [1, 2, 3],
                 Test8 = TestEnum.Test8
-            }
+            },
+            Test9 = new byte[] { 1, 2, 3 },
+            Test10 = new byte[] { 1, 2, 3 },
+            Test11 = new char[] { '1', '2', '3' },
+            Test12 = new char[] { '1', '2', '3' },
+            Test13 = true
         };
 
         var bytes = ProtoSerializer.Serialize(test);
@@ -40,14 +45,14 @@ internal static class Program
 [ProtoPackable]
 public partial class Test
 {
-    [ProtoMember(1, NumberHandling = ProtoNumberHandling.Fixed64 | ProtoNumberHandling.Signed)] 
+    [ProtoMember(1, NumberHandling = ProtoNumberHandling.Signed)] 
     public int Test1 { get; set; }
         
     [ProtoMember(2)] public string Test2 { get; set; } = string.Empty;
     
     [ProtoMember(3)] public float Test3 { get; set; }
-    
-    [ProtoMember(4)] public double Test4 { get; set; }
+
+    [ProtoMember(4)] public double Test4;
     
     [ProtoMember(5)] public int? Test5 { get; set; }
     
@@ -56,7 +61,18 @@ public partial class Test
     [ProtoMember(7)] public byte[] Test7 { get; set; } = [];
     
     [ProtoMember(8)] public Test_2 Test8 { get; set; } = new();
+    
+    [ProtoMember(9)] public ReadOnlyMemory<byte> Test9 { get; set; } = Array.Empty<byte>();
+    
+    [ProtoMember(10)] public Memory<byte> Test10 { get; set; } = Array.Empty<byte>();
+    
+    [ProtoMember(11)] public ReadOnlyMemory<char> Test11 { get; set; } = Array.Empty<char>();
+    
+    [ProtoMember(12)] public Memory<char> Test12 { get; set; } = Array.Empty<char>();
+    
+    [ProtoMember(13)] public bool Test13 { get; set; } = true;
 }
+
 
 
 [ProtoPackable(IgnoreDefaultFields = true)]
