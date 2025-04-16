@@ -1,6 +1,7 @@
 ﻿using Lagrange.Proto.Serialization;
 using Lagrange.Proto.Generator.Utility;
 using Lagrange.Proto.Generator.Utility.Extension;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SF = Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using SK = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
@@ -34,13 +35,14 @@ public partial class ProtoSourceGenerator
                     var expr = kv.Value.WireType switch        
                     {
                         WireType.VarInt when symbol.IsEnumType() => EmitResolvableLengthExpression(kv.Key, kv.Value.WireType, identifier),
+                        WireType.VarInt when symbol.SpecialType == SpecialType.System_Boolean => SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(1)),
                         WireType.VarInt => EmitVarIntLengthExpression(identifier),
                         WireType.Fixed32 => SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(4)),
                         WireType.Fixed64 => SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(8)),
                         WireType.LengthDelimited when type.IsStringType() => EmitStringLengthExpression(identifier),
                         WireType.LengthDelimited when type.IsByteArrayType() => EmitBytesLengthExpression(identifier),
                         WireType.LengthDelimited when symbol.IsUserDefinedType() => EmitProtoPackableLengthExpression(identifier),
-                        _ => throw new Exception($"Unsupported wire type: {kv.Value.WireType} for {type.ToString()}")
+                        _ => EmitResolvableLengthExpression(kv.Key, kv.Value.WireType, identifier)
                     };
                     
                     var tag = ProtoHelper.EncodeVarInt((kv.Key << 3) | (byte)kv.Value.WireType);

@@ -66,6 +66,7 @@ public partial class ProtoSourceGenerator
             return fieldInfo.WireType switch
             {
                 WireType.VarInt when symbol.IsEnumType() => [EmitResolvableSerializeStatement(identifier, field, fieldInfo.WireType)],
+                WireType.VarInt when symbol.SpecialType == SpecialType.System_Boolean => [EmitBooleanSerializeStatement(identifier)],
                 WireType.VarInt => [EmitVarIntSerializeStatement(identifier, fieldInfo.IsSigned)],
                 WireType.Fixed32 => [EmitFixed32SerializeStatement(identifier, fieldInfo.IsSigned)],
                 WireType.Fixed64 => [EmitFixed64SerializeStatement(identifier, fieldInfo.IsSigned)],
@@ -105,6 +106,18 @@ public partial class ProtoSourceGenerator
                 
             return SF.ExpressionStatement(SF.InvocationExpression(access).AddArgumentListArguments(SF.Argument(arg)));
         }
+        
+        private static StatementSyntax EmitBooleanSerializeStatement(string name)
+        {
+            var comparision = SF.ParenthesizedExpression(SF.ConditionalExpression(
+                SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("obj"), SF.IdentifierName(name)),
+                SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(1)),
+                SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(0))));
+            var access = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("writer"), SF.IdentifierName("WriteRawByte"));
+            var cast = SF.CastExpression(SF.PredefinedType(SF.Token(SK.ByteKeyword)), comparision);
+            return SF.ExpressionStatement(SF.InvocationExpression(access).AddArgumentListArguments(SF.Argument(cast)));
+        }
+
         
         private static StatementSyntax EmitResolvableSerializeStatement(string name, int field, WireType wireType)
         {

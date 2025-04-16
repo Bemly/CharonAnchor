@@ -70,7 +70,12 @@ public partial class ProtoSourceGenerator
             {
                 token.ThrowIfCancellationRequested();
                 
-                var symbol = Model.GetDeclaredSymbol(member) ?? throw new InvalidOperationException("Unable to get symbol.");
+                var symbol = classSymbol.GetMembers().First(x => x.Name == member switch
+                {
+                    FieldDeclarationSyntax fieldDeclaration => fieldDeclaration.Declaration.Variables[0].Identifier.ToString(),
+                    PropertyDeclarationSyntax propertyDeclaration => propertyDeclaration.Identifier.ToString(), 
+                    _ => throw new InvalidOperationException("Unsupported member type.")
+                });
 
                 if (symbol.IsStatic)
                 {
