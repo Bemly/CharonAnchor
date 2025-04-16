@@ -52,7 +52,7 @@ public static partial class ProtoSerializer
     [RequiresDynamicCode(SerializationRequiresDynamicCodeMessage)]
     public static void Serialize<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(IBufferWriter<byte> dest, T obj) 
     {
-        throw new NotImplementedException();
+        SerializeCore(dest, obj);
     }
     
     /// <summary>
@@ -65,5 +65,26 @@ public static partial class ProtoSerializer
     public static byte[] Serialize<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(T obj) 
     {
         throw new NotImplementedException();
+    }
+
+    [RequiresUnreferencedCode(SerializationUnreferencedCodeMessage)]
+    [RequiresDynamicCode(SerializationRequiresDynamicCodeMessage)]
+    private static void SerializeCore<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(IBufferWriter<byte> dest, T obj)
+    {       
+        ProtoConverter<T> converter;
+        if (ProtoTypeResolver.IsRegistered<T>())
+        {
+            converter = ProtoTypeResolver.GetConverter<T>();
+        }
+        else
+        {
+            converter = new ProtoObjectConverter<T>();
+            ProtoTypeResolver.Register(converter);
+        }
+        
+        var writer = ProtoWriterCache.RentWriter(dest);
+        converter.Write(0, WireType.VarInt, writer, obj); // the first two arguments are ignored
+        writer.Flush();
+        ProtoWriterCache.ReturnWriter(writer);
     }
 }

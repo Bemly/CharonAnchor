@@ -1,6 +1,8 @@
 ﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using Lagrange.Proto.Primitives;
+using Lagrange.Proto.Serialization.Converter;
+using Lagrange.Proto.Serialization.Metadata;
 
 namespace Lagrange.Proto.Serialization;
 
@@ -45,6 +47,25 @@ public static partial class ProtoSerializer
     [RequiresDynamicCode(SerializationRequiresDynamicCodeMessage)]
     public static T Deserialize<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(ReadOnlySpan<byte> data)
     {
-        throw new NotImplementedException();
+        var reader = new ProtoReader(data);
+        return DeserializeCore<T>(ref reader);
+    }
+    
+    [RequiresUnreferencedCode(SerializationUnreferencedCodeMessage)]
+    [RequiresDynamicCode(SerializationRequiresDynamicCodeMessage)]
+    private static T DeserializeCore<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(ref ProtoReader reader)
+    {
+        ProtoConverter<T> converter;
+        if (ProtoTypeResolver.IsRegistered<T>())
+        {
+            converter = ProtoTypeResolver.GetConverter<T>();
+        }
+        else
+        {
+            converter = new ProtoObjectConverter<T>();
+            ProtoTypeResolver.Register(converter);
+        }
+        
+        return converter.Read(0, WireType.VarInt, ref reader);
     }
 }

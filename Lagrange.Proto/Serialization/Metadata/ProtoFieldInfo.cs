@@ -37,6 +37,10 @@ public abstract class ProtoFieldInfo(int field, WireType wireType, Type declared
     private protected abstract void SetSetter(Delegate? setter);
 
     public abstract void Read(WireType wireType, ref ProtoReader reader, object target);
+    
+    public abstract void Write(ProtoWriter writer, object target);
+    
+    public abstract int Measure(object target);
         
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private string DebuggerDisplay => $"Field = {Field}, WireType = {WireType}, PropertyType = {PropertyType}, DeclaredType = {DeclaredType}";
@@ -128,5 +132,21 @@ public class ProtoFieldInfo<T> : ProtoFieldInfo
         
         T value = _typedEffectiveConverter.Read(Field, wireType, ref reader);
         _typedSet?.Invoke(target, value);
+    }
+
+    public override void Write(ProtoWriter writer, object target)
+    {
+        Debug.Assert(_typedEffectiveConverter != null && _typedGet != null);
+
+        T value = _typedGet.Invoke(target);
+        _typedEffectiveConverter.Write(Field, WireType, writer, value);
+    }
+    
+    public override int Measure(object target)
+    {
+        Debug.Assert(_typedEffectiveConverter != null && _typedGet != null);
+
+        T value = _typedGet.Invoke(target);
+        return _typedEffectiveConverter.Measure(WireType, value);
     }
 }
