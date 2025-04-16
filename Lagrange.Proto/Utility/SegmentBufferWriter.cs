@@ -12,10 +12,21 @@ public sealed class SegmentBufferWriter : IBufferWriter<byte>, IDisposable
     
     private int _position;
     private int _bytesWritten;
-    private byte[] _currentSegment = ArrayPool<byte>.Shared.Rent(DefaultSegmentSize);
+    private int _totalSize;
+    private byte[] _currentSegment;
 
     private readonly List<byte[]> _cachedSegments = [];
     private readonly List<CompletedBuffer> _completedBuffers = [];
+
+    public SegmentBufferWriter()
+    {
+        _currentSegment = ArrayPool<byte>.Shared.Rent(DefaultSegmentSize);
+    }
+    
+    public SegmentBufferWriter(int initialSize)
+    {
+        _currentSegment = ArrayPool<byte>.Shared.Rent(initialSize);
+    }
 
     public void Advance(int count)
     {
@@ -57,7 +68,7 @@ public sealed class SegmentBufferWriter : IBufferWriter<byte>, IDisposable
     
     public ReadOnlyMemory<byte> CreateReadOnlyMemory()
     {
-        var result = new byte[_bytesWritten];
+        var result = GC.AllocateUninitializedArray<byte>(_bytesWritten);
         var span = result.AsSpan();
         
         foreach (var buffer in _completedBuffers)
@@ -69,6 +80,22 @@ public sealed class SegmentBufferWriter : IBufferWriter<byte>, IDisposable
         _currentSegment.AsSpan(0, _position).CopyTo(span);
 
         return new ReadOnlyMemory<byte>(result);
+    }
+
+    public byte[] ToArray()
+    {
+        var result = GC.AllocateUninitializedArray<byte>(_bytesWritten);
+        var span = result.AsSpan();
+        
+        foreach (var buffer in _completedBuffers)
+        {
+            buffer.Span.CopyTo(span);
+            span = span[buffer.Length..];
+        }
+        
+        _currentSegment.AsSpan(0, _position).CopyTo(span);
+
+        return result;
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -88,6 +115,7 @@ public sealed class SegmentBufferWriter : IBufferWriter<byte>, IDisposable
         }
         
         _currentSegment = ArrayPool<byte>.Shared.Rent(sizeHint);
+        _totalSize += sizeHint;
         _position = 0;
     }
     
@@ -102,5 +130,16 @@ public sealed class SegmentBufferWriter : IBufferWriter<byte>, IDisposable
         public ReadOnlySpan<byte> Span => Buffer.AsSpan(0, Length);
 
         public void Return() => ArrayPool<byte>.Shared.Return(Buffer);
+    }
+
+    public void InitializeEmptyInstance(int size)
+    {
+        _position = 0;
+        _bytesWritten = 0;
+
+        while (size < _totalSize)
+        {
+            RentSegment(size);
+        }
     }
 }

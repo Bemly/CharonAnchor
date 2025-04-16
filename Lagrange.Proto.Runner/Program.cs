@@ -7,8 +7,6 @@ internal static class Program
 {
     private static void Main(string[] args)
     {
-        var bufferWriter = new ArrayBufferWriter<byte>();
-        
         var test = new Test
         {
             Test1 = 1,
@@ -31,9 +29,8 @@ internal static class Program
             }
         };
 
-        ProtoSerializer.SerializeProtoPackable(bufferWriter, test);
-        var bytes = bufferWriter.WrittenSpan.ToArray();
-        var test2 = ProtoSerializer.DeserializeProtoPackable<Test>(bytes);
+        var bytes = ProtoSerializer.Serialize(test);
+        var test2 = ProtoSerializer.Deserialize<Test>(bytes);
         
         Console.WriteLine(Convert.ToHexString(bytes));
         Console.WriteLine(test2.Test1);

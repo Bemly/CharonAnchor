@@ -10,8 +10,6 @@ namespace Lagrange.Proto.Primitives;
 /// </summary>
 internal static class ProtoWriterCache
 {
-    private static readonly ConcurrentQueue<SegmentBufferWriter> BufferPool = new();
-    
     [ThreadStatic]
     private static ThreadLocalState? _threadLocalState;
     
@@ -33,8 +31,27 @@ internal static class ProtoWriterCache
         return writer;
     }
     
-    public static SegmentBufferWriter RentSegmentWriter() => 
-        BufferPool.TryDequeue(out var writer) ? writer : new SegmentBufferWriter();
+    public static ProtoWriter RentWriterAndBuffer(int defaultBufferSize, out SegmentBufferWriter bufferWriter)
+    {
+        var state = _threadLocalState ??= new ThreadLocalState();
+        ProtoWriter writer;
+
+        if (state.RentedWriters++ == 0)
+        {
+            bufferWriter = state.BufferWriter;
+            writer = state.Writer;
+
+            bufferWriter.InitializeEmptyInstance(defaultBufferSize);
+            writer.Reset(bufferWriter);
+        }
+        else
+        {
+            bufferWriter = new SegmentBufferWriter(defaultBufferSize);
+            writer = new ProtoWriter(bufferWriter);
+        }
+
+        return writer;
+    }
 
     public static void ReturnWriter(ProtoWriter writer)
     {
@@ -46,15 +63,22 @@ internal static class ProtoWriterCache
         Debug.Assert((rentedWriters == 0) == ReferenceEquals(_threadLocalState.Writer, writer));
     }
     
-    public static void ReturnSegmentWriter(SegmentBufferWriter writer)
+    public static void ReturnWriterAndBuffer(ProtoWriter writer, SegmentBufferWriter bufferWriter)
     {
-        writer.Clear();
-        BufferPool.Enqueue(writer);
-    }
+        Debug.Assert(_threadLocalState != null);
+        var state = _threadLocalState;
 
+        writer.ResetAllStateForCacheReuse();
+        bufferWriter.Clear();
+
+        int rentedWriters = --state.RentedWriters;
+        Debug.Assert((rentedWriters == 0) == (ReferenceEquals(state.BufferWriter, bufferWriter) && ReferenceEquals(state.Writer, writer)));
+    }
+    
     private sealed class ThreadLocalState
     {
         public readonly ProtoWriter Writer = new();
+        public readonly SegmentBufferWriter BufferWriter = new();
         public int RentedWriters;
     }
 }

@@ -52,7 +52,9 @@ public static partial class ProtoSerializer
     [RequiresDynamicCode(SerializationRequiresDynamicCodeMessage)]
     public static void Serialize<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(IBufferWriter<byte> dest, T obj) 
     {
-        SerializeCore(dest, obj);
+        var writer = ProtoWriterCache.RentWriter(dest);
+        SerializeCore(writer, obj);
+        ProtoWriterCache.ReturnWriter(writer);
     }
     
     /// <summary>
@@ -64,12 +66,17 @@ public static partial class ProtoSerializer
     [RequiresDynamicCode(SerializationRequiresDynamicCodeMessage)]
     public static byte[] Serialize<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(T obj) 
     {
-        throw new NotImplementedException();
+        var writer = ProtoWriterCache.RentWriterAndBuffer(512, out var buffer);
+        SerializeCore(writer, obj);
+        var written = buffer.ToArray();
+        ProtoWriterCache.ReturnWriter(writer);
+        
+        return written;
     }
 
     [RequiresUnreferencedCode(SerializationUnreferencedCodeMessage)]
     [RequiresDynamicCode(SerializationRequiresDynamicCodeMessage)]
-    private static void SerializeCore<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(IBufferWriter<byte> dest, T obj)
+    private static void SerializeCore<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(ProtoWriter writer, T obj)
     {       
         ProtoConverter<T> converter;
         if (ProtoTypeResolver.IsRegistered<T>())
@@ -82,9 +89,7 @@ public static partial class ProtoSerializer
             ProtoTypeResolver.Register(converter);
         }
         
-        var writer = ProtoWriterCache.RentWriter(dest);
         converter.Write(0, WireType.VarInt, writer, obj); // the first two arguments are ignored
         writer.Flush();
-        ProtoWriterCache.ReturnWriter(writer);
     }
 }
