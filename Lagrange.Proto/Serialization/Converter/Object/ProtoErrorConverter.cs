@@ -9,7 +9,7 @@ public class ProtoErrorConverter<T> : ProtoConverter<T>
         ThrowHelper.ThrowInvalidOperationException_FailedDetermineConverter<T>();
     }
 
-    public override int Measure(WireType wireType, T value)
+    public override int Measure(int field, WireType wireType, T value)
     {
         ThrowHelper.ThrowInvalidOperationException_FailedDetermineConverter<T>();
         return 0;

@@ -12,7 +12,7 @@ public class ProtoMemoryCharConverter : ProtoConverter<Memory<char>>
         writer.EncodeString(value.Span);
     }
 
-    public override int Measure(WireType wireType, Memory<char> value)
+    public override int Measure(int field, WireType wireType, Memory<char> value)
     {
         return ProtoHelper.CountString(value.Span);
     }

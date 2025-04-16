@@ -33,7 +33,7 @@ public partial class ProtoSourceGenerator
                     
                     var expr = kv.Value.WireType switch        
                     {
-                        WireType.VarInt when symbol.IsEnumType() => EmitResolvableLengthExpression(kv.Value.WireType, identifier),
+                        WireType.VarInt when symbol.IsEnumType() => EmitResolvableLengthExpression(kv.Key, kv.Value.WireType, identifier),
                         WireType.VarInt => EmitVarIntLengthExpression(identifier),
                         WireType.Fixed32 => SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(4)),
                         WireType.Fixed64 => SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(8)),
@@ -81,12 +81,13 @@ public partial class ProtoSourceGenerator
                 .WithBody(SF.Block(SF.ReturnStatement(syntax)));
         }
         
-        private static ExpressionSyntax EmitResolvableLengthExpression(WireType wireType, string identifier)
+        private static ExpressionSyntax EmitResolvableLengthExpression(int field, WireType wireType, string identifier)
         {
+            var fieldNumber = SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(field));
             var wire = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("global::Lagrange.Proto.Serialization.WireType"), SF.IdentifierName(wireType.ToString()));
             var obj = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("obj"), SF.IdentifierName(identifier));
             var access = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("global::Lagrange.Proto.Primitives.ProtoResolvableUtility"), SF.IdentifierName("Measure"));
-            return SF.InvocationExpression(access).AddArgumentListArguments(SF.Argument(wire), SF.Argument(obj));
+            return SF.InvocationExpression(access).AddArgumentListArguments(SF.Argument(fieldNumber), SF.Argument(wire), SF.Argument(obj));
         }
         
         private static ExpressionSyntax EmitVarIntLengthExpression(string identifier)

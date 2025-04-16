@@ -11,7 +11,7 @@ public class ProtoBytesConverter : ProtoConverter<byte[]>
         writer.WriteRawBytes(value);
     }
 
-    public override int Measure(WireType wireType, byte[] value)
+    public override int Measure(int field, WireType wireType, byte[] value)
     {
         return ProtoHelper.CountBytes(value);
     }

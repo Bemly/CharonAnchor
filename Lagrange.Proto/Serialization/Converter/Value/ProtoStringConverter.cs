@@ -11,7 +11,7 @@ internal class ProtoStringConverter : ProtoConverter<string>
         writer.EncodeString(value);
     }
 
-    public override int Measure(WireType wireType, string value)
+    public override int Measure(int field, WireType wireType, string value)
     {
         return ProtoHelper.CountString(value);
     }

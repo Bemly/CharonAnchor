@@ -24,7 +24,7 @@ internal class ProtoNumberConverter<T> : ProtoConverter<T> where T : unmanaged, 
         }
     }
 
-    public override int Measure(WireType wireType, T value)
+    public override int Measure(int field, WireType wireType, T value)
     {
         return wireType switch
         {

@@ -18,7 +18,7 @@ public unsafe class ProtoEnumConverter<T> : ProtoConverter<T> where T : unmanage
         }
     }
     
-    public override int Measure(WireType wireType, T value)
+    public override int Measure(int field, WireType wireType, T value)
     {
         return ProtoHelper.GetVarIntLength(Unsafe.As<T, long>(ref value));
     }

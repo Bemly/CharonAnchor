@@ -15,7 +15,7 @@ public class ProtoSerializableConverter<T> : ProtoConverter<T> where T : IProtoS
         if (length > 0) T.SerializeHandler(value, writer);
     }
 
-    public override int Measure(WireType wireType, T value)
+    public override int Measure(int field, WireType wireType, T value)
     {
         int length = T.MeasureHandler(value);
         return ProtoHelper.GetVarIntLength(length) + length;

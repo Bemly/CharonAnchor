@@ -24,7 +24,7 @@ public class ProtoObjectConverter<T> : ProtoConverter<T>
         }
     }
 
-    public override int Measure(WireType wireType, T value)
+    public override int Measure(int field, WireType wireType, T value)
     {
         object? boxed = value; // avoid multiple times of boxing
         if (boxed is null) return 0;

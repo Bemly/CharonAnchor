@@ -10,7 +10,7 @@ internal class ProtoBooleanConverter : ProtoConverter<bool>
         writer.WriteRawByte(Unsafe.As<bool, byte>(ref value));
     }
 
-    public override int Measure(WireType wireType, bool value)
+    public override int Measure(int field, WireType wireType, bool value)
     {
         return 1;
     }

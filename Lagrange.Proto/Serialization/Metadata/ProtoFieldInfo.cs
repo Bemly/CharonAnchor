@@ -147,6 +147,6 @@ public class ProtoFieldInfo<T> : ProtoFieldInfo
         Debug.Assert(_typedEffectiveConverter != null && _typedGet != null);
 
         T value = _typedGet.Invoke(target);
-        return _typedEffectiveConverter.Measure(WireType, value);
+        return _typedEffectiveConverter.Measure(Field, WireType, value);
     }
 }

@@ -11,7 +11,7 @@ public class ProtoMemoryByteConverter : ProtoConverter<Memory<byte>>
         writer.WriteRawBytes(value.Span);
     }
 
-    public override int Measure(WireType wireType, Memory<byte> value)
+    public override int Measure(int field, WireType wireType, Memory<byte> value)
     {
         return ProtoHelper.CountBytes(value.Span);
     }

@@ -24,9 +24,9 @@ public static class ProtoResolvableExtension
 public static class ProtoResolvableUtility
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int Measure<T>(WireType wireType, T value)
+    public static int Measure<T>(int field, WireType wireType, T value)
     {
         var converter = ProtoTypeResolver.GetConverter<T>();
-        return converter.Measure(wireType, value);
+        return converter.Measure(field, wireType, value);
     }
 }

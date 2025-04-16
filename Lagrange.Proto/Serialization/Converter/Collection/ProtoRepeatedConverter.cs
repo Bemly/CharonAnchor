@@ -15,14 +15,23 @@ public abstract class ProtoRepeatedConverter<TCollection, TElement> : ProtoConve
         foreach (var item in value)
         {
             writer.EncodeVarInt(tag);
-            writer.EncodeVarInt(_converter.Measure(wireType, item));
+            writer.EncodeVarInt(_converter.Measure(field, wireType, item));
             _converter.Write(field, wireType, writer, item);
         }
     }
 
-    public override int Measure(WireType wireType, TCollection value)
+    public override int Measure(int field, WireType wireType, TCollection value)
     {
-        throw new InvalidOperationException("Should not be called");
+        int tag = (field << 3) | (byte)wireType;
+        int size = ProtoHelper.GetVarIntLength(tag) * (value.Count - 1); // the length of the first item is not counted as it would be added by the caller
+        
+        foreach (var item in value)
+        {
+            size += ProtoHelper.GetVarIntLength(_converter.Measure(field, wireType, item));
+            size += _converter.Measure(field, wireType, item);
+        }
+
+        return size;
     }
 
     public override TCollection Read(int field, WireType wireType, ref ProtoReader reader)
