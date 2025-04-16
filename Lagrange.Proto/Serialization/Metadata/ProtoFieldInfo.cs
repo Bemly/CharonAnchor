@@ -16,6 +16,7 @@ public abstract class ProtoFieldInfo(int field, WireType wireType, Type declared
     public Type PropertyType { get; } = property;
     
     public ProtoNumberHandling NumberHandling { get; init; } = ProtoNumberHandling.Default;
+    // because it is init field, JIT would remove the branch condition if it is used in some branch
     
     internal ProtoConverter EffectiveConverter
     {
@@ -130,7 +131,9 @@ public class ProtoFieldInfo<T> : ProtoFieldInfo
     {
         Debug.Assert(_typedEffectiveConverter != null);
         
-        T value = _typedEffectiveConverter.Read(Field, wireType, ref reader);
+        T value = NumberHandling == ProtoNumberHandling.Default
+            ? _typedEffectiveConverter.Read(Field, wireType, ref reader)
+            : _typedEffectiveConverter.ReadWithNumberHandling(Field, wireType, ref reader, NumberHandling);
         _typedSet?.Invoke(target, value);
     }
 
@@ -139,7 +142,8 @@ public class ProtoFieldInfo<T> : ProtoFieldInfo
         Debug.Assert(_typedEffectiveConverter != null && _typedGet != null);
 
         T value = _typedGet.Invoke(target);
-        _typedEffectiveConverter.Write(Field, WireType, writer, value);
+        if (NumberHandling == ProtoNumberHandling.Default) _typedEffectiveConverter.Write(Field, WireType, writer, value);
+        else _typedEffectiveConverter.WriteWithNumberHandling(Field, WireType, writer, value, NumberHandling);
     }
     
     public override int Measure(object target)

@@ -20,6 +20,18 @@ public abstract class ProtoRepeatedConverter<TCollection, TElement> : ProtoConve
         }
     }
 
+    public override void WriteWithNumberHandling(int field, WireType wireType, ProtoWriter writer, TCollection value, ProtoNumberHandling numberHandling)
+    {
+        int tag = (field << 3) | (byte)wireType;
+        
+        foreach (var item in value)
+        {
+            writer.EncodeVarInt(tag);
+            writer.EncodeVarInt(_converter.Measure(field, wireType, item));
+            _converter.WriteWithNumberHandling(field, wireType, writer, item, numberHandling);
+        }
+    }
+
     public override int Measure(int field, WireType wireType, TCollection value)
     {
         int tag = (field << 3) | (byte)wireType;
@@ -44,6 +56,25 @@ public abstract class ProtoRepeatedConverter<TCollection, TElement> : ProtoConve
         while (tag >> 3 == field)
         {
             var item = _converter.Read(field, wireType, ref reader);
+            Add(item, collection, state);
+            tag = reader.DecodeVarInt<int>();
+        }
+
+        reader.Rewind(ProtoHelper.GetVarIntLength(tag));
+
+        return Finalize(collection, state);
+    }
+    
+    public override TCollection ReadWithNumberHandling(int field, WireType wireType, ref ProtoReader reader, ProtoNumberHandling numberHandling)
+    {
+        var collection = Create();
+        object? state = CreateState();
+        
+        int tag = reader.DecodeVarInt<int>();
+        
+        while (tag >> 3 == field)
+        {
+            var item = _converter.ReadWithNumberHandling(field, wireType, ref reader, numberHandling);
             Add(item, collection, state);
             tag = reader.DecodeVarInt<int>();
         }

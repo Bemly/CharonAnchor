@@ -39,6 +39,24 @@ public static class ProtoHelper
     {
         return (value >> 1) ^ -(value & T.One);
     }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static T ZigZagEncodeFixed<T, TFixed>(T value) 
+        where T : unmanaged, INumber<T>
+        where TFixed : unmanaged, INumber<TFixed>, IShiftOperators<TFixed, int, TFixed>, IBitwiseOperators<TFixed, TFixed, TFixed>
+    {
+        TFixed v = TFixed.CreateTruncating(value);
+        return T.CreateTruncating(ZigZagEncode(v));
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static T ZigZagDecodeFixed<T, TFixed>(T value) 
+        where T : unmanaged, INumber<T>
+        where TFixed : unmanaged, INumber<TFixed>, IShiftOperators<TFixed, int, TFixed>, IBitwiseOperators<TFixed, TFixed, TFixed>
+    {
+        TFixed v = TFixed.CreateTruncating(value);
+        return T.CreateTruncating(ZigZagDecode(v));
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int CountString(ReadOnlySpan<char> str)
