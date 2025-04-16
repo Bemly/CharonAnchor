@@ -71,6 +71,13 @@ public partial class ProtoSourceGenerator
                 token.ThrowIfCancellationRequested();
                 
                 var symbol = Model.GetDeclaredSymbol(member) ?? throw new InvalidOperationException("Unable to get symbol.");
+
+                if (symbol.IsStatic)
+                {
+                    ReportDiagnostics(MustNotBeStatic, member.GetLocation(), symbol.Name, Identifier);
+                    continue;
+                }
+                
                 var attribute = symbol.GetAttributes().First();
                 int field = (int)(attribute.ConstructorArguments[0].Value ?? throw new InvalidOperationException("Unable to get field number."));
                 var type = member switch

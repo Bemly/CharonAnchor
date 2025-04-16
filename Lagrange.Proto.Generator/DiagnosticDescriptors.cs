@@ -57,4 +57,13 @@ public static class DiagnosticDescriptors
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true
     );
+    
+    public static DiagnosticDescriptor MustNotBeStatic { get; } = new(
+        id: "PROTO007",
+        title: "ProtoMember field {0} in class {1} must not be static",
+        messageFormat: "ProtoMember field {0} in class {1} must not be static",
+        category: "Usage",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true
+    );
 }
