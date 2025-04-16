@@ -9,7 +9,7 @@ namespace Lagrange.Proto.Serialization;
 public static partial class ProtoSerializer
 {
     /// <summary>
-    /// Deserialize the ProtoPackable Object from the source buffer, AOT Friendly
+    /// Deserialize the ProtoPackable Object from the source buffer, AOT Friendly, annotate the type with <see cref="ProtoPackableAttribute"/> to enable the source generator
     /// </summary>
     /// <param name="data">The source buffer to read from</param>
     /// <typeparam name="T">The type of the object to deserialize</typeparam>

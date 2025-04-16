@@ -12,7 +12,7 @@ namespace Lagrange.Proto.Serialization;
 public static partial class ProtoSerializer
 {
     /// <summary>
-    /// Serialize the ProtoPackable Object to the destination buffer, AOT Friendly
+    /// Serialize the ProtoPackable Object to the destination buffer, AOT Friendly, annotate the type with <see cref="ProtoPackableAttribute"/> to enable the source generator
     /// </summary>
     /// <param name="dest">The destination buffer to write to</param>
     /// <param name="obj">The object to serialize</param>
@@ -23,7 +23,7 @@ public static partial class ProtoSerializer
     }
     
     /// <summary>
-    /// Serialize the ProtoPackable Object to a byte array, AOT Friendly
+    /// Serialize the ProtoPackable Object to a byte array, AOT Friendly, annotate the type with <see cref="ProtoPackableAttribute"/> to enable the source generator
     /// </summary>
     /// <param name="obj">The object to serialize</param>
     /// <returns>The serialized object as a byte array</returns>
