@@ -7,8 +7,22 @@ namespace Lagrange.Proto.Serialization.Metadata;
 
 public static partial class ProtoTypeResolver
 {
-    private static readonly MethodInfo PopulateFieldInfoMethod = typeof(ProtoTypeResolver).GetMethod(nameof(PopulateFieldInfo), BindingFlags.NonPublic | BindingFlags.Static) ?? throw new InvalidOperationException($"Unable to find method {nameof(PopulateFieldInfo)} in {nameof(ProtoTypeResolver)}");
+    private static MethodInfo PopulateFieldInfoMethod
+    {
+        [RequiresUnreferencedCode(ProtoSerializer.SerializationRequiresDynamicCodeMessage)]
+        get
+        {
+            return _populateFieldInfoMethod ?? Initialize();
+            static MethodInfo Initialize()
+            {
+                var value = typeof(ProtoTypeResolver).GetMethod(nameof(PopulateFieldInfo), BindingFlags.NonPublic | BindingFlags.Static) ?? throw new InvalidOperationException($"Unable to find method {nameof(PopulateFieldInfo)}");
+                return Interlocked.CompareExchange(ref _populateFieldInfoMethod, value, null) ?? value;
+            }
+        }
+    }
 
+    private static MethodInfo? _populateFieldInfoMethod;
+    
     private static MemberAccessor MemberAccessor
     {
         [RequiresUnreferencedCode(ProtoSerializer.SerializationRequiresDynamicCodeMessage)]
