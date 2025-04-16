@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
+using Lagrange.Proto.Serialization;
 
 namespace Lagrange.Proto.Primitives;
 
@@ -330,5 +331,57 @@ public ref struct ProtoReader
         _offset += (firstLen + secondLen) >> 3; // in bits
         
         return (firstNum, secondNum);
+    }
+
+    public void SkipField(WireType wireType)
+    {
+        switch (wireType)
+        {
+            case WireType.Fixed32:
+                SkipFixed32();
+                break;
+            case WireType.Fixed64:
+                SkipFixed64();
+                break;
+            case WireType.VarInt:
+                SkipVarInt();
+                break;
+            case WireType.LengthDelimited:
+                SkipLengthDelimited();
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(wireType), wireType, null);
+        }
+    }
+
+    private void SkipVarInt()
+    {
+        ulong b0 = Unsafe.As<byte, ulong>(ref Unsafe.Add(ref _first, _offset));
+        ulong b1 = Unsafe.As<byte, ulong>(ref Unsafe.Add(ref _first, _offset + 8));
+        ulong msbs0 = ~b0 & ~0x7f7f7f7f7f7f7f7ful;
+        ulong msbs1 = ~b1 & ~0x7f7f7f7f7f7f7f7ful;
+        _offset = msbs0 == 0 ? (BitOperations.TrailingZeroCount(msbs1) + 1 + 64) >> 3 : BitOperations.TrailingZeroCount(msbs0) + 1 >> 3;
+    }
+    
+    private void SkipFixed32()
+    {
+        if (_length - _offset < 4) ThrowHelper.ThrowArgumentOutOfRangeException_NoEnoughSpace(nameof(SkipFixed32), 4, _length - _offset);
+        
+        _offset += sizeof(uint);
+    }
+    
+    private void SkipFixed64()
+    {
+        if (_length - _offset < 8) ThrowHelper.ThrowArgumentOutOfRangeException_NoEnoughSpace(nameof(SkipFixed64), 8, _length - _offset);
+        
+        _offset += sizeof(ulong);
+    }
+    
+    private void SkipLengthDelimited()
+    {
+        int length = DecodeVarInt<int>();
+        if (_length - _offset < length) ThrowHelper.ThrowArgumentOutOfRangeException_NoEnoughSpace(nameof(SkipLengthDelimited), length, _length - _offset);
+        
+        _offset += length;
     }
 }

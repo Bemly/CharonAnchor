@@ -50,9 +50,15 @@ public class ProtoObjectConverter<T> : ProtoConverter<T>
         while (!reader.IsCompleted)
         {
             int tag = reader.DecodeVarIntUnsafe<int>();
-            var fieldInfo = _objectInfo.Fields[tag];
-            fieldInfo.Read(fieldInfo.WireType, ref reader, boxed);
-        } // TODO: Handle unknown fields
+            if (_objectInfo.Fields.TryGetValue(tag, out var fieldInfo))
+            {
+                fieldInfo.Read(fieldInfo.WireType, ref reader, boxed);
+            }
+            else
+            {
+                reader.SkipField((WireType)(tag & 0x07));
+            }
+        }
         
         return target;
     }
