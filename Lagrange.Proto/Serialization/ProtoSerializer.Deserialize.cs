@@ -61,17 +61,42 @@ public static partial class ProtoSerializer
     [RequiresDynamicCode(SerializationRequiresDynamicCodeMessage)]
     private static T DeserializeCore<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(ref ProtoReader reader)
     {
-        ProtoConverter<T> converter;
+        ProtoObjectConverter<T> converter;
         if (ProtoTypeResolver.IsRegistered<T>())
         {
-            converter = ProtoTypeResolver.GetConverter<T>();
+            if (ProtoTypeResolver.GetConverter<T>() as ProtoObjectConverter<T> is not { } c)
+            {
+                converter = new ProtoObjectConverter<T>(ProtoTypeResolver.CreateObjectInfo<T>());
+                ProtoTypeResolver.Register(converter);
+            }
+            else
+            {
+                converter = c;
+            }
         }
         else
         {
-            converter = new ProtoObjectConverter<T>();
-            ProtoTypeResolver.Register(converter);
+            ProtoTypeResolver.Register(converter = new ProtoObjectConverter<T>());
+        }
+        Debug.Assert(converter.ObjectInfo.ObjectCreator != null);
+
+        T target = converter.ObjectInfo.ObjectCreator();
+        var boxed = (object?)target; // avoid multiple times of boxing
+        if (boxed is null) ThrowHelper.ThrowInvalidOperationException_CanNotCreateObject(typeof(T));
+
+        while (!reader.IsCompleted)
+        {
+            int tag = reader.DecodeVarIntUnsafe<int>();
+            if (converter.ObjectInfo.Fields.TryGetValue(tag, out var fieldInfo))
+            {
+                fieldInfo.Read(fieldInfo.WireType, ref reader, boxed);
+            }
+            else
+            {
+                reader.SkipField((WireType)(tag & 0x07));
+            }
         }
         
-        return converter.Read(0, WireType.VarInt, ref reader);
+        return target;
     }
 }

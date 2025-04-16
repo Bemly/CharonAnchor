@@ -88,7 +88,7 @@ public static partial class ProtoTypeResolver
                 return;
             }
             
-            Converter = new ProtoErrorConverter<T>();
+            Converter = ResolveObjectConverter<T>();
             Check<T>.Registered = true;
         }
     }
@@ -147,6 +147,10 @@ public static partial class ProtoTypeResolver
         return null;
     }
     
+    [UnconditionalSuppressMessage("Trimmer", "IL2026")]
+    [UnconditionalSuppressMessage("Trimmer", "IL3050", Justification = "For AOT condition, the generic type definition would always appear in srcgen as it is a member in class serialized.")]
+    private static ProtoConverter<T> ResolveObjectConverter<T>() => RuntimeFeature.IsDynamicCodeSupported ? new ProtoObjectConverter<T>() : new ProtoErrorConverter<T>();
+
     private static class Check<T>
     {
         public static bool Registered { get; set; }

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -7,6 +8,8 @@ using Lagrange.Proto.Serialization;
 
 namespace Lagrange.Proto.Primitives;
 
+[StructLayout(LayoutKind.Auto)]
+[DebuggerDisplay("{DebuggerDisplay,nq}")]
 public ref struct ProtoReader
 {
     private readonly ref byte _first;
@@ -384,4 +387,6 @@ public ref struct ProtoReader
         
         _offset += length;
     }
+    
+    private string DebuggerDisplay => $"Offset: {_offset}, Length: {_length}, Hex : {Convert.ToHexString(MemoryMarshal.CreateSpan(ref _first, _length))}";
 }

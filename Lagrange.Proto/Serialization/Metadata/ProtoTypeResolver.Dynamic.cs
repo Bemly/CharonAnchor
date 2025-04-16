@@ -56,9 +56,10 @@ public static partial class ProtoTypeResolver
             if (field.IsStatic) continue;
             var fieldInfo = CreateFieldInfo(typeof(T), field);
             if (fieldInfo == null) continue;
-            
-            if (fields.ContainsKey(fieldInfo.Field)) ThrowHelper.ThrowInvalidOperationException_DuplicateField(typeof(T), fieldInfo.Field);
-            fields[(fieldInfo.Field << 3) | (byte)fieldInfo.WireType] = fieldInfo;
+
+            int tag = (fieldInfo.Field << 3) | (byte)fieldInfo.WireType;
+            if (fields.ContainsKey(tag)) ThrowHelper.ThrowInvalidOperationException_DuplicateField(typeof(T), fieldInfo.Field);
+            fields[tag] = fieldInfo;
         }
         
         foreach (var field in typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance))
@@ -66,15 +67,16 @@ public static partial class ProtoTypeResolver
             var fieldInfo = CreateFieldInfo(typeof(T), field);
             if (fieldInfo == null) continue;
             
-            if (fields.ContainsKey(fieldInfo.Field)) ThrowHelper.ThrowInvalidOperationException_DuplicateField(typeof(T), fieldInfo.Field);
-            fields[(fieldInfo.Field << 3) | (byte)fieldInfo.WireType] = fieldInfo;
+            int tag = (fieldInfo.Field << 3) | (byte)fieldInfo.WireType;
+            if (fields.ContainsKey(tag)) ThrowHelper.ThrowInvalidOperationException_DuplicateField(typeof(T), fieldInfo.Field);
+            fields[tag] = fieldInfo;
         }
         
         return new ProtoObjectInfo<T>
         {
             ObjectCreator = MemberAccessor.CreateParameterlessConstructor<T>(ctor),
             IgnoreDefaultFields = ignoreDefaultFields,
-            Fields = fields
+            Fields = fields.OrderBy(x => x.Key).ToDictionary(x => x.Key, x => x.Value)
         };
     }
 
@@ -105,7 +107,10 @@ public static partial class ProtoTypeResolver
         if (attribute == null) return null;
         
         var wireType = DetermineWireType(type, attribute.NumberHandling);
-        var fieldInfo = new ProtoFieldInfo<TField>(attribute.Field, wireType, declared);
+        var fieldInfo = new ProtoFieldInfo<TField>(attribute.Field, wireType, declared)
+        {
+            NumberHandling = attribute.NumberHandling
+        };
         
         DetermineAccessors(fieldInfo, member, false);
 

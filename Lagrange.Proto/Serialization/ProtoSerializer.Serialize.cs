@@ -83,18 +83,32 @@ public static partial class ProtoSerializer
     [RequiresDynamicCode(SerializationRequiresDynamicCodeMessage)]
     private static void SerializeCore<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(ProtoWriter writer, T obj)
     {       
-        ProtoConverter<T> converter;
+        ProtoObjectConverter<T> converter;
         if (ProtoTypeResolver.IsRegistered<T>())
         {
-            converter = ProtoTypeResolver.GetConverter<T>();
+            if (ProtoTypeResolver.GetConverter<T>() as ProtoObjectConverter<T> is not { } c)
+            {
+                converter = new ProtoObjectConverter<T>(ProtoTypeResolver.CreateObjectInfo<T>());
+                ProtoTypeResolver.Register(converter);
+            }
+            else
+            {
+                converter = c;
+            }
         }
         else
         {
-            converter = new ProtoObjectConverter<T>();
-            ProtoTypeResolver.Register(converter);
+            ProtoTypeResolver.Register(converter = new ProtoObjectConverter<T>());
         }
         
-        converter.Write(0, WireType.VarInt, writer, obj); // the first two arguments are ignored
+        object? boxed = obj; // avoid multiple times of boxing
+        if (boxed is null) return;
+        
+        foreach (var (tag, info) in converter.ObjectInfo.Fields)
+        {
+            writer.EncodeVarInt(tag);
+            info.Write(writer, boxed);
+        }
         writer.Flush();
     }
 }

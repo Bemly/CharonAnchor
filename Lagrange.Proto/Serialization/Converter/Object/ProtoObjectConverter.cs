@@ -8,16 +8,21 @@ namespace Lagrange.Proto.Serialization.Converter;
 
 [RequiresUnreferencedCode(ProtoSerializer.SerializationUnreferencedCodeMessage)]
 [RequiresDynamicCode(ProtoSerializer.SerializationRequiresDynamicCodeMessage)]
-public class ProtoObjectConverter<T> : ProtoConverter<T>
+internal class ProtoObjectConverter<T>(ProtoObjectInfo<T> objectInfo) : ProtoConverter<T>
 {
-    private readonly ProtoObjectInfo<T> _objectInfo = ProtoTypeResolver.CreateObjectInfo<T>();
+    internal readonly ProtoObjectInfo<T> ObjectInfo = objectInfo;
     
+    internal ProtoObjectConverter() : this(ProtoTypeResolver.CreateObjectInfo<T>()) { }
+
     public override void Write(int field, WireType wireType, ProtoWriter writer, T value)
     {
         object? boxed = value; // avoid multiple times of boxing
         if (boxed is null) return;
         
-        foreach (var (tag, info) in _objectInfo.Fields)
+        int length = Measure(field, wireType, value);
+        writer.EncodeVarInt(length);
+        
+        foreach (var (tag, info) in ObjectInfo.Fields)
         {
             writer.EncodeVarInt(tag);
             info.Write(writer, boxed);
@@ -30,7 +35,7 @@ public class ProtoObjectConverter<T> : ProtoConverter<T>
         if (boxed is null) return 0;
         
         int result = 0;
-        foreach (var (tag, info) in _objectInfo.Fields)
+        foreach (var (tag, info) in ObjectInfo.Fields)
         {
             result += ProtoHelper.GetVarIntLength(tag);
             result += info.Measure(boxed);
@@ -41,22 +46,25 @@ public class ProtoObjectConverter<T> : ProtoConverter<T>
 
     public override T Read(int field, WireType wireType, ref ProtoReader reader)
     {
-        Debug.Assert(_objectInfo.ObjectCreator != null);
+        Debug.Assert(ObjectInfo.ObjectCreator != null);
         
-        T target = _objectInfo.ObjectCreator();
+        T target = ObjectInfo.ObjectCreator();
         var boxed = (object?)target; // avoid multiple times of boxing
         if (boxed is null) ThrowHelper.ThrowInvalidOperationException_CanNotCreateObject(typeof(T));
 
-        while (!reader.IsCompleted)
+        int length = reader.DecodeVarInt<int>();
+        var subSpan = reader.CreateSpan(length);
+        var subReader = new ProtoReader(subSpan);
+        while (!subReader.IsCompleted)
         {
-            int tag = reader.DecodeVarIntUnsafe<int>();
-            if (_objectInfo.Fields.TryGetValue(tag, out var fieldInfo))
+            int tag = subReader.DecodeVarIntUnsafe<int>();
+            if (ObjectInfo.Fields.TryGetValue(tag, out var fieldInfo))
             {
-                fieldInfo.Read(fieldInfo.WireType, ref reader, boxed);
+                fieldInfo.Read(fieldInfo.WireType, ref subReader, boxed);
             }
             else
             {
-                reader.SkipField((WireType)(tag & 0x07));
+                subReader.SkipField((WireType)(tag & 0x07));
             }
         }
         

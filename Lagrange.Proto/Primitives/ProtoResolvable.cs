@@ -7,13 +7,6 @@ namespace Lagrange.Proto.Primitives;
 public static class ProtoResolvableExtension
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T DecodeResolvable<T>(this ref ProtoReader reader, int field, WireType wireType)
-    {
-        var converter = ProtoTypeResolver.GetConverter<T>();
-        return converter.Read(field, wireType, ref reader);
-    }
-    
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void EncodeResolvable<T>(this ProtoWriter writer, int field, WireType wireType, T value)
     {
         var converter = ProtoTypeResolver.GetConverter<T>();

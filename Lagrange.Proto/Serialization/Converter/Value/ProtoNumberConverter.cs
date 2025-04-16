@@ -24,12 +24,11 @@ internal class ProtoNumberConverter<T> : ProtoConverter<T> where T : unmanaged, 
         }
     }
 
-    public override unsafe void WriteWithNumberHandling(int field, WireType wireType, ProtoWriter writer, T value, ProtoNumberHandling numberHandling)
+    public override void WriteWithNumberHandling(int field, WireType wireType, ProtoWriter writer, T value, ProtoNumberHandling numberHandling)
     {
         if ((numberHandling & ProtoNumberHandling.Signed) != 0)
         {
-            T signedValue = sizeof(T) < 4 ? ProtoHelper.ZigZagEncodeFixed<T, int>(value) : ProtoHelper.ZigZagEncodeFixed<T, long>(value);
-            Write(field, wireType, writer, signedValue);
+            Write(field, wireType, writer, ProtoHelper.ZigZagEncode(value));
         }
         else
         {
@@ -59,14 +58,9 @@ internal class ProtoNumberConverter<T> : ProtoConverter<T> where T : unmanaged, 
         };
     }
     
-    public override unsafe T ReadWithNumberHandling(int field, WireType wireType, ref ProtoReader reader, ProtoNumberHandling numberHandling)
+    public override T ReadWithNumberHandling(int field, WireType wireType, ref ProtoReader reader, ProtoNumberHandling numberHandling)
     {
-        if ((numberHandling & ProtoNumberHandling.Signed) != 0)
-        {
-            T signedValue = sizeof(T) < 4 ? ProtoHelper.ZigZagDecodeFixed<T, int>(reader.DecodeVarInt<T>()) : ProtoHelper.ZigZagDecodeFixed<T, long>(reader.DecodeVarInt<T>());
-            return signedValue;
-        }
-
-        return Read(field, wireType, ref reader);
+        T value = Read(field, wireType, ref reader);
+        return (numberHandling & ProtoNumberHandling.Signed) != 0 ? ProtoHelper.ZigZagDecode(value) : value;
     }
 }

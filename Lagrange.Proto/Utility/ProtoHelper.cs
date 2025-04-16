@@ -26,38 +26,34 @@ public static class ProtoHelper
         return BitOperations.TrailingZeroCount(v) / 7 + 1;
     }
     
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe T ZigZagEncode<T>(T value) 
-        where T : unmanaged, INumber<T>, IShiftOperators<T, int, T>, IBitwiseOperators<T, T, T>
+    public static unsafe T ZigZagEncode<T>(T value) where T : unmanaged, INumber<T>
     {
-        return (value << 1) ^ (value >> (sizeof(T) * 8 - 1));
+        if (sizeof(T) < 4)
+        {
+            int v = int.CreateSaturating(value);
+            return T.CreateTruncating((v << 1) ^ (v >> 31));
+        }
+        else
+        {
+            long v = long.CreateSaturating(value);
+            return T.CreateTruncating((v << 1) ^ (v >> 63));
+        }
     }
     
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T ZigZagDecode<T>(T value) 
-        where T : unmanaged, INumber<T>, IShiftOperators<T, int, T>, IBitwiseOperators<T, T, T>
+    public static unsafe T ZigZagDecode<T>(T value) where T : unmanaged, INumber<T>
     {
-        return (value >> 1) ^ -(value & T.One);
+        if (sizeof(T) < 4)
+        {
+            int v = int.CreateSaturating(value);
+            return T.CreateTruncating((v >> 1) ^ -(v & 1));
+        }
+        else
+        {
+            long v = long.CreateSaturating(value);
+            return T.CreateTruncating((v >> 1) ^ -(v & 1));
+        }
     }
     
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T ZigZagEncodeFixed<T, TFixed>(T value) 
-        where T : unmanaged, INumber<T>
-        where TFixed : unmanaged, INumber<TFixed>, IShiftOperators<TFixed, int, TFixed>, IBitwiseOperators<TFixed, TFixed, TFixed>
-    {
-        TFixed v = TFixed.CreateTruncating(value);
-        return T.CreateTruncating(ZigZagEncode(v));
-    }
-    
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T ZigZagDecodeFixed<T, TFixed>(T value) 
-        where T : unmanaged, INumber<T>
-        where TFixed : unmanaged, INumber<TFixed>, IShiftOperators<TFixed, int, TFixed>, IBitwiseOperators<TFixed, TFixed, TFixed>
-    {
-        TFixed v = TFixed.CreateTruncating(value);
-        return T.CreateTruncating(ZigZagDecode(v));
-    }
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int CountString(ReadOnlySpan<char> str)
     {
