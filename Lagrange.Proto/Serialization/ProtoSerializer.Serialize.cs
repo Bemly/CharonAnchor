@@ -29,7 +29,12 @@ public static partial class ProtoSerializer
     /// <returns>The serialized object as a byte array</returns>
     public static byte[] SerializeProtoPackable<T>(T obj) where T : IProtoSerializable<T>
     {
-        throw new NotImplementedException();
+        var writer = ProtoWriterCache.RentWriterAndBuffer(512, out var buffer);
+        SerializeProtoPackableCore(buffer, obj);
+        var written = buffer.ToArray();
+        ProtoWriterCache.ReturnWriterAndBuffer(writer, buffer);
+        
+        return written;
     }
     
     private static void SerializeProtoPackableCore<T>(IBufferWriter<byte> dest, T obj) where T : IProtoSerializable<T>
@@ -69,7 +74,7 @@ public static partial class ProtoSerializer
         var writer = ProtoWriterCache.RentWriterAndBuffer(512, out var buffer);
         SerializeCore(writer, obj);
         var written = buffer.ToArray();
-        ProtoWriterCache.ReturnWriter(writer);
+        ProtoWriterCache.ReturnWriterAndBuffer(writer, buffer);
         
         return written;
     }
