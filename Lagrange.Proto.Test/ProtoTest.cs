@@ -16,7 +16,7 @@ public class ProtoTest
     {
         var test = new Test
         {
-            Test1 = 1,
+            Test1 = 114514,
             Test2 = "Test",
             Test3 = 3.14f,
             Test4 = 3.14,
@@ -38,7 +38,8 @@ public class ProtoTest
             Test10 = new byte[] { 1, 2, 3 },
             Test11 = new char[] { '1', '2', '3' },
             Test12 = new char[] { '1', '2', '3' },
-            Test13 = true
+            Test13 = true,
+            Test14 = 1234567890123456789
         };
         
         _test = test;
@@ -82,6 +83,7 @@ public class ProtoTest
             Assert.That(obj.Test11.ToArray(), Is.EqualTo(_test.Test11.ToArray()));
             Assert.That(obj.Test12.ToArray(), Is.EqualTo(_test.Test12.ToArray()));
             Assert.That(obj.Test13, Is.EqualTo(_test.Test13));
+            Assert.That(obj.Test14, Is.EqualTo(_test.Test14));
         });
     }
     
@@ -112,6 +114,7 @@ public class ProtoTest
             Assert.That(obj.Test11.ToArray(), Is.EqualTo(_test.Test11.ToArray()));
             Assert.That(obj.Test12.ToArray(), Is.EqualTo(_test.Test12.ToArray()));
             Assert.That(obj.Test13, Is.EqualTo(_test.Test13));
+            Assert.That(obj.Test14, Is.EqualTo(_test.Test14));
         });
     }
 }
@@ -145,6 +148,8 @@ public partial class Test
     [ProtoMember(12)] public Memory<char> Test12 { get; set; } = Array.Empty<char>();
     
     [ProtoMember(13)] public bool Test13 { get; set; } = true;
+    
+    [ProtoMember(14)] public long Test14 { get; set; }
 }
 
 
