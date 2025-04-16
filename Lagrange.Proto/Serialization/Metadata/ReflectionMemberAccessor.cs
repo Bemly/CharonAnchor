@@ -19,7 +19,19 @@ internal sealed class ReflectionMemberAccessor : MemberAccessor
             ? type.IsValueType ? () => Activator.CreateInstance(type, nonPublic: false)! : null
             : () => ctorInfo.Invoke(null);
     }
-    
+
+    public override Func<T>? CreateParameterlessConstructor<T>(ConstructorInfo? constructorInfo)
+    {
+        Debug.Assert(typeof(T) != null);
+        Debug.Assert(constructorInfo is null || constructorInfo.GetParameters().Length == 0);
+
+        if (typeof(T).IsAbstract) return null;
+
+        return constructorInfo is null
+            ? typeof(T).IsValueType ? Activator.CreateInstance<T> : null
+            : () => (T)constructorInfo.Invoke(null);
+    }
+
     public override Func<object, TProperty> CreatePropertyGetter<TProperty>(PropertyInfo propertyInfo)
     {
         var getMethodInfo = propertyInfo.GetMethod!;

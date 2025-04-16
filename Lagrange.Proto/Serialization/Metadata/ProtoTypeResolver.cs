@@ -10,26 +10,6 @@ public static partial class ProtoTypeResolver
 {
     private static readonly ConcurrentDictionary<Type, ProtoConverter> Converters = new(Environment.ProcessorCount, 150);
     
-    private static MemberAccessor? _memberAccessor;
-
-    internal static MemberAccessor MemberAccessor
-    {
-        [RequiresUnreferencedCode(ProtoSerializer.SerializationRequiresDynamicCodeMessage)]
-        [RequiresDynamicCode(ProtoSerializer.SerializationRequiresDynamicCodeMessage)]
-        get
-        {
-            return _memberAccessor ?? Initialize();
-            static MemberAccessor Initialize()
-            {
-                MemberAccessor value = RuntimeFeature.IsDynamicCodeSupported ?
-                    new ReflectionEmitCachingMemberAccessor() : 
-                    new ReflectionMemberAccessor();
-
-                return Interlocked.CompareExchange(ref _memberAccessor, value, null) ?? value;
-            }
-        }
-    }
-
     static ProtoTypeResolver()
     {
         RegisterWellKnownTypes();

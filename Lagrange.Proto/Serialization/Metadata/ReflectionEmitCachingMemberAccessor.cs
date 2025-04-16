@@ -17,6 +17,11 @@ internal sealed partial class ReflectionEmitCachingMemberAccessor() : MemberAcce
             key: (nameof(CreateParameterlessConstructor), type, ctorInfo),
             valueFactory: key => _sourceAccessor.CreateParameterlessConstructor(key.declaringType, (ConstructorInfo?)key.member));
 
+    public override Func<T>? CreateParameterlessConstructor<T>(ConstructorInfo? constructorInfo) =>
+        _cache.GetOrAdd(
+            key: (nameof(CreateParameterlessConstructor), typeof(T), constructorInfo),
+            valueFactory: key => _sourceAccessor.CreateParameterlessConstructor<T>((ConstructorInfo)key.member!));
+
     public override Func<object, TProperty> CreateFieldGetter<TProperty>(FieldInfo fieldInfo) =>
         _cache.GetOrAdd(
             key: (nameof(CreateFieldGetter), typeof(TProperty), fieldInfo),

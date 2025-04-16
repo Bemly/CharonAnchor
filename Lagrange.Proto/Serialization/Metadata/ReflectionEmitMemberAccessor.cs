@@ -46,19 +46,35 @@ internal sealed class ReflectionEmitMemberAccessor : MemberAccessor
 
         return CreateDelegate<Func<object>>(dynamicMethod);
     }
-    
-    private static DynamicMethod CreateAddMethodDelegate([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] Type collectionType)
-    {
-        var realMethod = (collectionType.GetMethod("Push") ?? collectionType.GetMethod("Enqueue"))!;
-        var dynamicMethod = new DynamicMethod(realMethod.Name, typeof(void), [collectionType, ObjectType], typeof(ReflectionEmitMemberAccessor).Module, skipVisibility: true);
-        var il = dynamicMethod.GetILGenerator();
 
-        il.Emit(OpCodes.Ldarg_0);
-        il.Emit(OpCodes.Ldarg_1);
-        il.Emit(OpCodes.Callvirt, realMethod);
+    public override Func<T>? CreateParameterlessConstructor<T>(ConstructorInfo? constructorInfo)
+    {
+        Debug.Assert(constructorInfo is null || constructorInfo.GetParameters().Length == 0);
+
+        var type = typeof(T);
+        if (type.IsAbstract) return null;
+        if (constructorInfo is null && !type.IsValueType) return null;
+
+        var dynamicMethod = new DynamicMethod(ConstructorInfo.ConstructorName, type, Type.EmptyTypes, typeof(ReflectionEmitMemberAccessor).Module, skipVisibility: true);
+        var il = dynamicMethod.GetILGenerator();
+        if (constructorInfo is null)
+        {
+            Debug.Assert(type.IsValueType);
+
+            var local = il.DeclareLocal(type);
+
+            il.Emit(OpCodes.Ldloca_S, local);
+            il.Emit(OpCodes.Initobj, type);
+            il.Emit(OpCodes.Ldloc, local);
+        }
+        else
+        {
+            il.Emit(OpCodes.Newobj, constructorInfo);
+        }
+        
         il.Emit(OpCodes.Ret);
 
-        return dynamicMethod;
+        return CreateDelegate<Func<T>>(dynamicMethod);
     }
     
     public override Func<object, TProperty> CreatePropertyGetter<TProperty>(PropertyInfo propertyInfo) =>
