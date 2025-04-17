@@ -11,42 +11,6 @@ internal sealed class ReflectionEmitMemberAccessor : MemberAccessor
 {
     private static readonly Type ObjectType = typeof(object);
     
-    public Func<object>? CreateParameterlessConstructor(Type type, ConstructorInfo? constructorInfo)
-    {
-        Debug.Assert(type != null);
-        Debug.Assert(constructorInfo is null || constructorInfo.GetParameters().Length == 0);
-
-        if (type.IsAbstract) return null;
-        if (constructorInfo is null && !type.IsValueType) return null;
-
-        var dynamicMethod = new DynamicMethod(ConstructorInfo.ConstructorName, ObjectType, Type.EmptyTypes, typeof(ReflectionEmitMemberAccessor).Module, skipVisibility: true);
-        var il = dynamicMethod.GetILGenerator();
-
-        if (constructorInfo is null)
-        {
-            Debug.Assert(type.IsValueType);
-
-            var local = il.DeclareLocal(type);
-
-            il.Emit(OpCodes.Ldloca_S, local);
-            il.Emit(OpCodes.Initobj, type);
-            il.Emit(OpCodes.Ldloc, local);
-            il.Emit(OpCodes.Box, type);
-        }
-        else
-        {
-            il.Emit(OpCodes.Newobj, constructorInfo);
-            if (type.IsValueType)
-            {
-                il.Emit(OpCodes.Box, type);
-            }
-        }
-
-        il.Emit(OpCodes.Ret);
-
-        return CreateDelegate<Func<object>>(dynamicMethod);
-    }
-
     public override Func<T>? CreateParameterlessConstructor<T>(ConstructorInfo? constructorInfo)
     {
         Debug.Assert(constructorInfo is null || constructorInfo.GetParameters().Length == 0);

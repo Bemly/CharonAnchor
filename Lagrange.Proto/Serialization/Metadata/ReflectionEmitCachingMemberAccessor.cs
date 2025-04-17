@@ -11,12 +11,7 @@ internal sealed partial class ReflectionEmitCachingMemberAccessor() : MemberAcce
     private readonly Cache<(string id, Type declaringType, MemberInfo? member)> _cache = new(slidingExpiration: TimeSpan.FromMilliseconds(1000), evictionInterval: TimeSpan.FromMilliseconds(200));
 
     public override void Clear() => _cache.Clear();
-
-    public Func<object>? CreateParameterlessConstructor(Type type, ConstructorInfo? ctorInfo) =>
-        _cache.GetOrAdd(
-            key: (nameof(CreateParameterlessConstructor), type, ctorInfo),
-            valueFactory: key => _sourceAccessor.CreateParameterlessConstructor(key.declaringType, (ConstructorInfo?)key.member));
-
+    
     public override Func<T>? CreateParameterlessConstructor<T>(ConstructorInfo? constructorInfo) =>
         _cache.GetOrAdd(
             key: (nameof(CreateParameterlessConstructor), typeof(T), constructorInfo),
