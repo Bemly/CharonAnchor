@@ -2,13 +2,12 @@
 
 namespace Lagrange.Proto.Test;
 
-
+[TestFixture]
 public class UnknownTest
 {
     private Test _test;
     
     private byte[] _bytes;
-
     
     [SetUp]
     public void Setup()

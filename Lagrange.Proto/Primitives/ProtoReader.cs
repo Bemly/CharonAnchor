@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -388,5 +389,6 @@ public ref struct ProtoReader
         _offset += length;
     }
     
+    [ExcludeFromCodeCoverage]
     private string DebuggerDisplay => $"Offset: {_offset}, Length: {_length}, Hex : {Convert.ToHexString(MemoryMarshal.CreateSpan(ref _first, _length))}";
 }

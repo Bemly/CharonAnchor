@@ -2,7 +2,7 @@
 
 namespace Lagrange.Proto.Test;
 
-
+[TestFixture]
 public class ProtoTest
 {
     private Test _test;
