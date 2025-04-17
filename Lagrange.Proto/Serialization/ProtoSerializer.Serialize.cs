@@ -45,7 +45,6 @@ public static partial class ProtoSerializer
 
         T.SerializeHandler(obj, writer);
         writer.Flush();
-        ProtoWriterCache.ReturnWriter(writer);
     }
     
     /// <summary>
