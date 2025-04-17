@@ -17,6 +17,12 @@ public static class TypeExtension
     {
         return SystemAssemblies.Contains(assembly.Name);
     }
+    
+    public static bool IsRepeatedType(this ITypeSymbol symbol)
+    {
+        return symbol is INamedTypeSymbol { IsGenericType: true, ConstructedFrom.Name: "List" } namedTypeSymbol && namedTypeSymbol.ContainingNamespace.ToString() == "System.Collections.Generic" || 
+               symbol is IArrayTypeSymbol;
+    }
 
     public static bool IsIntegerType(this ITypeSymbol symbol)
     {

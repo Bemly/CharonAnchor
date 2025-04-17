@@ -2,7 +2,7 @@ using Lagrange.Proto.Primitives;
 using Lagrange.Proto.Serialization.Metadata;
 using Lagrange.Proto.Utility;
 
-namespace Lagrange.Proto.Serialization.Converter.Collection;
+namespace Lagrange.Proto.Serialization.Converter;
 
 public abstract class ProtoRepeatedConverter<TCollection, TElement> : ProtoConverter<TCollection> where TCollection : ICollection<TElement>
 {

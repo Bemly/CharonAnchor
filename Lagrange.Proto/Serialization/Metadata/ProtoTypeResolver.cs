@@ -23,6 +23,7 @@ public static partial class ProtoTypeResolver
     private static readonly Dictionary<Type, Type> KnownGenericTypeConverters = new(3)
     {
         { typeof(Nullable<>), typeof(ProtoNullableConverter<>) },
+        { typeof(List<>), typeof(ProtoListConverter<>) }
     };
     
     private static readonly Dictionary<Type, Type> KnownGenericInterfaceConverters = new(3)
@@ -87,6 +88,14 @@ public static partial class ProtoTypeResolver
                 Check<T>.Registered = true;
                 return;
             }
+
+            if (type.IsArray && ResolveArrayConverter<T>(type) is { } arrayConverter)
+            {
+                Converters[type] = arrayConverter;
+                Converter = arrayConverter;
+                Check<T>.Registered = true;
+                return;
+            }
             
             Converter = ResolveObjectConverter<T>();
             Check<T>.Registered = true;
@@ -144,6 +153,20 @@ public static partial class ProtoTypeResolver
             }
         }
 
+        return null;
+    }
+    
+    [UnconditionalSuppressMessage("Trimmer", "IL2055")]
+    [UnconditionalSuppressMessage("Trimmer", "IL2067")]
+    [UnconditionalSuppressMessage("Trimmer", "IL2070", Justification = "The interface would always be preserve")]
+    [UnconditionalSuppressMessage("Trimmer", "IL3050", Justification = "The generic type definition would always appear in metadata as it is a member in class serialized.")]
+    private static ProtoConverter<T>? ResolveArrayConverter<T>(Type type)
+    {
+        if (type.GetElementType() is { } elementType)
+        { 
+            var converter = typeof(ProtoArrayConverter<>).MakeGenericType(elementType);
+            return (ProtoConverter<T>)Activator.CreateInstance(converter)!;
+        }
         return null;
     }
     

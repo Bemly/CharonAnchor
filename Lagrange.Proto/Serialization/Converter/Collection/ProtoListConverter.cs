@@ -1,4 +1,4 @@
-namespace Lagrange.Proto.Serialization.Converter.Collection;
+namespace Lagrange.Proto.Serialization.Converter;
 
 public class ProtoListConverter<T> : ProtoRepeatedConverter<List<T>, T>
 {

@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace Lagrange.Proto.Serialization.Converter.Collection;
+namespace Lagrange.Proto.Serialization.Converter;
 
 public class ProtoArrayConverter<T> : ProtoRepeatedConverter<T[], T>
 {

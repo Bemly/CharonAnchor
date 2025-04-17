@@ -24,6 +24,17 @@ public static class ProtoHelper
     
     public static WireType GetWireType(ITypeSymbol symbol)
     {
+        if (symbol is IArrayTypeSymbol arrayType) return GetWireType(arrayType.ElementType);
+        
+        if (symbol is INamedTypeSymbol { IsGenericType: true } namedType)
+        {
+            var genericType = namedType.ConstructedFrom;
+            if (genericType.Name == "List" && genericType.ContainingNamespace.ToString() == "System.Collections.Generic")
+            {
+                return GetWireType(namedType.TypeArguments[0]);
+            }
+        }
+        
         if (symbol.IsIntegerType() || symbol.IsEnumType() || symbol.SpecialType == SpecialType.System_Boolean) return WireType.VarInt;
         if (symbol.SpecialType == SpecialType.System_Single) return WireType.Fixed32;
         if (symbol.SpecialType == SpecialType.System_Double) return WireType.Fixed64;
