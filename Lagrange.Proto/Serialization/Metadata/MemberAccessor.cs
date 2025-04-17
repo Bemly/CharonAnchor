@@ -4,8 +4,6 @@ namespace Lagrange.Proto.Serialization.Metadata;
 
 internal abstract class MemberAccessor
 {
-    public abstract Func<object>? CreateParameterlessConstructor(Type type, ConstructorInfo? constructorInfo);
-    
     public abstract Func<T>? CreateParameterlessConstructor<T>(ConstructorInfo? constructorInfo);
 
     public abstract Func<object, TProperty> CreatePropertyGetter<TProperty>(PropertyInfo propertyInfo);

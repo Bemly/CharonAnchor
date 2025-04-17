@@ -8,7 +8,7 @@ namespace Lagrange.Proto.Serialization.Metadata;
 [RequiresUnreferencedCode(ProtoSerializer.SerializationRequiresDynamicCodeMessage)]
 internal sealed class ReflectionMemberAccessor : MemberAccessor
 {
-    public override Func<object>? CreateParameterlessConstructor(Type type, ConstructorInfo? ctorInfo)
+    public Func<object>? CreateParameterlessConstructor(Type type, ConstructorInfo? ctorInfo)
     {
         Debug.Assert(type != null);
         Debug.Assert(ctorInfo is null || ctorInfo.GetParameters().Length == 0);

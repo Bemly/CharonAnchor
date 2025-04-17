@@ -11,7 +11,7 @@ internal sealed class ReflectionEmitMemberAccessor : MemberAccessor
 {
     private static readonly Type ObjectType = typeof(object);
     
-    public override Func<object>? CreateParameterlessConstructor(Type type, ConstructorInfo? constructorInfo)
+    public Func<object>? CreateParameterlessConstructor(Type type, ConstructorInfo? constructorInfo)
     {
         Debug.Assert(type != null);
         Debug.Assert(constructorInfo is null || constructorInfo.GetParameters().Length == 0);
