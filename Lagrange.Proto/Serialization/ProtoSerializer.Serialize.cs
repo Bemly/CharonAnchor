@@ -19,7 +19,9 @@ public static partial class ProtoSerializer
     /// <typeparam name="T">The type of the object to serialize</typeparam>
     public static void SerializeProtoPackable<T>(IBufferWriter<byte> dest, T obj) where T : IProtoSerializable<T>
     {
-        SerializeProtoPackableCore(dest, obj);
+        var writer = ProtoWriterCache.RentWriter(dest);
+        SerializeProtoPackableCore(writer, obj);
+        ProtoWriterCache.ReturnWriter(writer);
     }
     
     /// <summary>
@@ -30,18 +32,17 @@ public static partial class ProtoSerializer
     public static byte[] SerializeProtoPackable<T>(T obj) where T : IProtoSerializable<T>
     {
         var writer = ProtoWriterCache.RentWriterAndBuffer(512, out var buffer);
-        SerializeProtoPackableCore(buffer, obj);
+        SerializeProtoPackableCore(writer, obj);
         var written = buffer.ToArray();
         ProtoWriterCache.ReturnWriterAndBuffer(writer, buffer);
         
         return written;
     }
     
-    private static void SerializeProtoPackableCore<T>(IBufferWriter<byte> dest, T obj) where T : IProtoSerializable<T>
+    private static void SerializeProtoPackableCore<T>(ProtoWriter writer, T obj) where T : IProtoSerializable<T>
     {
-        ProtoTypeResolver.Register(new ProtoSerializableConverter<T>());
+        if (!ProtoTypeResolver.IsRegistered<T>()) ProtoTypeResolver.Register(new ProtoSerializableConverter<T>());
 
-        var writer = ProtoWriterCache.RentWriter(dest);
         T.SerializeHandler(obj, writer);
         writer.Flush();
         ProtoWriterCache.ReturnWriter(writer);
