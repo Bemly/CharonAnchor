@@ -4,7 +4,7 @@ using Lagrange.Proto.Primitives;
 namespace Lagrange.Proto.Test;
 
 [TestFixture]
-public class WriterTest
+public class EncoderTest
 {
     private long _number1;
 
@@ -92,6 +92,28 @@ public class WriterTest
         {
             Assert.That(number1, Is.EqualTo(_number1));
             Assert.That(number2, Is.EqualTo(_number2));
+        });
+    }
+
+    [Test]
+    public void TestUnsafeRead()
+    {
+        Span<byte> longerBuffer = stackalloc byte[256];
+        _longInt.AsSpan().CopyTo(longerBuffer);
+        
+        var reader = new ProtoReader(longerBuffer);
+        var (number1, number2) = reader.DecodeVarIntUnsafe<long, int>(longerBuffer);
+        
+        reader = new ProtoReader(longerBuffer);
+        long number12 = reader.DecodeVarInt<long>();
+        int number22 = reader.DecodeVarInt<int>();
+        
+        Assert.Multiple(() =>
+        {
+            Assert.That(number1, Is.EqualTo(_number1));
+            Assert.That(number2, Is.EqualTo(_number2));
+            Assert.That(number12, Is.EqualTo(_number1));
+            Assert.That(number22, Is.EqualTo(_number2));
         });
     }
 }
