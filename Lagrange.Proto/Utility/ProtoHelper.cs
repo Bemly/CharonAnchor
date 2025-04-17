@@ -29,10 +29,11 @@ public static class ProtoHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int GetVarIntLength<T>(T value) where T : unmanaged, INumberBase<T>
     {
-        ulong v = ulong.CreateTruncating(value);
+        long v = long.CreateTruncating(value);
         return BitOperations.TrailingZeroCount(v) / 7 + 1;
     }
     
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe T ZigZagEncode<T>(T value) where T : unmanaged, INumber<T>
     {
         if (sizeof(T) < 4)
@@ -47,6 +48,7 @@ public static class ProtoHelper
         }
     }
     
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe T ZigZagDecode<T>(T value) where T : unmanaged, INumber<T>
     {
         if (sizeof(T) < 4)
