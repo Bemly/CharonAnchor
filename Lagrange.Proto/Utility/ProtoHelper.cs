@@ -6,16 +6,23 @@ namespace Lagrange.Proto.Utility;
 
 public static class ProtoHelper
 {
-    /// <summary>
-    /// This function should only be used when writing the string.
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static (int, int) GetVarIntRange(int length) => length switch
+    internal static int GetVarIntMin(int length) => length switch
     {
-        1 => (1 << 0, (1 << 7) - 1),
-        2 => (1 << 7, (1 << 14) - 1),
-        3 => (1 << 14, (1 << 21) - 1),
-        4 => (1 << 21, (1 << 28) - 1),
+        1 => (1 << 0),
+        2 => (1 << 7),
+        3 => (1 << 14),
+        4 => (1 << 21),
+        _ => throw new ArgumentOutOfRangeException(nameof(length), "Invalid length for VarInt.")
+    };
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static int GetVarIntMax(int length) => length switch
+    {
+        1 => (1 << 7) - 1,
+        2 => (1 << 14) - 1,
+        3 => (1 << 21) - 1,
+        4 => (1 << 28) - 1,
         _ => throw new ArgumentOutOfRangeException(nameof(length), "Invalid length for VarInt.")
     };
 
