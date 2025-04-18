@@ -24,7 +24,7 @@ public static class ProtoHelper
     
     public static WireType GetWireType(ITypeSymbol symbol)
     {
-        if (symbol is IArrayTypeSymbol arrayType) return GetWireType(arrayType.ElementType);
+        if (symbol is IArrayTypeSymbol { ElementType.SpecialType: not SpecialType.System_Byte } arrayType) return GetWireType(arrayType.ElementType);
         
         if (symbol is INamedTypeSymbol { IsGenericType: true } namedType)
         {
