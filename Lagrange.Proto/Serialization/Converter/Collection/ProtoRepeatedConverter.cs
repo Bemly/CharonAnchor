@@ -17,8 +17,6 @@ public abstract class ProtoRepeatedConverter<TCollection, TElement> : ProtoConve
         {
             if (first) first = false;
             else writer.EncodeVarInt(tag);
-
-            if (wireType == WireType.LengthDelimited) writer.EncodeVarInt(_converter.Measure(field, wireType, item));
             _converter.Write(field, wireType, writer, item);
         }
     }
@@ -32,8 +30,6 @@ public abstract class ProtoRepeatedConverter<TCollection, TElement> : ProtoConve
         {
             if (first) first = false;
             else writer.EncodeVarInt(tag);
-
-            if (wireType == WireType.LengthDelimited) writer.EncodeVarInt(_converter.Measure(field, wireType, item));
             _converter.WriteWithNumberHandling(field, wireType, writer, item, numberHandling);
         }
     }
@@ -57,16 +53,14 @@ public abstract class ProtoRepeatedConverter<TCollection, TElement> : ProtoConve
         var collection = Create();
         object? state = CreateState();
         
-        int tag;
         while (true)
         {
             var item = _converter.Read(field, wireType, ref reader);
             Add(item, collection, state);
-            tag = reader.DecodeVarInt<int>();
-            if (tag >> 3 != field) break;
+            if (reader.DecodeVarInt<int>() >> 3 != field) break;
         }
 
-        reader.Rewind(-ProtoHelper.GetVarIntLength(tag));
+        reader.Rewind(-ProtoHelper.GetVarIntLength((field << 3) | (byte)wireType));
 
         return Finalize(collection, state);
     }
@@ -76,16 +70,14 @@ public abstract class ProtoRepeatedConverter<TCollection, TElement> : ProtoConve
         var collection = Create();
         object? state = CreateState();
 
-        int tag;
         while (true)
         {
             var item = _converter.ReadWithNumberHandling(field, wireType, ref reader, numberHandling);
             Add(item, collection, state);
-            tag = reader.DecodeVarInt<int>();
-            if (tag >> 3 != field) break;
+            if (reader.DecodeVarInt<int>() >> 3 != field) break;
         }
 
-        reader.Rewind(ProtoHelper.GetVarIntLength(tag));
+        reader.Rewind(-ProtoHelper.GetVarIntLength((field << 3) | (byte)wireType));
 
         return Finalize(collection, state);
     }

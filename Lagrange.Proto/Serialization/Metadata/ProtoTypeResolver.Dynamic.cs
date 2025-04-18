@@ -153,6 +153,13 @@ public static partial class ProtoTypeResolver
     private static WireType DetermineWireType(Type fieldType, ProtoNumberHandling numberHandling)
     {
         if (fieldType.IsEnum) fieldType = Enum.GetUnderlyingType(fieldType);
+        
+        if (fieldType.IsArray && fieldType.GetElementType() != typeof(byte)) fieldType = fieldType.GetElementType()!;
+
+        if (fieldType.IsGenericType && fieldType.GetGenericTypeDefinition() == typeof(List<>))
+        {
+            fieldType = fieldType.GetGenericArguments()[0];
+        }
 
         if (fieldType is { IsValueType: true, IsGenericType: true })
         {
