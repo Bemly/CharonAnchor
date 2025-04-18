@@ -20,8 +20,8 @@ public static class TypeExtension
     
     public static bool IsRepeatedType(this ITypeSymbol symbol)
     {
-        return symbol is INamedTypeSymbol { IsGenericType: true, ConstructedFrom.Name: "List" } namedTypeSymbol && namedTypeSymbol.ContainingNamespace.ToString() == "System.Collections.Generic" || 
-               symbol is IArrayTypeSymbol;
+        return symbol is INamedTypeSymbol { IsGenericType: true, ConstructedFrom.Name: "List" } namedTypeSymbol && namedTypeSymbol.ContainingNamespace.ToString() == "System.Collections.Generic" ||
+               (symbol is IArrayTypeSymbol arrayType && arrayType.ElementType.SpecialType != SpecialType.System_Byte);
     }
 
     public static bool IsIntegerType(this ITypeSymbol symbol)
