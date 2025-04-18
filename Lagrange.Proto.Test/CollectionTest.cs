@@ -50,7 +50,8 @@ public class CollectionTest
 [ProtoPackable]
 public partial class TestCollection
 {
-    [ProtoMember(1)] public int[] Test1 { get; set; } = [];
+    [ProtoMember(1, NumberHandling = ProtoNumberHandling.Signed | ProtoNumberHandling.Fixed64)] 
+    public int[] Test1 { get; set; } = [];
     
     [ProtoMember(2)] public string[] Test2 { get; set; } = [];
     
