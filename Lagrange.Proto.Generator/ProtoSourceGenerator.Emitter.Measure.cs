@@ -31,19 +31,27 @@ public partial class ProtoSourceGenerator
                     
                     var symbol = parser.Model.GetTypeSymbol(type);
                     string identifier = symbol.IsValueType && type.IsNullableType() ? name + ".Value" : name;
-                    
-                    var expr = kv.Value.WireType switch        
+
+                    ExpressionSyntax expr;
+                    if (symbol.IsRepeatedType())
                     {
-                        WireType.VarInt when symbol.IsEnumType() => EmitResolvableLengthExpression(kv.Key, kv.Value.WireType, identifier),
-                        WireType.VarInt when symbol.SpecialType == SpecialType.System_Boolean => SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(1)),
-                        WireType.VarInt => EmitVarIntLengthExpression(identifier),
-                        WireType.Fixed32 => SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(4)),
-                        WireType.Fixed64 => SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(8)),
-                        WireType.LengthDelimited when type.IsStringType() => EmitStringLengthExpression(identifier),
-                        WireType.LengthDelimited when type.IsByteArrayType() => EmitBytesLengthExpression(identifier),
-                        WireType.LengthDelimited when symbol.IsUserDefinedType() => EmitProtoPackableLengthExpression(identifier),
-                        _ => EmitResolvableLengthExpression(kv.Key, kv.Value.WireType, identifier)
-                    };
+                        expr = EmitResolvableLengthExpression(kv.Key, kv.Value.WireType, identifier);
+                    }
+                    else
+                    {
+                        expr = kv.Value.WireType switch
+                        {
+                            WireType.VarInt when symbol.IsEnumType() => EmitResolvableLengthExpression(kv.Key, kv.Value.WireType, identifier),
+                            WireType.VarInt when symbol.SpecialType == SpecialType.System_Boolean => SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(1)),
+                            WireType.VarInt => EmitVarIntLengthExpression(identifier),
+                            WireType.Fixed32 => SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(4)),
+                            WireType.Fixed64 => SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(8)),
+                            WireType.LengthDelimited when type.IsStringType() => EmitStringLengthExpression(identifier),
+                            WireType.LengthDelimited when type.IsByteArrayType() => EmitBytesLengthExpression(identifier),
+                            WireType.LengthDelimited when symbol.IsUserDefinedType() => EmitProtoPackableLengthExpression(identifier),
+                            _ => EmitResolvableLengthExpression(kv.Key, kv.Value.WireType, identifier)
+                        };
+                    }
                     
                     var tag = ProtoHelper.EncodeVarInt((kv.Key << 3) | (byte)kv.Value.WireType);
                     if (symbol.IsValueType && !type.IsNullableType())

@@ -1,6 +1,7 @@
 using Lagrange.Proto.Generator.Entity;
 using Lagrange.Proto.Generator.Utility.Extension;
 using Lagrange.Proto.Serialization;
+using Microsoft.CodeAnalysis;
 using SF = Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using SK = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
 
@@ -51,29 +52,37 @@ namespace Lagrange.Proto.Generator
                     var symbol = parser.Model.GetTypeSymbol(kv.Value.TypeSyntax);
                     var method = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.ParseTypeName("global::Lagrange.Proto.Serialization.Metadata.ProtoTypeResolver"), SF.IdentifierName("Register"));
 
+                    TypeSyntax? type = null;
                     if (symbol.IsEnumType())
                     {
-                        var type = SF.ParseTypeName($"global::Lagrange.Proto.Serialization.Converter.ProtoEnumConverter<{kv.Value.TypeSyntax}>");
-                        var @object = SF.ObjectCreationExpression(type).WithArgumentList(SF.ArgumentList());
-                        statements.Add(kv.Value, (SF.ExpressionStatement(
-                            SF.InvocationExpression(method).WithArgumentList(SF.ArgumentList(SF.SingletonSeparatedList(SF.Argument(@object))))
-                        ), type));
+                        type = SF.ParseTypeName($"global::Lagrange.Proto.Serialization.Converter.ProtoEnumConverter<{kv.Value.TypeSyntax}>");
                     }
                     else if (symbol.IsNullable())
                     {
-                        var underlyingType = symbol.GetUnderlyingType();
-                        var type = SF.ParseTypeName($"global::Lagrange.Proto.Serialization.Converter.ProtoNullableConverter<{underlyingType}>");
-                        var @object = SF.ObjectCreationExpression(type).WithArgumentList(SF.ArgumentList());
-                        statements.Add(kv.Value, (SF.ExpressionStatement(
-                            SF.InvocationExpression(method).WithArgumentList(SF.ArgumentList(SF.SingletonSeparatedList(SF.Argument(@object))))
-                        ), type));
+                        type = SF.ParseTypeName($"global::Lagrange.Proto.Serialization.Converter.ProtoNullableConverter<{symbol.GetUnderlyingType()}>");
                     }
                     else if (symbol.GetAttributes().Any(x => x.AttributeClass?.ToDisplayString() == ProtoPackableAttributeFullName))
                     {
-                        var type = SF.ParseTypeName($"global::Lagrange.Proto.Serialization.Converter.ProtoSerializableConverter<{kv.Value.TypeSyntax}>");
+                        type = SF.ParseTypeName($"global::Lagrange.Proto.Serialization.Converter.ProtoSerializableConverter<{kv.Value.TypeSyntax}>");
+                    }
+                    else if (symbol.IsRepeatedType())
+                    {
+                        if (symbol is IArrayTypeSymbol arrayType) type = SF.ParseTypeName($"global::Lagrange.Proto.Serialization.Converter.ProtoArrayConverter<{arrayType.ElementType}>");
+                        else if (symbol is INamedTypeSymbol namedType)
+                        {
+                            var genericType = namedType.ConstructedFrom;
+                            if (genericType.Name == "List" && genericType.ContainingNamespace.ToString() == "System.Collections.Generic")
+                            {
+                                type = SF.ParseTypeName($"global::Lagrange.Proto.Serialization.Converter.ProtoListConverter<{namedType.TypeArguments[0]}>");
+                            }
+                        }
+                    }
+
+                    if (type != null)
+                    {
                         var @object = SF.ObjectCreationExpression(type).WithArgumentList(SF.ArgumentList());
-                        statements.Add(kv.Value, (SF.ExpressionStatement(
-                            SF.InvocationExpression(method).WithArgumentList(SF.ArgumentList(SF.SingletonSeparatedList(SF.Argument(@object))))
+                        statements.Add(kv.Value, (SF.ExpressionStatement(SF.InvocationExpression(method)
+                            .WithArgumentList(SF.ArgumentList(SF.SingletonSeparatedList(SF.Argument(@object))))
                         ), type));
                     }
                 }

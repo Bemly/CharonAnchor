@@ -11,11 +11,14 @@ public abstract class ProtoRepeatedConverter<TCollection, TElement> : ProtoConve
     public override void Write(int field, WireType wireType, ProtoWriter writer, TCollection value)
     {
         int tag = (field << 3) | (byte)wireType;
+        bool first = true;
         
         foreach (var item in value)
         {
-            writer.EncodeVarInt(tag);
-            writer.EncodeVarInt(_converter.Measure(field, wireType, item));
+            if (first) first = false;
+            else writer.EncodeVarInt(tag);
+
+            if (wireType == WireType.LengthDelimited) writer.EncodeVarInt(_converter.Measure(field, wireType, item));
             _converter.Write(field, wireType, writer, item);
         }
     }
@@ -23,11 +26,14 @@ public abstract class ProtoRepeatedConverter<TCollection, TElement> : ProtoConve
     public override void WriteWithNumberHandling(int field, WireType wireType, ProtoWriter writer, TCollection value, ProtoNumberHandling numberHandling)
     {
         int tag = (field << 3) | (byte)wireType;
+        bool first = true;
         
         foreach (var item in value)
         {
-            writer.EncodeVarInt(tag);
-            writer.EncodeVarInt(_converter.Measure(field, wireType, item));
+            if (first) first = false;
+            else writer.EncodeVarInt(tag);
+
+            if (wireType == WireType.LengthDelimited) writer.EncodeVarInt(_converter.Measure(field, wireType, item));
             _converter.WriteWithNumberHandling(field, wireType, writer, item, numberHandling);
         }
     }
@@ -51,16 +57,16 @@ public abstract class ProtoRepeatedConverter<TCollection, TElement> : ProtoConve
         var collection = Create();
         object? state = CreateState();
         
-        int tag = reader.DecodeVarInt<int>();
-        
-        while (tag >> 3 == field)
+        int tag;
+        while (true)
         {
             var item = _converter.Read(field, wireType, ref reader);
             Add(item, collection, state);
             tag = reader.DecodeVarInt<int>();
+            if (tag >> 3 != field) break;
         }
 
-        reader.Rewind(ProtoHelper.GetVarIntLength(tag));
+        reader.Rewind(-ProtoHelper.GetVarIntLength(tag));
 
         return Finalize(collection, state);
     }
@@ -69,14 +75,14 @@ public abstract class ProtoRepeatedConverter<TCollection, TElement> : ProtoConve
     {
         var collection = Create();
         object? state = CreateState();
-        
-        int tag = reader.DecodeVarInt<int>();
-        
-        while (tag >> 3 == field)
+
+        int tag;
+        while (true)
         {
             var item = _converter.ReadWithNumberHandling(field, wireType, ref reader, numberHandling);
             Add(item, collection, state);
             tag = reader.DecodeVarInt<int>();
+            if (tag >> 3 != field) break;
         }
 
         reader.Rewind(ProtoHelper.GetVarIntLength(tag));

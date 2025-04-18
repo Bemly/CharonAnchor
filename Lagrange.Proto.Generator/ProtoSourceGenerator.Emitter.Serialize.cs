@@ -63,6 +63,8 @@ public partial class ProtoSourceGenerator
             var symbol = parser.Model.GetTypeSymbol(type);
             if (type.IsNullableType() && symbol.IsValueType) identifier += ".Value";
 
+            if (symbol.IsRepeatedType()) return [EmitResolvableSerializeStatement(identifier, field, fieldInfo.WireType)];
+
             return fieldInfo.WireType switch
             {
                 WireType.VarInt when symbol.IsEnumType() => [EmitResolvableSerializeStatement(identifier, field, fieldInfo.WireType)],

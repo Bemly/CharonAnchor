@@ -1,4 +1,4 @@
-﻿using Lagrange.Proto.Serialization.Converter;
+using Lagrange.Proto.Serialization.Converter;
 
 namespace Lagrange.Proto.Serialization.Metadata;
 
