@@ -63,7 +63,7 @@ public partial class ProtoSourceGenerator
             var symbol = parser.Model.GetTypeSymbol(type);
             if (type.IsNullableType() && symbol.IsValueType) identifier += ".Value";
 
-            if (symbol.IsRepeatedType()) return [EmitResolvableSerializeStatement(identifier, field, fieldInfo.WireType)];
+            if (symbol.IsRepeatedType()) return [fieldInfo.IsSigned ? EmitResolvableSerializeStatement(identifier, field, fieldInfo.WireType, ProtoNumberHandling.Signed) : EmitResolvableSerializeStatement(identifier, field, fieldInfo.WireType)];
 
             return fieldInfo.WireType switch
             {
@@ -118,7 +118,6 @@ public partial class ProtoSourceGenerator
             var cast = SF.CastExpression(SF.PredefinedType(SF.Token(SK.ByteKeyword)), comparision);
             return SF.ExpressionStatement(SF.InvocationExpression(access).AddArgumentListArguments(SF.Argument(cast)));
         }
-
         
         private static StatementSyntax EmitResolvableSerializeStatement(string name, int field, WireType wireType)
         {
@@ -127,6 +126,16 @@ public partial class ProtoSourceGenerator
             var arg = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("obj"), SF.IdentifierName(name));
             var access = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("writer"), SF.IdentifierName("EncodeResolvable"));
             return SF.ExpressionStatement(SF.InvocationExpression(access).AddArgumentListArguments(SF.Argument(tagArg), SF.Argument(wireTypeArg), SF.Argument(arg)));
+        }
+
+        private static StatementSyntax EmitResolvableSerializeStatement(string name, int field, WireType wireType, ProtoNumberHandling numberHandling)
+        {
+            var tagArg = SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(field));
+            var wireTypeArg = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("global::Lagrange.Proto.Serialization.WireType"), SF.IdentifierName(wireType.ToString()));
+            var arg = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("obj"), SF.IdentifierName(name));
+            var number = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("global::Lagrange.Proto.Serialization.ProtoNumberHandling"), SF.IdentifierName(numberHandling.ToString()));
+            var access = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("writer"), SF.IdentifierName("EncodeResolvable"));
+            return SF.ExpressionStatement(SF.InvocationExpression(access).AddArgumentListArguments(SF.Argument(tagArg), SF.Argument(wireTypeArg), SF.Argument(arg), SF.Argument(number)));
         }
             
         private static StatementSyntax EmitFixed32SerializeStatement(string name, bool isSigned)

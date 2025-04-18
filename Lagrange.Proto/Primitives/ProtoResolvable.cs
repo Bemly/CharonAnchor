@@ -12,6 +12,13 @@ public static class ProtoResolvableExtension
         var converter = ProtoTypeResolver.GetConverter<T>();
         converter.Write(field, wireType, writer, value);
     }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void EncodeResolvable<T>(this ProtoWriter writer, int field, WireType wireType, T value, ProtoNumberHandling numberHandling)
+    {
+        var converter = ProtoTypeResolver.GetConverter<T>();
+        converter.WriteWithNumberHandling(field, wireType, writer, value, numberHandling);
+    }
 }
 
 public static class ProtoResolvableUtility
