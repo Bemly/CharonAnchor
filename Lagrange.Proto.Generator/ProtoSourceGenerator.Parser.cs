@@ -15,6 +15,7 @@ namespace Lagrange.Proto.Generator;
 public partial class ProtoSourceGenerator
 {
     private const string ProtoPackableAttributeFullName = "Lagrange.Proto.ProtoPackableAttribute";
+    private const string ProtoValueMemberAttributeFullName = "Lagrange.Proto.ProtoValueMemberAttribute";
     
     private class Parser(ClassDeclarationSyntax context, SemanticModel model)
     {
@@ -88,14 +89,14 @@ public partial class ProtoSourceGenerator
                     continue;
                 }
                 
-                var attribute = symbol.GetAttributes().First();
+                var attribute = symbol.GetAttributes().First(x => x.AttributeClass?.Name == "ProtoMemberAttribute");
                 int field = (int)(attribute.ConstructorArguments[0].Value ?? throw new InvalidOperationException("Unable to get field number."));
-                string name = member switch
+                if (Fields.ContainsKey(field))
                 {
-                    FieldDeclarationSyntax fieldDeclaration => fieldDeclaration.Declaration.Variables[0].Identifier.ToString(),
-                    PropertyDeclarationSyntax propertyDeclaration => propertyDeclaration.Identifier.ToString(),
-                    _ => throw new InvalidOperationException("Unsupported member type.")
-                };
+                    ReportDiagnostics(DuplicateFieldNumber, member.GetLocation(), field, identifier);
+                    continue;
+                }
+                
                 var typeSymbol = symbol switch
                 {
                     IPropertySymbol propertySymbol => propertySymbol.Type,
@@ -114,38 +115,58 @@ public partial class ProtoSourceGenerator
                         continue;
                     }
                 }
-                
-                foreach (var argument in attribute.NamedArguments)
+
+                if (SymbolResolver.IsMapType(typeSymbol, out var keyType, out var valueType))
                 {
-                    switch (argument.Key)
-                    {
-                        case "NumberHandling":
+                    var keyWireType = ProtoHelper.GetWireType(keyType);
+                    var valueWireType = ProtoHelper.GetWireType(valueType);
+                    bool valueSigned = false;
+
+                    ReadProtoMemberAttribute(attribute, ref keyWireType, member, field, identifier, ref signed);
+                    var valueAttribute = symbol.GetAttributes().FirstOrDefault(x => x.AttributeClass?.ToDisplayString() == ProtoValueMemberAttributeFullName);
+                    if (valueAttribute != null) ReadProtoMemberAttribute(valueAttribute, ref valueWireType, member, field, identifier, ref valueSigned);
+
+                    Fields[field] = new ProtoFieldInfo(symbol, typeSymbol, wireType, signed) 
+                    { 
+                        ExtraTypeInfo =
                         {
-                            if (wireType != WireType.VarInt)
-                            {
-                                ReportDiagnostics(InvalidNumberHandling, member.GetLocation(), field, identifier);
-                                continue;
-                            }
-                            
-                            var value = (ProtoNumberHandling)(argument.Value.Value ?? throw new InvalidOperationException("Unable to get number handling."));
-                            if (value.HasFlag(ProtoNumberHandling.Signed)) signed = true;
-                            if (value.HasFlag(ProtoNumberHandling.Fixed32)) wireType = WireType.Fixed32;
-                            if (value.HasFlag(ProtoNumberHandling.Fixed64)) wireType = WireType.Fixed64;
-                            break;
-                        }
-                    }
+                            new ProtoTypeInfo(keyType, keyWireType, signed),
+                            new ProtoTypeInfo(valueType, valueWireType, valueSigned)
+                        } 
+                    };
                 }
-                
-                if (Fields.ContainsKey(field))
+                else
                 {
-                    ReportDiagnostics(DuplicateFieldNumber, member.GetLocation(), field, identifier);
-                    continue;
+                    ReadProtoMemberAttribute(attribute, ref wireType, member, field, identifier, ref signed);
+                    Fields[field] = new ProtoFieldInfo(symbol, typeSymbol, wireType, signed);
                 }
-                
-                Fields[field] = new ProtoFieldInfo(symbol, typeSymbol, wireType, signed);
             }
         }
-        
+
+        private void ReadProtoMemberAttribute(AttributeData attribute, ref WireType wireType, MemberDeclarationSyntax member, int field, string identifier, ref bool signed)
+        {
+            foreach (var argument in attribute.NamedArguments)
+            {
+                switch (argument.Key)
+                {
+                    case "NumberHandling":
+                    {
+                        if (wireType != WireType.VarInt)
+                        {
+                            ReportDiagnostics(InvalidNumberHandling, member.GetLocation(), field, identifier);
+                            continue;
+                        }
+                            
+                        var value = (ProtoNumberHandling)(argument.Value.Value ?? throw new InvalidOperationException("Unable to get number handling."));
+                        if (value.HasFlag(ProtoNumberHandling.Signed)) signed = true;
+                        if (value.HasFlag(ProtoNumberHandling.Fixed32)) wireType = WireType.Fixed32;
+                        if (value.HasFlag(ProtoNumberHandling.Fixed64)) wireType = WireType.Fixed64;
+                        break;
+                    }
+                }
+            }
+        }
+
         private static bool TryGetNestedTypeDeclarations(ClassDeclarationSyntax contextClassSyntax, SemanticModel semanticModel, CancellationToken cancellationToken, [NotNullWhen(true)] out List<string>? typeDeclarations)
         {
             typeDeclarations = null;

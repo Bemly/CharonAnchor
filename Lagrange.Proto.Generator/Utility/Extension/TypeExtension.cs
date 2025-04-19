@@ -6,11 +6,21 @@ namespace Lagrange.Proto.Generator.Utility.Extension;
 
 public static class TypeExtension
 {
-    private static readonly string[] SystemAssemblies = ["mscorlib", "System", "System.Core", "System.Private.CoreLib", "System.Runtime"];
+    private static readonly string[] SystemAssemblies = ["mscorlib", "System", "System.Core", "System.Private.CoreLib", "System.Runtime", "System.Collections"];
     
     public static bool IsUserDefinedType(this ITypeSymbol type)
     {
-        return type.TypeKind is TypeKind.Class or TypeKind.Struct or TypeKind.Enum && !type.ContainingAssembly.IsSystemAssembly();
+        if (type is INamedTypeSymbol namedTypeSymbol)
+        {
+            if (namedTypeSymbol.IsGenericType)
+            {
+                return !namedTypeSymbol.ContainingAssembly.IsSystemAssembly() && !namedTypeSymbol.TypeArguments.All(IsUserDefinedType);
+            }
+
+            return !namedTypeSymbol.ContainingAssembly.IsSystemAssembly();
+        }
+
+        return true;
     }
     
     private static bool IsSystemAssembly(this IAssemblySymbol assembly)

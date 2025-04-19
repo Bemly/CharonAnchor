@@ -13,4 +13,6 @@ public class ProtoFieldInfo(ISymbol symbol, ITypeSymbol typeSymbol, WireType wir
     public WireType WireType { get; } = wireType;
     
     public bool IsSigned { get; } = isSigned;
+    
+    public List<ProtoTypeInfo> ExtraTypeInfo { get; } = [];
 }
