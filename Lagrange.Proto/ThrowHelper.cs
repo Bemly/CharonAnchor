@@ -21,7 +21,6 @@ internal static class ThrowHelper
     
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
-
     public static void ThrowInvalidDataException_MalformedMessage() => throw new InvalidDataException("Malformed proto message while decoding");
 
     [DoesNotReturn]
