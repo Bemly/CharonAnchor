@@ -14,10 +14,15 @@ public static class TypeExtension
         {
             if (namedTypeSymbol.IsGenericType)
             {
-                return !namedTypeSymbol.ContainingAssembly.IsSystemAssembly() && !namedTypeSymbol.TypeArguments.All(IsUserDefinedType);
+                return !(namedTypeSymbol.ContainingAssembly.IsSystemAssembly() && namedTypeSymbol.TypeArguments.All(IsUserDefinedType));
             }
 
             return !namedTypeSymbol.ContainingAssembly.IsSystemAssembly();
+        }
+        
+        if (type is IArrayTypeSymbol arrayTypeSymbol)
+        {
+            return arrayTypeSymbol.ElementType.IsUserDefinedType();
         }
 
         return true;
