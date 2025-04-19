@@ -32,7 +32,7 @@ public static partial class ProtoSerializer
             int tag = reader.DecodeVarIntUnsafe<int>();
             if (objectInfo.Fields.TryGetValue(tag, out var fieldInfo))
             {
-                fieldInfo.Read(fieldInfo.WireType, ref reader, target);
+                fieldInfo.Read(ref reader, target);
             }
             else
             {
@@ -89,7 +89,7 @@ public static partial class ProtoSerializer
             int tag = reader.DecodeVarIntUnsafe<int>();
             if (converter.ObjectInfo.Fields.TryGetValue(tag, out var fieldInfo))
             {
-                fieldInfo.Read(fieldInfo.WireType, ref reader, boxed);
+                fieldInfo.Read(ref reader, boxed);
             }
             else
             {

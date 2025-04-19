@@ -60,7 +60,7 @@ internal class ProtoObjectConverter<T>(ProtoObjectInfo<T> objectInfo) : ProtoCon
             int tag = subReader.DecodeVarIntUnsafe<int>();
             if (ObjectInfo.Fields.TryGetValue(tag, out var fieldInfo))
             {
-                fieldInfo.Read(fieldInfo.WireType, ref subReader, boxed);
+                fieldInfo.Read(ref subReader, boxed);
             }
             else
             {

@@ -37,7 +37,7 @@ public abstract class ProtoFieldInfo(int field, WireType wireType, Type declared
     private protected abstract void SetGetter(Delegate? getter);
     private protected abstract void SetSetter(Delegate? setter);
 
-    public abstract void Read(WireType wireType, ref ProtoReader reader, object target);
+    public abstract void Read(ref ProtoReader reader, object target);
     
     public abstract void Write(ProtoWriter writer, object target);
     
@@ -127,13 +127,13 @@ public class ProtoFieldInfo<T> : ProtoFieldInfo
         }
     }
     
-    public override void Read(WireType wireType, ref ProtoReader reader, object target)
+    public override void Read(ref ProtoReader reader, object target)
     {
         Debug.Assert(_typedEffectiveConverter != null);
         
         T value = NumberHandling == ProtoNumberHandling.Default
-            ? _typedEffectiveConverter.Read(Field, wireType, ref reader)
-            : _typedEffectiveConverter.ReadWithNumberHandling(Field, wireType, ref reader, NumberHandling);
+            ? _typedEffectiveConverter.Read(Field, WireType, ref reader)
+            : _typedEffectiveConverter.ReadWithNumberHandling(Field, WireType, ref reader, NumberHandling);
         _typedSet?.Invoke(target, value);
     }
 
