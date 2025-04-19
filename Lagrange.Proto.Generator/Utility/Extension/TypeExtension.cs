@@ -14,7 +14,7 @@ public static class TypeExtension
         {
             if (namedTypeSymbol.IsGenericType)
             {
-                return !(namedTypeSymbol.ContainingAssembly.IsSystemAssembly() && namedTypeSymbol.TypeArguments.All(IsUserDefinedType));
+                return !namedTypeSymbol.ContainingAssembly.IsSystemAssembly() && !namedTypeSymbol.TypeArguments.All(IsUserDefinedType);
             }
 
             return !namedTypeSymbol.ContainingAssembly.IsSystemAssembly();
