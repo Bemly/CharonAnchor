@@ -41,7 +41,6 @@ public abstract class ProtoRepeatedConverter<TCollection, TElement> : ProtoConve
         
         foreach (var item in value)
         {
-            size += ProtoHelper.GetVarIntLength(_converter.Measure(field, wireType, item));
             size += _converter.Measure(field, wireType, item);
         }
 
