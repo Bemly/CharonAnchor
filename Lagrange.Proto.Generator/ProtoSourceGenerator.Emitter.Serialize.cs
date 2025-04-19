@@ -107,6 +107,12 @@ public partial class ProtoSourceGenerator
 
         private void EmitMember(SourceWriter source, int field, ProtoFieldInfo info, string memberName)
         {
+            if (SymbolResolver.IsMapType(info.TypeSymbol, out _, out _))
+            { 
+                source.WriteLine($"{TypeInfoPropertyName}.Fields[{field << 3 | (byte)info.WireType}].Write({WriterVarName}, {memberName});");
+                return;
+            }
+            
             if (!SymbolResolver.IsRepeatedType(info.TypeSymbol, out _))
             {
                 string? special = info.WireType switch

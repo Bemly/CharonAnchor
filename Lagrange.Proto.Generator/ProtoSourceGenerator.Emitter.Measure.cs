@@ -36,7 +36,6 @@ public partial class ProtoSourceGenerator
                 int field = kv.Key;
                 var info = kv.Value;
 
-                var tag = ProtoHelper.EncodeVarInt(field << 3 | (byte)info.WireType);
                 EmitLengthStatement(source, field, info);
             }
 
@@ -108,6 +107,7 @@ public partial class ProtoSourceGenerator
                 WireType.Fixed64 => "8",
                 WireType.LengthDelimited when info.TypeSymbol.SpecialType == SpecialType.System_String => $"{CountStringMethodRef}({memberName})",
                 WireType.LengthDelimited when info.TypeSymbol is IArrayTypeSymbol { ElementType.SpecialType: SpecialType.System_Byte } => $"{CountBytesMethodRef}({memberName})",
+                WireType.LengthDelimited when info.ExtraTypeInfo.Count is not 0 => $"{TypeInfoPropertyName}.Fields[{field << 3 | (byte)info.WireType}].Measure({memberName})",
                 _ => $"{MeasureMethodRef}({field}, {WireTypeTypeRef}.{info.WireType}, {memberName})"
             };
         }

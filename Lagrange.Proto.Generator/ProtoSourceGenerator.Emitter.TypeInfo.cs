@@ -15,6 +15,7 @@ public partial class ProtoSourceGenerator
         private const string ProtoObjectInfoTypeRef = "global::Lagrange.Proto.Serialization.Metadata.ProtoObjectInfo<{0}>";
         private const string ProtoFieldInfoTypeRef = "global::Lagrange.Proto.Serialization.Metadata.ProtoFieldInfo";
         private const string ProtoFieldInfoGenericTypeRef = "global::Lagrange.Proto.Serialization.Metadata.ProtoFieldInfo<{0}>";
+        private const string ProtoMapFieldInfoGenericTypeRef = "global::Lagrange.Proto.Serialization.Metadata.ProtoMapFieldInfo<{0}, {1}, {2}>";
         private const string ProtoTypeResolverTypeRef = "global::Lagrange.Proto.Serialization.Metadata.ProtoTypeResolver";
         private const string WireTypeTypeRef = "global::Lagrange.Proto.Serialization.WireType";
         private const string ConverterTypeRef = "global::Lagrange.Proto.Serialization.Converter";
@@ -53,7 +54,7 @@ public partial class ProtoSourceGenerator
                 foreach (var kv2 in Converters)
                 {
                     var predicate = kv2.Item1;
-                    var typeName = kv2.Item2(info);
+                    string typeName = kv2.Item2(info);
                     string converter = ConverterTypeRef + "." + kv2.Item3;
                     
                     if (predicate(info))
@@ -80,8 +81,9 @@ public partial class ProtoSourceGenerator
             {
                 int field = kv.Key;
                 var info = kv.Value;
-                
-                EmitFieldInfo(source, field, info);
+
+                if (info.ExtraTypeInfo.Count == 0) EmitFieldInfo(source, field, info);
+                else EmitMapFieldInfo(source, field, info);
             }
             source.Indentation--;
             source.WriteLine("},");
@@ -106,6 +108,27 @@ public partial class ProtoSourceGenerator
             source.WriteLine($"Get = {ObjectVarName} => (({_fullQualifiedName}){ObjectVarName}).{info.Symbol.Name},");
             source.WriteLine($"Set = ({ObjectVarName}, {ValueVarName}) => (({_fullQualifiedName}){ObjectVarName}).{info.Symbol.Name} = {ValueVarName},");
             source.WriteLine($"NumberHandling = {ProtoNumberHandlingTypeRef}.{(info.IsSigned ? "Signed" : "Default")}");
+            
+            source.Indentation--;
+            source.WriteLine("},");
+        }
+        
+        private void EmitMapFieldInfo(SourceWriter source, int field, ProtoFieldInfo info)
+        {
+            int tag = field << 3 | (byte)info.WireType;
+            
+            var key = info.ExtraTypeInfo[0];
+            var value = info.ExtraTypeInfo[1];
+
+            string type = string.Format(ProtoMapFieldInfoGenericTypeRef, info.TypeSymbol.GetFullName(), key.TypeSymbol.GetFullName(), value.TypeSymbol.GetFullName());
+            source.WriteLine($"[{tag}] = new {type}({field}, {WireTypeTypeRef}.{key.WireType}, {WireTypeTypeRef}.{value.WireType}, typeof({_fullQualifiedName}))");
+            source.WriteLine('{');
+            source.Indentation++;
+            
+            source.WriteLine($"Get = {ObjectVarName} => (({_fullQualifiedName}){ObjectVarName}).{info.Symbol.Name},");
+            source.WriteLine($"Set = ({ObjectVarName}, {ValueVarName}) => (({_fullQualifiedName}){ObjectVarName}).{info.Symbol.Name} = {ValueVarName},");
+            source.WriteLine($"NumberHandling = {ProtoNumberHandlingTypeRef}.{(key.IsSigned ? "Signed" : "Default")},");
+            source.WriteLine($"ValueNumberHandling = {ProtoNumberHandlingTypeRef}.{(value.IsSigned ? "Signed" : "Default")}");
             
             source.Indentation--;
             source.WriteLine("},");
