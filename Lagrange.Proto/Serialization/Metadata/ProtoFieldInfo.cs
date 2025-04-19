@@ -256,20 +256,24 @@ public class ProtoMapFieldInfo<TMap, TKey, TValue>(int field, WireType keyWireTy
         
         while (true)
         {
-            TKey? key = default;
-            TValue? value = default;
+            reader.SkipField(WireType.VarInt); // skip the length of the map
+            
+            TKey? key = default; bool foundKey = false;
+            TValue? value = default; bool foundValue = false;
             
             if (NumberHandling == ProtoNumberHandling.Default)
             {
-                while (key is null || value is null)
+                while ((key is null || !foundKey) || (value is null || !foundValue))
                 {
                     switch (reader.DecodeVarInt<byte>() >> 3)
                     {
                         case 1:
                             key = _typedKeyConverter.Read(Field, KeyWireType, ref reader);
+                            foundKey = true;
                             break;
                         case 2:
                             value = _typedValueConverter.Read(Field, ValueWireType, ref reader);
+                            foundValue = true;
                             break;
                         default:
                             ThrowHelper.ThrowInvalidDataException_MalformedMessage();
@@ -279,15 +283,17 @@ public class ProtoMapFieldInfo<TMap, TKey, TValue>(int field, WireType keyWireTy
             }
             else
             {
-                while (key is null || value is null)
+                while ((key is null || !foundKey) || (value is null || !foundValue))
                 {
                     switch (reader.DecodeVarInt<byte>() >> 3)
                     {
                         case 1:
                             key = _typedKeyConverter.ReadWithNumberHandling(Field, KeyWireType, ref reader, NumberHandling);
+                            foundKey = true;
                             break;
                         case 2:
                             value = _typedValueConverter.ReadWithNumberHandling(Field, ValueWireType, ref reader, ValueNumberHandling);
+                            foundValue = true;
                             break;
                         default:
                             ThrowHelper.ThrowInvalidDataException_MalformedMessage();
@@ -320,11 +326,11 @@ public class ProtoMapFieldInfo<TMap, TKey, TValue>(int field, WireType keyWireTy
 
             writer.EncodeVarInt(_typedKeyConverter.Measure(1, KeyWireType, key) + _typedValueConverter.Measure(2, ValueWireType, value) + 2); // 2 for the tag of key and value
             
-            writer.EncodeVarInt(8 | (byte)WireType);
+            writer.WriteRawByte((byte)(8 | (byte)KeyWireType));
             if (NumberHandling == ProtoNumberHandling.Default) _typedKeyConverter.Write(1, KeyWireType, writer, key);
             else _typedKeyConverter.WriteWithNumberHandling(1, KeyWireType, writer, key, NumberHandling);
             
-            writer.EncodeVarInt(16 | (byte)WireType);
+            writer.WriteRawByte((byte)(16 | (byte)ValueWireType));
             if (ValueNumberHandling == ProtoNumberHandling.Default) _typedValueConverter.Write(2, ValueWireType, writer, value);
             else _typedValueConverter.WriteWithNumberHandling(2, ValueWireType, writer, value, ValueNumberHandling);
         }
