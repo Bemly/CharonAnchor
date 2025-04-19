@@ -109,7 +109,7 @@ public partial class ProtoSourceGenerator
         {
             if (SymbolResolver.IsMapType(info.TypeSymbol, out _, out _))
             { 
-                source.WriteLine($"{TypeInfoPropertyName}.Fields[{field << 3 | (byte)info.WireType}].Write({WriterVarName}, {memberName});");
+                source.WriteLine($"{TypeInfoPropertyName}.Fields[{field << 3 | (byte)info.WireType}].Write({WriterVarName}, {ObjectVarName});");
                 return;
             }
             
