@@ -28,7 +28,7 @@ public partial class ProtoSourceGenerator
 
         private void EmitSerializeMethod(SourceWriter source)
         {
-            source.WriteLine($"public static void SerializeHandler({_fullQualifiedName} {ObjectVarName} ,{ProtoWriterTypeRef} {WriterVarName})");
+            source.WriteLine($"public static void SerializeHandler({_fullQualifiedName} {ObjectVarName}, {ProtoWriterTypeRef} {WriterVarName})");
             source.WriteLine("{");
             source.Indentation++;
 
@@ -49,6 +49,9 @@ public partial class ProtoSourceGenerator
         {
             var tag = ProtoHelper.EncodeVarInt(field << 3 | (byte)info.WireType);
             
+            string memberName =  info.TypeSymbol.IsValueType && info.TypeSymbol.IsNullable() 
+                ? $"{ObjectVarName}.{info.Symbol.Name}.Value"
+                : $"{ObjectVarName}.{info.Symbol.Name}";
             if (parser.IgnoreDefaultFields)
             {
                 if (info.TypeSymbol.IsValueType) // check with default
@@ -56,15 +59,15 @@ public partial class ProtoSourceGenerator
                     EmitIfNotDefaultStatement(source, $"{ObjectVarName}.{info.Symbol.Name}", writer =>
                     {
                         EmitRawTags(writer, tag);
-                        EmitMember(writer, field, info, $"{ObjectVarName}.{info.Symbol.Name}");
+                        EmitMember(writer, field, info, memberName);
                     });
                 }
                 else
                 {
-                    EmitIfNotNullStatement(source, $"{ObjectVarName}.{info.Symbol.Name}", writer =>
+                    EmitIfNotNullStatement(source, memberName, writer =>
                     {
                         EmitRawTags(writer, tag);
-                        EmitMember(writer, field, info, $"{ObjectVarName}.{info.Symbol.Name}");
+                        EmitMember(writer, field, info, memberName);
                     });
                 }
             }
@@ -77,21 +80,21 @@ public partial class ProtoSourceGenerator
                         EmitIfNotNullStatement(source, $"{ObjectVarName}.{info.Symbol.Name}", writer =>
                         {
                             EmitRawTags(writer, tag);
-                            EmitMember(writer, field, info, $"{ObjectVarName}.{info.Symbol.Name}.Value");
+                            EmitMember(writer, field, info, memberName);
                         });
                     }
                     else // write directly
                     {
                         EmitRawTags(source, tag);
-                        EmitMember(source, field, info, $"{ObjectVarName}.{info.Symbol.Name}");
+                        EmitMember(source, field, info, memberName);
                     }
                 }
                 else
                 {
-                    EmitIfNotNullStatement(source, $"{ObjectVarName}.{info.Symbol.Name}", writer =>
+                    EmitIfNotNullStatement(source, memberName, writer =>
                     {
                         EmitRawTags(writer, tag);
-                        EmitMember(writer, field, info, $"{ObjectVarName}.{info.Symbol.Name}");
+                        EmitMember(writer, field, info, memberName);
                     });
                 }
             }
@@ -104,29 +107,31 @@ public partial class ProtoSourceGenerator
 
         private void EmitMember(SourceWriter source, int field, ProtoFieldInfo info, string memberName)
         {
-            string? special = info.WireType switch
+            if (!SymbolResolver.IsRepeatedType(info.TypeSymbol, out _))
             {
-                WireType.VarInt when info.TypeSymbol.IsIntegerType() && info.IsSigned => $"{WriterVarName}.{EncodeVarIntMethodName}({ProtoHelperTypeRef}.{ZigZagEncodeMethodName}({memberName}));",
-                WireType.VarInt when info.TypeSymbol.IsIntegerType() => $"{WriterVarName}.{EncodeVarIntMethodName}({memberName});",
-                WireType.Fixed32 when info.IsSigned => $"{WriterVarName}.{EncodeFixed32MethodName}({ProtoHelperTypeRef}.{ZigZagEncodeMethodName}({memberName}));",
-                WireType.Fixed64 when info.IsSigned => $"{WriterVarName}.{EncodeFixed64MethodName}({ProtoHelperTypeRef}.{ZigZagEncodeMethodName}({memberName}));",
-                WireType.Fixed32 => $"{WriterVarName}.{EncodeFixed32MethodName}({memberName});",
-                WireType.Fixed64 => $"{WriterVarName}.{EncodeFixed64MethodName}({memberName});",
-                WireType.LengthDelimited when info.TypeSymbol.SpecialType == SpecialType.System_String => $"{WriterVarName}.{EncodeStringMethodName}({memberName});",
-                WireType.LengthDelimited when info.TypeSymbol is IArrayTypeSymbol { ElementType.SpecialType: SpecialType.System_Byte } => $"{WriterVarName}.{EncodeBytesMethodName}({memberName});",
-                _ => null
-            };
+                string? special = info.WireType switch
+                {
+                    WireType.VarInt when info.TypeSymbol.IsIntegerType() && info.IsSigned => $"{WriterVarName}.{EncodeVarIntMethodName}({ProtoHelperTypeRef}.{ZigZagEncodeMethodName}({memberName}));",
+                    WireType.VarInt when info.TypeSymbol.IsIntegerType() => $"{WriterVarName}.{EncodeVarIntMethodName}({memberName});",
+                    WireType.Fixed32 when info.IsSigned => $"{WriterVarName}.{EncodeFixed32MethodName}({ProtoHelperTypeRef}.{ZigZagEncodeMethodName}({memberName}));",
+                    WireType.Fixed64 when info.IsSigned => $"{WriterVarName}.{EncodeFixed64MethodName}({ProtoHelperTypeRef}.{ZigZagEncodeMethodName}({memberName}));",
+                    WireType.Fixed32 => $"{WriterVarName}.{EncodeFixed32MethodName}({memberName});",
+                    WireType.Fixed64 => $"{WriterVarName}.{EncodeFixed64MethodName}({memberName});",
+                    WireType.LengthDelimited when info.TypeSymbol.SpecialType == SpecialType.System_String => $"{WriterVarName}.{EncodeStringMethodName}({memberName});",
+                    WireType.LengthDelimited when info.TypeSymbol is IArrayTypeSymbol { ElementType.SpecialType: SpecialType.System_Byte } => $"{WriterVarName}.{EncodeBytesMethodName}({memberName});",
+                    _ => null
+                };
+
+                if (special != null)
+                {
+                    source.WriteLine(special);
+                    return;
+                }
+            }
             
-            if (special != null)
-            {
-                source.WriteLine(special);
-            }
-            else
-            {
-                source.WriteLine(info.IsSigned
-                    ? $"{WriterVarName}.{EncodeResolvableMethodName}({field}, {WireTypeTypeRef}.{info.WireType}, {memberName}, {ProtoNumberHandlingTypeRef}.{(info.IsSigned ? "Signed" : "Default")});"
-                    : $"{WriterVarName}.{EncodeResolvableMethodName}({field}, {WireTypeTypeRef}.{info.WireType}, {memberName});");
-            }
+            source.WriteLine(info.IsSigned
+                ? $"{WriterVarName}.{EncodeResolvableMethodName}({field}, {WireTypeTypeRef}.{info.WireType}, {memberName}, {ProtoNumberHandlingTypeRef}.{(info.IsSigned ? "Signed" : "Default")});"
+                : $"{WriterVarName}.{EncodeResolvableMethodName}({field}, {WireTypeTypeRef}.{info.WireType}, {memberName});");
         }
     }
 }

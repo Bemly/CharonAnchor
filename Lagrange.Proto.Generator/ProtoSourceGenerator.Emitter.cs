@@ -83,7 +83,7 @@ public partial class ProtoSourceGenerator
         
         private static void EmitIfNotNullStatement(SourceWriter source, string variableName, Action<SourceWriter> emitAction)
         {
-            source.WriteLine($"if ({variableName} is not null)");
+            source.WriteLine($"if ({variableName} != null)");
             source.WriteLine("{");
             source.Indentation++;
             emitAction(source);
@@ -93,7 +93,7 @@ public partial class ProtoSourceGenerator
         
         private static void EmitIfNotDefaultStatement(SourceWriter source, string variableName, Action<SourceWriter> emitAction)
         {
-            source.WriteLine($"if ({variableName} is not default)");
+            source.WriteLine($"if ({variableName} != default)");
             source.WriteLine("{");
             source.Indentation++;
             emitAction(source);

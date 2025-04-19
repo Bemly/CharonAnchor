@@ -99,7 +99,7 @@ public partial class ProtoSourceGenerator
             source.WriteLine($"{LengthVarName} += {expression};");
         }
 
-        private string GenerateLengthMember(int field, ProtoFieldInfo info, string memberName)
+        private static string GenerateLengthMember(int field, ProtoFieldInfo info, string memberName)
         {
             return info.WireType switch
             {
@@ -113,7 +113,7 @@ public partial class ProtoSourceGenerator
         }
     }
 
-    private static string GenerateIfNotNullExpression(string variableName, string left, string right) => $"({variableName} is not null ? {left} : {right})";
+    private static string GenerateIfNotNullExpression(string variableName, string left, string right) => $"({variableName} != null ? {left} : {right})";
         
-    private static string GenerateIfNotDefaultExpression(string variableName, string left, string right) => $"({variableName} is not default ? {left} : {right})";
+    private static string GenerateIfNotDefaultExpression(string variableName, string left, string right) => $"({variableName} != default ? {left} : {right})";
 }
