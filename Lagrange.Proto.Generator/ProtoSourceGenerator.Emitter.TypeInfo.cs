@@ -1,182 +1,114 @@
 using Lagrange.Proto.Generator.Entity;
+using Lagrange.Proto.Generator.Utility;
 using Lagrange.Proto.Generator.Utility.Extension;
-using Lagrange.Proto.Serialization;
 using Microsoft.CodeAnalysis;
-using SF = Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
-using SK = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
 
-using Microsoft.CodeAnalysis.CSharp.Syntax;
+namespace Lagrange.Proto.Generator;
 
-namespace Lagrange.Proto.Generator
+public partial class ProtoSourceGenerator
 {
-    public partial class ProtoSourceGenerator
+    private partial class Emitter
     {
-        private partial class Emitter
-        {
-            private readonly string _protoTypeInfoFullName = $"global::Lagrange.Proto.Serialization.Metadata.ProtoObjectInfo<{parser.Identifier}>";
-            
-            private readonly string _protoTypeInfoNullableFullName = $"global::Lagrange.Proto.Serialization.Metadata.ProtoObjectInfo<{parser.Identifier}>?";
-            
-            private const string ProtoNumberHandlingFullName = "global::Lagrange.Proto.Serialization.ProtoNumberHandling";
-            
-            private FieldDeclarationSyntax EmitTypeInfoField()
-            {
-                return SF.FieldDeclaration(SF.VariableDeclaration(SF.ParseTypeName(_protoTypeInfoNullableFullName)).AddVariables(SF.VariableDeclarator(SF.Identifier("_typeInfo"))))
-                    .AddModifiers(SF.Token(SK.PrivateKeyword), SF.Token(SK.StaticKeyword));
-            }
-
-            private PropertyDeclarationSyntax EmitTypeInfoProperty()
-            {
-                return SF.PropertyDeclaration(SF.ParseTypeName(_protoTypeInfoFullName), SF.ParseToken("TypeInfo"))
-                    .AddModifiers(SF.Token(SK.PublicKeyword), SF.Token(SK.StaticKeyword))
-                    .AddAccessorListAccessors(
-                        SF.AccessorDeclaration(SK.GetAccessorDeclaration)
-                            .WithExpressionBody(
-                                SF.ArrowExpressionClause(
-                                    SF.AssignmentExpression(SK.CoalesceAssignmentExpression,
-                                        SF.IdentifierName("_typeInfo"),
-                                        SF.InvocationExpression(SF.IdentifierName("CreateTypeInfo")).WithArgumentList(SF.ArgumentList())
-                                    )
-                                )
-                            )
-                            .WithSemicolonToken(SF.Token(SK.SemicolonToken))
-                    );
-            }
-
-            private StatementSyntax[] EmitTypeInfoRegisteredStatements()
-            {
-                var statements = new Dictionary<ProtoFieldInfo, (StatementSyntax, TypeSyntax)>();
-                
-                foreach (var kv in parser.Fields)
-                {
-                    var symbol = parser.Model.GetTypeSymbol(kv.Value.TypeSyntax);
-                    var method = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.ParseTypeName("global::Lagrange.Proto.Serialization.Metadata.ProtoTypeResolver"), SF.IdentifierName("Register"));
-
-                    TypeSyntax? type = null;
-                    if (symbol.IsEnumType())
-                    {
-                        type = SF.ParseTypeName($"global::Lagrange.Proto.Serialization.Converter.ProtoEnumConverter<{kv.Value.TypeSyntax}>");
-                    }
-                    else if (symbol.IsNullable())
-                    {
-                        type = SF.ParseTypeName($"global::Lagrange.Proto.Serialization.Converter.ProtoNullableConverter<{symbol.GetUnderlyingType()}>");
-                    }
-                    else if (symbol.GetAttributes().Any(x => x.AttributeClass?.ToDisplayString() == ProtoPackableAttributeFullName))
-                    {
-                        type = SF.ParseTypeName($"global::Lagrange.Proto.Serialization.Converter.ProtoSerializableConverter<{kv.Value.TypeSyntax}>");
-                    }
-                    else if (symbol.IsRepeatedType())
-                    {
-                        if (symbol is IArrayTypeSymbol arrayType) type = SF.ParseTypeName($"global::Lagrange.Proto.Serialization.Converter.ProtoArrayConverter<{arrayType.ElementType}>");
-                        else if (symbol is INamedTypeSymbol namedType)
-                        {
-                            var genericType = namedType.ConstructedFrom;
-                            if (genericType.Name == "List" && genericType.ContainingNamespace.ToString() == "System.Collections.Generic")
-                            {
-                                type = SF.ParseTypeName($"global::Lagrange.Proto.Serialization.Converter.ProtoListConverter<{namedType.TypeArguments[0]}>");
-                            }
-                        }
-                    }
-
-                    if (type != null)
-                    {
-                        var @object = SF.ObjectCreationExpression(type).WithArgumentList(SF.ArgumentList());
-                        statements.Add(kv.Value, (SF.ExpressionStatement(SF.InvocationExpression(method)
-                            .WithArgumentList(SF.ArgumentList(SF.SingletonSeparatedList(SF.Argument(@object))))
-                        ), type));
-                    }
-                }
-
-                var branched = new StatementSyntax[statements.Count];
-                int i = 0;
-                
-                foreach (var kv in statements)
-                {
-                    var type = kv.Value.Item2;
-                    var method = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.ParseTypeName("global::Lagrange.Proto.Serialization.Metadata.ProtoTypeResolver"), SF.IdentifierName($"IsRegistered<{type}>"));
-                    var invocation = SF.InvocationExpression(method).WithArgumentList(SF.ArgumentList());
-                    branched[i] = SF.IfStatement(SF.PrefixUnaryExpression(SK.LogicalNotExpression, invocation), SF.Block(kv.Value.Item1));
-                    i++;
-                }
-
-                return branched;
-            }
-            
-            private MethodDeclarationSyntax EmitTypeInfoCreationMethod()
-            {
-                var fields = parser.Fields.ToDictionary(
-                    kv => (kv.Key << 3) | (byte)kv.Value.WireType,
-                    kv =>
-                    {
-                        string first = kv.Value.WireType switch
-                        {
-                            WireType.Fixed32 or WireType.Fixed64 => $"{ProtoNumberHandlingFullName}.{kv.Value.WireType}",
-                            _ => $"{ProtoNumberHandlingFullName}.Default"
-                        };
-                        string numberHandling = $"{first}{(kv.Value.IsSigned ? $" | {ProtoNumberHandlingFullName}.Signed" : "")}";
-                        
-                        return SF.ObjectCreationExpression(SF.ParseTypeName($"global::Lagrange.Proto.Serialization.Metadata.ProtoFieldInfo<{kv.Value.TypeSyntax}>"))
-                            .WithArgumentList(SF.ArgumentList(
-                                SF.SeparatedList<ArgumentSyntax>(
-                                    [
-                                        SF.Argument(SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(kv.Key))),
-                                        SF.Argument(SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("global::Lagrange.Proto.Serialization.WireType"), SF.IdentifierName(kv.Value.WireType.ToString()))),
-                                        SF.Argument(SF.TypeOfExpression(SF.ParseTypeName(parser.Identifier)))
-                                    ]
-                                )
-                            ))
-                            .WithInitializer(SF.InitializerExpression(SK.ObjectInitializerExpression).AddExpressions(
-                                    SF.AssignmentExpression(SK.SimpleAssignmentExpression, SF.IdentifierName("Get"), EmitTypeInfoGetter(kv.Value.Name)),
-                                    SF.AssignmentExpression(SK.SimpleAssignmentExpression, SF.IdentifierName("Set"), EmitTypeInfoSetter(kv.Value.Name)),
-                                    SF.AssignmentExpression(SK.SimpleAssignmentExpression, SF.IdentifierName("NumberHandling"), SF.IdentifierName(numberHandling))
-                                )
-                            );
-                    });
-                var dictionaryInitialize = SF.ObjectCreationExpression(SF.ParseTypeName("global::System.Collections.Generic.Dictionary<int, global::Lagrange.Proto.Serialization.Metadata.ProtoFieldInfo>"))
-                    .WithArgumentList(SF.ArgumentList())
-                    .WithInitializer(SF.InitializerExpression(SK.CollectionInitializerExpression).AddExpressions(
-                        fields.Select(kv =>
-                        {
-                            var exprs = new CollectionElementSyntax[] { SF.ExpressionElement(SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(kv.Key))) };
-                            var left = SF.CollectionExpression(SF.SeparatedList(exprs));
-                            return SF.AssignmentExpression(SK.SimpleAssignmentExpression, left, kv.Value);
-                        }).Cast<ExpressionSyntax>().ToArray()
-                    ));
-                var fieldsAssignment = SF.AssignmentExpression(SK.SimpleAssignmentExpression, SF.IdentifierName("Fields"), dictionaryInitialize);
-                
-                var lambda = SF.ParenthesizedLambdaExpression(SF.ParameterList(), SF.ObjectCreationExpression(SF.ParseTypeName(parser.Identifier)).WithArgumentList(SF.ArgumentList()));
-                var objectCreatorAssignment = SF.AssignmentExpression(SK.SimpleAssignmentExpression, SF.IdentifierName("ObjectCreator"), lambda);
-                var ignoreDefaultAssignment = SF.AssignmentExpression(SK.SimpleAssignmentExpression, SF.IdentifierName("IgnoreDefaultFields"), SF.LiteralExpression(parser.IgnoreDefaultFields ? SK.TrueLiteralExpression : SK.FalseLiteralExpression));
-                
-                var returnStatement = SF.ReturnStatement(SF.ObjectCreationExpression(SF.ParseTypeName(_protoTypeInfoFullName))
-                    .WithArgumentList(SF.ArgumentList())
-                    .WithInitializer(SF.InitializerExpression(SK.ObjectInitializerExpression).AddExpressions(fieldsAssignment, objectCreatorAssignment, ignoreDefaultAssignment))
-                );
-
-                return SF.MethodDeclaration(SF.ParseTypeName(_protoTypeInfoFullName), "CreateTypeInfo")
-                    .AddModifiers(SF.Token(SK.PrivateKeyword), SF.Token(SK.StaticKeyword))
-                    .WithBody(SF.Block().AddStatements(EmitTypeInfoRegisteredStatements()).AddStatements(returnStatement));
-            }
-            
-            private ExpressionSyntax EmitTypeInfoGetter(string prop)
-            {
-                var cast = SF.CastExpression(SF.ParseTypeName(parser.Identifier), SF.IdentifierName("obj"));
-                var access = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.ParenthesizedExpression(cast), SF.IdentifierName(prop));
-
-                return SF.SimpleLambdaExpression(SF.Parameter(SF.Identifier("obj")), access);
-            }
+        private const string TypeInfoFieldName = "_typeInfo";
+        private const string TypeInfoPropertyName = "TypeInfo";
         
-            private ExpressionSyntax EmitTypeInfoSetter(string prop)
-            {
-                var parameters = SF.ParameterList().AddParameters(SF.Parameter(SF.Identifier("obj")), SF.Parameter(SF.Identifier("value")));
-                var cast = SF.CastExpression(SF.ParseTypeName(parser.Identifier), SF.IdentifierName("obj"));
-                var left = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.ParenthesizedExpression(cast), SF.IdentifierName(prop));
-                var right = SF.IdentifierName("value");
+        private const string ProtoObjectInfoTypeRef = "global::Lagrange.Proto.Serialization.Metadata.ProtoObjectInfo<{0}>";
+        private const string ProtoFieldInfoTypeRef = "global::Lagrange.Proto.Serialization.Metadata.ProtoFieldInfo";
+        private const string ProtoFieldInfoGenericTypeRef = "global::Lagrange.Proto.Serialization.Metadata.ProtoFieldInfo<{0}>";
+        private const string ProtoTypeResolverTypeRef = "global::Lagrange.Proto.Serialization.Metadata.ProtoTypeResolver";
+        private const string WireTypeTypeRef = "global::Lagrange.Proto.Serialization.WireType";
+        private const string ConverterTypeRef = "global::Lagrange.Proto.Serialization.Converter";
+        private const string GenericTypeRef = "System.Collections.Generic";
+        
+        private const string IsRegisteredMethodRef = ProtoTypeResolverTypeRef + ".IsRegistered<{0}>";
+        private const string RegisterMethodRef = ProtoTypeResolverTypeRef + ".Register({0})";
+        
+        private string ProtoObjectInfoTypeRefGeneric => string.Format(ProtoObjectInfoTypeRef, _fullQualifiedName);
+
+        private static readonly List<(Func<ProtoFieldInfo, bool>, Func<ProtoFieldInfo, string>, string)> Converters =
+        [
+            (x => x.TypeSymbol.IsValueType && x.TypeSymbol.IsNullable(), x => SymbolResolver.GetGenericTypeNonNull(x.TypeSymbol).GetFullName(), "ProtoNullableConverter<{0}>"),
+            (x => x.TypeSymbol.TypeKind == TypeKind.Enum, x => x.TypeSymbol.GetFullName(), "ProtoEnumConverter<{0}>"),
+            (x => x.TypeSymbol is IArrayTypeSymbol, x => SymbolResolver.GetGenericTypeNonNull(x.TypeSymbol).GetFullName(), "ProtoArrayConverter<{0}>"),
+            (x => x.TypeSymbol is INamedTypeSymbol { IsGenericType: true, ConstructedFrom.Name: "List" } s && s.ContainingNamespace.ToString() == GenericTypeRef, x => SymbolResolver.GetGenericTypeNonNull(x.TypeSymbol).GetFullName(), "ProtoListConverter<{0}>"),
+            (x => SymbolResolver.IsProtoPackable(x.TypeSymbol), x => x.TypeSymbol.GetFullName(), "ProtoSerializableConverter<{0}>"),
+        ];
+        
+        private void EmitTypeInfo(SourceWriter source)
+        {
+            source.WriteLine($"public static {ProtoObjectInfoTypeRefGeneric}? {TypeInfoFieldName};");
+            source.WriteLine();
             
-                return SF.ParenthesizedLambdaExpression(parameters,
-                    SF.AssignmentExpression(SK.SimpleAssignmentExpression, left, right)
-                );
+            source.WriteLine($"public static {ProtoObjectInfoTypeRefGeneric} {TypeInfoPropertyName} => {TypeInfoFieldName} ??= GetTypeInfo();");
+            source.WriteLine();
+            
+            source.WriteLine($"private static {ProtoObjectInfoTypeRefGeneric} GetTypeInfo()");
+            source.WriteLine('{');
+            source.Indentation++;
+            
+            foreach (var kv in parser.Fields)
+            {
+                var info = kv.Value;
+
+                foreach (var kv2 in Converters)
+                {
+                    var predicate = kv2.Item1;
+                    var typeName = kv2.Item2(info);
+                    string converter = ConverterTypeRef + "." + kv2.Item3;
+                    
+                    if (predicate(info))
+                    {
+                        source.WriteLine($"if (!{string.Format(IsRegisteredMethodRef, info.TypeSymbol.GetFullName())}())");
+                        source.WriteLine('{');
+                        source.Indentation++;
+                        source.WriteLine($"{string.Format(RegisterMethodRef, string.Format("new " + converter + "()", typeName))};");
+                        source.Indentation--;
+                        source.WriteLine('}');
+                        source.WriteLine();
+                    }
+                }
             }
+            
+            source.WriteLine($"return new {ProtoObjectInfoTypeRefGeneric}()");
+            source.WriteLine('{');
+            source.Indentation++;
+            
+            source.WriteLine($"Fields = new global::System.Collections.Generic.Dictionary<int, {string.Format(ProtoFieldInfoTypeRef)}>()");
+            source.WriteLine('{');
+            source.Indentation++;
+            foreach (var kv in parser.Fields)
+            {
+                int field = kv.Key;
+                var info = kv.Value;
+                
+                EmitFieldInfo(source, field, info);
+            }
+            source.Indentation--;
+            source.WriteLine("},");
+            
+            source.WriteLine($"ObjectCreator = () => new {_fullQualifiedName}(),");
+            source.WriteLine($"IgnoreDefaultFields = {parser.IgnoreDefaultFields.ToString().ToLower()}");
+            
+            source.Indentation--;
+            source.WriteLine("};");
+            source.Indentation--;
+            source.WriteLine('}');
+        }
+
+        private void EmitFieldInfo(SourceWriter source, int field, ProtoFieldInfo info)
+        {
+            int tag = field << 3 | (byte)info.WireType;
+            
+            source.WriteLine($"[{tag}] = new {string.Format(ProtoFieldInfoGenericTypeRef, info.TypeSymbol.GetFullName())}({field}, {WireTypeTypeRef}.{info.WireType}, typeof({_fullQualifiedName}))");
+            source.WriteLine('{');
+            source.Indentation++;
+            
+            source.WriteLine($"Get = {ObjectVarName} => (({_fullQualifiedName}){ObjectVarName}).{info.Symbol.Name},");
+            source.WriteLine($"Set = ({ObjectVarName}, {ValueVarName}) => (({_fullQualifiedName}){ObjectVarName}).{info.Symbol.Name} = {ValueVarName},");
+            source.WriteLine($"NumberHandling = {ProtoNumberHandlingTypeRef}.{(info.IsSigned ? "Signed" : "Default")}");
+            
+            source.Indentation--;
+            source.WriteLine("},");
         }
     }
 }

@@ -1,10 +1,8 @@
-﻿using Lagrange.Proto.Serialization;
+using Lagrange.Proto.Generator.Entity;
 using Lagrange.Proto.Generator.Utility;
 using Lagrange.Proto.Generator.Utility.Extension;
+using Lagrange.Proto.Serialization;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using SF = Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
-using SK = Microsoft.CodeAnalysis.CSharp.SyntaxKind;
 
 namespace Lagrange.Proto.Generator;
 
@@ -12,128 +10,110 @@ public partial class ProtoSourceGenerator
 {
     private partial class Emitter
     {
-        private MethodDeclarationSyntax EmitMeasureHandlerMethod()
+        private const string ConstantVarName = "constant";
+        private const string LengthVarName = "length";
+
+        private const string ProtoHelperTypeRef = "global::Lagrange.Proto.Utility.ProtoHelper";
+        private const string ProtoResolvableUtilityTypeRef = "global::Lagrange.Proto.Primitives.ProtoResolvableUtility";
+
+        private const string GetVarIntLengthMethodRef = $"{ProtoHelperTypeRef}.GetVarIntLength";
+        private const string CountStringMethodRef = $"{ProtoHelperTypeRef}.CountString";
+        private const string CountBytesMethodRef = $"{ProtoHelperTypeRef}.CountBytes";
+        private const string MeasureMethodRef = $"{ProtoResolvableUtilityTypeRef}.Measure";
+
+        private void EmitMeasureMethod(SourceWriter source)
         {
-            ExpressionSyntax syntax;
-            if (parser.Fields.Count == 0)
+            source.WriteLine($"public static int MeasureHandler({_fullQualifiedName} {ObjectVarName})");
+            source.WriteLine("{");
+            source.Indentation++;
+
+            EmitConstant(source);
+            source.WriteLine($"int {LengthVarName} = {ConstantVarName};");
+            source.WriteLine();
+
+            foreach (var kv in parser.Fields)
             {
-                syntax = SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(0));
+                int field = kv.Key;
+                var info = kv.Value;
+
+                var tag = ProtoHelper.EncodeVarInt(field << 3 | (byte)info.WireType);
+                EmitLengthStatement(source, field, info);
+            }
+
+            source.WriteLine();
+            source.WriteLine($"return {LengthVarName};");
+
+            source.Indentation--;
+            source.WriteLine("}");
+        }
+
+        private void EmitConstant(SourceWriter source)
+        {
+            if (parser.IgnoreDefaultFields)
+            {
+                source.WriteLine($"const int {ConstantVarName} = 0;");
+                return;
+            }
+
+            int constant = 0;
+            foreach (var kv in parser.Fields)
+            {
+                int field = kv.Key;
+                var info = kv.Value;
+
+                var tag = ProtoHelper.EncodeVarInt(field << 3 | (byte)info.WireType);
+                if (info.TypeSymbol.IsValueType && !info.TypeSymbol.IsNullable()) constant += tag.Length;
+            }
+
+            source.WriteLine($"const int {ConstantVarName} = {constant};");
+        }
+
+        private void EmitLengthStatement(SourceWriter source, int field, ProtoFieldInfo info)
+        {
+            var tag = ProtoHelper.EncodeVarInt(field << 3 | (byte)info.WireType);
+            string lengthMember = info.TypeSymbol.IsValueType && info.TypeSymbol.IsNullable()
+                ? GenerateLengthMember(field, info, $"{ObjectVarName}.{info.Symbol.Name}.Value")
+                : GenerateLengthMember(field, info, $"{ObjectVarName}.{info.Symbol.Name}");
+            string expression;
+
+            if (parser.IgnoreDefaultFields)
+            {
+                expression = info.TypeSymbol.IsValueType
+                    ? GenerateIfNotDefaultExpression($"{ObjectVarName}.{info.Symbol.Name}", $"{tag.Length} + {lengthMember}", "0")
+                    : GenerateIfNotNullExpression($"{ObjectVarName}.{info.Symbol.Name}", $"{tag.Length} + {lengthMember}", "0"); // check with default
             }
             else
             {
-                int constant = 0;
-                var expressions = new List<ExpressionSyntax>();
-
-                foreach (var kv in parser.Fields)
+                if (info.TypeSymbol.IsValueType)
                 {
-                    var type = kv.Value.TypeSyntax;
-                    string name = kv.Value.Name;
-                    
-                    var symbol = parser.Model.GetTypeSymbol(type);
-                    string identifier = symbol.IsValueType && type.IsNullableType() ? name + ".Value" : name;
-
-                    ExpressionSyntax expr;
-                    if (symbol.IsRepeatedType())
-                    {
-                        expr = EmitResolvableLengthExpression(kv.Key, kv.Value.WireType, identifier);
-                    }
-                    else
-                    {
-                        expr = kv.Value.WireType switch
-                        {
-                            WireType.VarInt when symbol.IsEnumType() => EmitResolvableLengthExpression(kv.Key, kv.Value.WireType, identifier),
-                            WireType.VarInt when symbol.SpecialType == SpecialType.System_Boolean => SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(1)),
-                            WireType.VarInt => EmitVarIntLengthExpression(identifier),
-                            WireType.Fixed32 => SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(4)),
-                            WireType.Fixed64 => SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(8)),
-                            WireType.LengthDelimited when type.IsStringType() => EmitStringLengthExpression(identifier),
-                            WireType.LengthDelimited when type.IsByteArrayType() => EmitBytesLengthExpression(identifier),
-                            WireType.LengthDelimited when symbol.IsUserDefinedType() => EmitProtoPackableLengthExpression(identifier),
-                            _ => EmitResolvableLengthExpression(kv.Key, kv.Value.WireType, identifier)
-                        };
-                    }
-                    
-                    var tag = ProtoHelper.EncodeVarInt((kv.Key << 3) | (byte)kv.Value.WireType);
-                    if (symbol.IsValueType && !type.IsNullableType())
-                    {
-                        if (parser.IgnoreDefaultFields)
-                        {
-                            var left = SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(0));
-                            var right = SF.BinaryExpression(SK.AddExpression, SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(tag.Length)), expr);
-                            expr = EmitDefaultCheckExpression(name, left, right);
-                        }
-                        else
-                        {
-                            constant += tag.Length;
-                        }
-                    }
-                    else // null check with obj.{identifier}
-                    {
-                        var left = SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(0));
-                        var right = SF.BinaryExpression(SK.AddExpression, SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(tag.Length)), expr);
-                        expr = EmitNullableCheckExpression(name, left, right);
-                    }
-                    
-                    expressions.Add(expr);
+                    expression = info.TypeSymbol.IsNullable()
+                        ? GenerateIfNotNullExpression($"{ObjectVarName}.{info.Symbol.Name}", $"{tag.Length} + {lengthMember}", "0")
+                        : lengthMember;
                 }
-                
-                syntax = SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(constant));
-                syntax = expressions.Aggregate(syntax, (current, expr) => SF.BinaryExpression(SK.AddExpression, current, expr));
+                else
+                {
+                    expression = GenerateIfNotNullExpression($"{ObjectVarName}.{info.Symbol.Name}", $"{tag.Length} + {lengthMember}", "0");
+                }
             }
 
-            string classFullName = $"global::{parser.Namespace}.{parser.Identifier}";
-            var parameters = SF.ParameterList()
-                .AddParameters(SF.Parameter(SF.Identifier("obj")).WithType(SF.ParseTypeName(classFullName)));
-            
-            return SF.MethodDeclaration(SF.PredefinedType(SF.Token(SK.IntKeyword)), "MeasureHandler")
-                .AddModifiers(SF.Token(SK.PublicKeyword), SF.Token(SK.StaticKeyword))
-                .WithParameterList(parameters)
-                .WithBody(SF.Block(SF.ReturnStatement(syntax)));
-        }
-        
-        private static ExpressionSyntax EmitResolvableLengthExpression(int field, WireType wireType, string identifier)
-        {
-            var fieldNumber = SF.LiteralExpression(SK.NumericLiteralExpression, SF.Literal(field));
-            var wire = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("global::Lagrange.Proto.Serialization.WireType"), SF.IdentifierName(wireType.ToString()));
-            var obj = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("obj"), SF.IdentifierName(identifier));
-            var access = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("global::Lagrange.Proto.Primitives.ProtoResolvableUtility"), SF.IdentifierName("Measure"));
-            return SF.InvocationExpression(access).AddArgumentListArguments(SF.Argument(fieldNumber), SF.Argument(wire), SF.Argument(obj));
-        }
-        
-        private static ExpressionSyntax EmitVarIntLengthExpression(string identifier)
-        {
-            var obj = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("obj"), SF.IdentifierName(identifier));
-            var access = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("global::Lagrange.Proto.Utility.ProtoHelper"), SF.IdentifierName("GetVarIntLength"));
-            return SF.InvocationExpression(access).AddArgumentListArguments(SF.Argument(obj));
+            source.WriteLine($"{LengthVarName} += {expression};");
         }
 
-        private static ExpressionSyntax EmitStringLengthExpression(string identifier)
+        private string GenerateLengthMember(int field, ProtoFieldInfo info, string memberName)
         {
-            var obj = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("obj"), SF.IdentifierName(identifier));
-            var access = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("global::Lagrange.Proto.Utility.ProtoHelper"), SF.IdentifierName("CountString"));
-            return SF.InvocationExpression(access).AddArgumentListArguments(SF.Argument(obj));
+            return info.WireType switch
+            {
+                WireType.VarInt when info.TypeSymbol.IsIntegerType() => $"{GetVarIntLengthMethodRef}({memberName})",
+                WireType.Fixed32 => "4",
+                WireType.Fixed64 => "8",
+                WireType.LengthDelimited when info.TypeSymbol.SpecialType == SpecialType.System_String => $"{CountStringMethodRef}({memberName})",
+                WireType.LengthDelimited when info.TypeSymbol is IArrayTypeSymbol { ElementType.SpecialType: SpecialType.System_Byte } => $"{CountBytesMethodRef}({memberName})",
+                _ => $"{MeasureMethodRef}({field}, {WireTypeTypeRef}.{info.WireType}, {memberName})"
+            };
         }
-        
-        private static ExpressionSyntax EmitBytesLengthExpression(string identifier)
-        {
-            var obj = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("obj"), SF.IdentifierName(identifier));
-            var access = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("global::Lagrange.Proto.Utility.ProtoHelper"), SF.IdentifierName("CountBytes"));
-            return SF.InvocationExpression(access).AddArgumentListArguments(SF.Argument(obj));
-        }
-        
-        private static ExpressionSyntax EmitProtoPackableLengthExpression(string name)
-        {
-            var obj = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("obj"), SF.IdentifierName(name));
-            var access = SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("global::Lagrange.Proto.Utility.ProtoHelper"), SF.IdentifierName("CountProtoPackable"));
-            return SF.InvocationExpression(access).AddArgumentListArguments(SF.Argument(obj));
-        }
-
-        private static ExpressionSyntax EmitNullableCheckExpression(string identifier, ExpressionSyntax left, ExpressionSyntax right) => SF.ParenthesizedExpression(
-                SF.ConditionalExpression(SF.BinaryExpression(SK.EqualsExpression, SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("obj"), SF.IdentifierName(identifier)), SF.LiteralExpression(SK.NullLiteralExpression)), left, right)
-            );
-        
-        private static ExpressionSyntax EmitDefaultCheckExpression(string identifier, ExpressionSyntax left, ExpressionSyntax right) => SF.ParenthesizedExpression(
-            SF.ConditionalExpression(SF.BinaryExpression(SK.EqualsExpression, SF.MemberAccessExpression(SK.SimpleMemberAccessExpression, SF.IdentifierName("obj"), SF.IdentifierName(identifier)), SF.LiteralExpression(SK.DefaultLiteralExpression)), left, right)
-        );
     }
+
+    private static string GenerateIfNotNullExpression(string variableName, string left, string right) => $"({variableName} is not null ? {left} : {right})";
+        
+    private static string GenerateIfNotDefaultExpression(string variableName, string left, string right) => $"({variableName} is not default ? {left} : {right})";
 }

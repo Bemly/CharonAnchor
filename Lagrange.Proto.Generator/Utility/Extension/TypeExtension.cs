@@ -18,85 +18,41 @@ public static class TypeExtension
         return SystemAssemblies.Contains(assembly.Name);
     }
     
-    public static bool IsRepeatedType(this ITypeSymbol symbol)
-    {
-        return symbol is INamedTypeSymbol { IsGenericType: true, ConstructedFrom.Name: "List" } namedTypeSymbol && namedTypeSymbol.ContainingNamespace.ToString() == "System.Collections.Generic" ||
-               (symbol is IArrayTypeSymbol arrayType && arrayType.ElementType.SpecialType != SpecialType.System_Byte);
-    }
-
     public static bool IsIntegerType(this ITypeSymbol symbol)
     {
-        if (symbol.IsNullable())
-        {
-            return symbol is INamedTypeSymbol { IsGenericType: true, ConstructedFrom.SpecialType: SpecialType.System_Nullable_T } namedTypeSymbol && namedTypeSymbol.TypeArguments[0].IsIntegerType();
-        }
-        
-        return symbol.SpecialType is SpecialType.System_SByte or SpecialType.System_Byte or SpecialType.System_Int16 or
-               SpecialType.System_UInt16 or SpecialType.System_Int32 or SpecialType.System_UInt32 or
-               SpecialType.System_Int64 or SpecialType.System_UInt64;
-    }
-    
-    public static bool IsEnumType(this ITypeSymbol symbol)
-    {
-        return symbol.TypeKind == TypeKind.Enum;
+        if (SymbolResolver.IsNullableType(symbol, out var type)) symbol = type;
+
+        return (sbyte)symbol.SpecialType is >= (int)SpecialType.System_SByte and <= (int)SpecialType.System_UInt64;
     }
     
     public static bool IsNullable(this ITypeSymbol symbol)
     {
         return symbol is INamedTypeSymbol { IsGenericType: true, ConstructedFrom.SpecialType: SpecialType.System_Nullable_T };
     }
-
-    public static ITypeSymbol GetUnderlyingType(this ITypeSymbol symbol)
-    {
-        return symbol is INamedTypeSymbol { IsGenericType: true, ConstructedFrom.SpecialType: SpecialType.System_Nullable_T } namedTypeSymbol 
-            ? namedTypeSymbol.TypeArguments[0]
-            : throw new InvalidOperationException();
-    }
     
-    public static bool IsStringType(this TypeSyntax type)
+    public static string GetFullName(this ITypeSymbol symbol)
     {
-        return type switch
+        if (symbol is INamedTypeSymbol namedTypeSymbol)
         {
-            PredefinedTypeSyntax predefinedType => predefinedType.Keyword.IsKind(SyntaxKind.StringKeyword),
-            NullableTypeSyntax nullableType => IsStringType(nullableType.ElementType),
-            IdentifierNameSyntax identifierName => identifierName.Identifier.Text == "String",
-            QualifiedNameSyntax qualifiedName => qualifiedName.Right switch
+            string namespaceName = namedTypeSymbol.ContainingNamespace.ToString();
+            string typeName = namedTypeSymbol.Name;
+            while (namedTypeSymbol.ContainingType != null)
             {
-                IdentifierNameSyntax identifierName when qualifiedName.Left.ToString() == "System" => IsStringType(identifierName),
-                _ => false
-            },
-            _ => false
-        };
-    }
-    
-    public static bool IsByteArrayType(this TypeSyntax type)
-    {
-        return type switch
-        {
-            ArrayTypeSyntax { ElementType: PredefinedTypeSyntax predefinedType } =>  predefinedType.Keyword.IsKind(SyntaxKind.ByteKeyword),
-            ArrayTypeSyntax { ElementType: NullableTypeSyntax nullableType } => IsByteArrayType(nullableType.ElementType),
-            ArrayTypeSyntax { ElementType: IdentifierNameSyntax identifierName } => identifierName.Identifier.Text == "Byte",
-            ArrayTypeSyntax { ElementType: QualifiedNameSyntax qualifiedName } => qualifiedName.Right switch
+                namedTypeSymbol = namedTypeSymbol.ContainingType;
+                typeName = $"{namedTypeSymbol.Name}.{typeName}";
+            }
+            
+            if (namedTypeSymbol.IsGenericType)
             {
-                IdentifierNameSyntax identifierName when qualifiedName.Left.ToString() == "System" => IsByteArrayType(identifierName),
-                _ => false
-            },
-            _ => false
-        };
-    }
-    
-    public static bool IsNullableType(this TypeSyntax type)
-    {
-        return type switch
-        {
-            NullableTypeSyntax => true,
-            IdentifierNameSyntax identifierName => identifierName.Identifier.Text == "Nullable",
-            QualifiedNameSyntax qualifiedName => qualifiedName.Right switch
+                string genericTypeArguments = string.Join(", ", namedTypeSymbol.TypeArguments.Select(t => t.GetFullName()));
+                return $"global::{namespaceName}.{typeName}<{genericTypeArguments}>";
+            }
+            else
             {
-                IdentifierNameSyntax identifierName when qualifiedName.Left.ToString() == "System" => IsNullableType(identifierName),
-                _ => false
-            },
-            _ => false
-        };
+                return $"global::{namespaceName}.{typeName}";
+            }
+        }
+        
+        return symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
     }
 }

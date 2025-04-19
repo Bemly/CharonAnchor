@@ -1,5 +1,4 @@
-﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
+﻿using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Lagrange.Proto.Generator.Utility.Extension;
@@ -10,18 +9,26 @@ public static class RoslynExtension
 
     public static bool ContainsAttribute(this MemberDeclarationSyntax context, string attributeName) => context.AttributeLists.SelectMany(x => x.Attributes).Any(x => x.Name.ToString() == attributeName);
 
-    public static bool IsPartial(this TypeDeclarationSyntax context) => context.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword));
-
-    public static NameSyntax GetFullName(this Type type) => SyntaxFactory.ParseName($"global::{type.FullName}");
-    
-    public static ITypeSymbol GetTypeSymbol(this SemanticModel model, TypeSyntax type)
+    public static string GetTypeKindKeyword(this TypeDeclarationSyntax typeDeclaration)
     {
-        var symbol = model.GetSymbolInfo(type).Symbol;
-        if (symbol is ITypeSymbol typeSymbol)
+        switch (typeDeclaration.Kind())
         {
-            return typeSymbol;
+            case SyntaxKind.ClassDeclaration:
+                return "class";
+            case SyntaxKind.InterfaceDeclaration:
+                return "interface";
+            case SyntaxKind.StructDeclaration:
+                return "struct";
+            case SyntaxKind.RecordDeclaration:
+                return "record";
+            case SyntaxKind.RecordStructDeclaration:
+                return "record struct";
+            case SyntaxKind.EnumDeclaration:
+                return "enum";
+            case SyntaxKind.DelegateDeclaration:
+                return "delegate";
+            default:
+                throw new NotSupportedException($"Unsupported type kind: {typeDeclaration.Kind()}");
         }
-        
-        throw new InvalidOperationException($"Unable to get type symbol for {type}");
     }
 }

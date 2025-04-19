@@ -1,7 +1,6 @@
 ﻿using Lagrange.Proto.Generator.Utility.Extension;
 using Lagrange.Proto.Serialization;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Lagrange.Proto.Generator.Utility;
 
@@ -24,18 +23,9 @@ public static class ProtoHelper
     
     public static WireType GetWireType(ITypeSymbol symbol)
     {
-        if (symbol is IArrayTypeSymbol { ElementType.SpecialType: not SpecialType.System_Byte } arrayType) return GetWireType(arrayType.ElementType);
+        if (SymbolResolver.IsRepeatedType(symbol, out var type)) symbol = type;
         
-        if (symbol is INamedTypeSymbol { IsGenericType: true } namedType)
-        {
-            var genericType = namedType.ConstructedFrom;
-            if (genericType.Name == "List" && genericType.ContainingNamespace.ToString() == "System.Collections.Generic")
-            {
-                return GetWireType(namedType.TypeArguments[0]);
-            }
-        }
-        
-        if (symbol.IsIntegerType() || symbol.IsEnumType() || symbol.SpecialType == SpecialType.System_Boolean) return WireType.VarInt;
+        if (symbol.IsIntegerType() || symbol.TypeKind == TypeKind.Enum || symbol.SpecialType == SpecialType.System_Boolean) return WireType.VarInt;
         if (symbol.SpecialType == SpecialType.System_Single) return WireType.Fixed32;
         if (symbol.SpecialType == SpecialType.System_Double) return WireType.Fixed64;
 
