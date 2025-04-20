@@ -9,14 +9,14 @@ internal static partial class Program
     {
         var test = new Test { Test1 = new Dictionary<int, int> { { 1, 2 }, { 3, 4 }, { 5, 6 } } };
 
-        var buffer = ProtoSerializer.SerializeProtoPackable(test);
+        var buffer = ProtoSerializer.Serialize(test);
+        var deserialized = ProtoSerializer.Deserialize<Test>(buffer);
         Console.WriteLine(Convert.ToHexString(buffer));
     }
 
-    [ProtoPackable]
     public partial class Test
     {
-        [ProtoMember(1)] [ProtoValueMember(NumberHandling = ProtoNumberHandling.Signed)]
-        public Dictionary<int, int> Test1 { get; set; } = new Dictionary<int, int>();
+        [ProtoMember(1)] [ProtoValueMember]
+        public Dictionary<int, int> Test1 { get; set; } = new();
     }
 }

@@ -23,6 +23,22 @@ public static partial class ProtoTypeResolver
 
     private static MethodInfo? _populateFieldInfoMethod;
     
+    private static MethodInfo PopulateMapFieldInfoMethod
+    {
+        [RequiresUnreferencedCode(ProtoSerializer.SerializationRequiresDynamicCodeMessage)]
+        get
+        {
+            return _populateMapFieldInfoMethod ?? Initialize();
+            static MethodInfo Initialize()
+            {
+                var value = typeof(ProtoTypeResolver).GetMethod(nameof(PopulateMapFieldInfo), BindingFlags.NonPublic | BindingFlags.Static) ?? throw new InvalidOperationException($"Unable to find method {nameof(PopulateFieldInfo)}");
+                return Interlocked.CompareExchange(ref _populateMapFieldInfoMethod, value, null) ?? value;
+            }
+        }
+    }
+    
+    private static MethodInfo? _populateMapFieldInfoMethod;
+    
     private static MemberAccessor MemberAccessor
     {
         [RequiresUnreferencedCode(ProtoSerializer.SerializationRequiresDynamicCodeMessage)]
@@ -93,7 +109,9 @@ public static partial class ProtoTypeResolver
             _ => throw new NotSupportedException($"Unsupported member type: {member.MemberType}")
         };
         
-        var method = PopulateFieldInfoMethod.MakeGenericMethod(targetType);
+        var method = IsMapType(targetType, out var keyType, out var valueType) 
+            ? PopulateMapFieldInfoMethod.MakeGenericMethod(targetType, keyType, valueType) 
+            : PopulateFieldInfoMethod.MakeGenericMethod(targetType);
         return (ProtoFieldInfo?)method.Invoke(null, [declared, member]);
     }
 
@@ -117,9 +135,67 @@ public static partial class ProtoTypeResolver
         return fieldInfo;
     }
     
+    [RequiresUnreferencedCode(ProtoSerializer.SerializationRequiresDynamicCodeMessage)]
+    [RequiresDynamicCode(ProtoSerializer.SerializationRequiresDynamicCodeMessage)]
+    internal static ProtoMapFieldInfo<TMap, TKey, TValue>? PopulateMapFieldInfo<TMap, TKey, TValue>(Type declared, MemberInfo member)
+        where TMap : IDictionary<TKey, TValue>, new()
+        where TKey : notnull
+    {
+        var attribute = member.GetCustomAttribute<ProtoMemberAttribute>();
+        if (attribute == null) return null;
+        
+        var keyWireType = DetermineWireType(typeof(TKey), attribute.NumberHandling);
+        var valueHanding = member.GetCustomAttribute<ProtoValueMemberAttribute>()?.NumberHandling ?? ProtoNumberHandling.Default;
+        var valueWireType = DetermineWireType(typeof(TValue), valueHanding);
+        
+        var fieldInfo = new ProtoMapFieldInfo<TMap, TKey, TValue>(attribute.Field, keyWireType, valueWireType, declared)
+        {
+            NumberHandling = attribute.NumberHandling,
+            ValueNumberHandling = valueHanding
+        };
+        
+        DetermineAccessors(fieldInfo, member, false);
+        return fieldInfo;
+    }
+    
     [RequiresUnreferencedCode(ProtoSerializer.SerializationUnreferencedCodeMessage)]
     [RequiresDynamicCode(ProtoSerializer.SerializationRequiresDynamicCodeMessage)]
     private static void DetermineAccessors<T>(ProtoFieldInfo<T> jsonPropertyInfo, MemberInfo memberInfo, bool useNonPublicAccessors)
+    {
+        Debug.Assert(memberInfo is FieldInfo or PropertyInfo);
+
+        switch (memberInfo)
+        {
+            case PropertyInfo propertyInfo:
+            {
+                var getMethod = propertyInfo.GetMethod;
+                if (getMethod != null && (getMethod.IsPublic || useNonPublicAccessors)) jsonPropertyInfo.Get = MemberAccessor.CreatePropertyGetter<T>(propertyInfo);
+                
+                var setMethod = propertyInfo.SetMethod;
+                if (setMethod != null && (setMethod.IsPublic || useNonPublicAccessors)) jsonPropertyInfo.Set = MemberAccessor.CreatePropertySetter<T>(propertyInfo);
+                break;
+            }
+            case FieldInfo fieldInfo:
+            {
+                Debug.Assert(fieldInfo.IsPublic || useNonPublicAccessors);
+
+                jsonPropertyInfo.Get = MemberAccessor.CreateFieldGetter<T>(fieldInfo);
+                if (!fieldInfo.IsInitOnly) jsonPropertyInfo.Set = MemberAccessor.CreateFieldSetter<T>(fieldInfo);
+                break;
+            }
+            default:
+            {
+                Debug.Fail($"Invalid MemberInfo type: {memberInfo.MemberType}");
+                break;
+            }
+        }
+    }
+    
+    [RequiresUnreferencedCode(ProtoSerializer.SerializationUnreferencedCodeMessage)]
+    [RequiresDynamicCode(ProtoSerializer.SerializationRequiresDynamicCodeMessage)]
+    private static void DetermineAccessors<T, TKey, TValue>(ProtoMapFieldInfo<T, TKey, TValue> jsonPropertyInfo, MemberInfo memberInfo, bool useNonPublicAccessors) 
+        where T : IDictionary<TKey, TValue>, new()
+        where TKey : notnull
     {
         Debug.Assert(memberInfo is FieldInfo or PropertyInfo);
 
@@ -196,5 +272,26 @@ public static partial class ProtoTypeResolver
         }
 
         return result;
+    }
+
+    private static bool IsMapType(
+        Type type,
+        [NotNullWhen(true)] out Type? keyType, 
+        [NotNullWhen(true)] out Type? valueType)
+    {
+        keyType = null; valueType = null;
+        
+        if (!type.IsGenericType) return false;
+        if (type.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+        {
+            var genericArgs = type.GetGenericArguments();
+            if (genericArgs.Length != 2) return false;
+            
+            keyType = genericArgs[0];
+            valueType = genericArgs[1];
+            return true;
+        }
+
+        return false;
     }
 }
