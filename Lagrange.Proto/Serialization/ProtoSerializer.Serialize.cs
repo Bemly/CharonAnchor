@@ -20,8 +20,14 @@ public static partial class ProtoSerializer
     public static void SerializeProtoPackable<T>(IBufferWriter<byte> dest, T obj) where T : IProtoSerializable<T>
     {
         var writer = ProtoWriterCache.RentWriter(dest);
-        SerializeProtoPackableCore(writer, obj);
-        ProtoWriterCache.ReturnWriter(writer);
+        try
+        {
+            SerializeProtoPackableCore(writer, obj);
+        }
+        finally
+        {
+            ProtoWriterCache.ReturnWriter(writer);
+        }
     }
     
     /// <summary>
@@ -32,11 +38,15 @@ public static partial class ProtoSerializer
     public static byte[] SerializeProtoPackable<T>(T obj) where T : IProtoSerializable<T>
     {
         var writer = ProtoWriterCache.RentWriterAndBuffer(512, out var buffer);
-        SerializeProtoPackableCore(writer, obj);
-        var written = buffer.ToArray();
-        ProtoWriterCache.ReturnWriterAndBuffer(writer, buffer);
-        
-        return written;
+        try
+        {
+            SerializeProtoPackableCore(writer, obj);
+            return buffer.ToArray();
+        }
+        finally
+        {
+            ProtoWriterCache.ReturnWriterAndBuffer(writer, buffer);
+        }
     }
     
     private static void SerializeProtoPackableCore<T>(ProtoWriter writer, T obj) where T : IProtoSerializable<T>
@@ -58,8 +68,14 @@ public static partial class ProtoSerializer
     public static void Serialize<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(IBufferWriter<byte> dest, T obj) 
     {
         var writer = ProtoWriterCache.RentWriter(dest);
-        SerializeCore(writer, obj);
-        ProtoWriterCache.ReturnWriter(writer);
+        try
+        {
+            SerializeCore(writer, obj);
+        }
+        finally
+        {
+            ProtoWriterCache.ReturnWriter(writer);
+        }
     }
     
     /// <summary>
@@ -72,11 +88,15 @@ public static partial class ProtoSerializer
     public static byte[] Serialize<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(T obj) 
     {
         var writer = ProtoWriterCache.RentWriterAndBuffer(512, out var buffer);
-        SerializeCore(writer, obj);
-        var written = buffer.ToArray();
-        ProtoWriterCache.ReturnWriterAndBuffer(writer, buffer);
-        
-        return written;
+        try
+        {
+            SerializeCore(writer, obj);
+            return buffer.ToArray();
+        }
+        finally
+        {
+            ProtoWriterCache.ReturnWriterAndBuffer(writer, buffer);
+        }
     }
 
     [RequiresUnreferencedCode(SerializationUnreferencedCodeMessage)]
