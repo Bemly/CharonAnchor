@@ -28,6 +28,7 @@ public static partial class ProtoTypeResolver
 <# foreach(var item in numberTypes) { #>
         Register(new ProtoNullableConverter<<#= item.Name #>>());
 <# } #>
+        Register(new ProtoNullableConverter<bool>());
 
         Register(new ProtoBooleanConverter());
         Register(new ProtoStringConverter());

@@ -1,4 +1,4 @@
-using Lagrange.Proto.Serialization.Converter;
+﻿using Lagrange.Proto.Serialization.Converter;
 
 namespace Lagrange.Proto.Serialization.Metadata;
 
@@ -27,6 +27,7 @@ public static partial class ProtoTypeResolver
         Register(new ProtoNullableConverter<UInt64>());
         Register(new ProtoNullableConverter<Single>());
         Register(new ProtoNullableConverter<Double>());
+        Register(new ProtoNullableConverter<bool>());
 
         Register(new ProtoBooleanConverter());
         Register(new ProtoStringConverter());
