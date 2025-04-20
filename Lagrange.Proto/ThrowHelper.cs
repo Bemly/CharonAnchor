@@ -38,4 +38,21 @@ internal static class ThrowHelper
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static void ThrowInvalidOperationException_CanNotCreateObject(Type type) => throw new InvalidOperationException($"Cannot create an instance of {type.Name}. Ensure that the type has a parameterless constructor or is a value type.");
+    
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static void ThrowInvalidOperationException_NodeWrongType(params ReadOnlySpan<string> supportedTypeNames)
+    {
+        Debug.Assert(supportedTypeNames.Length > 0);
+        string concatenatedNames = supportedTypeNames.Length == 1 ? supportedTypeNames[0] : string.Join(", ", supportedTypeNames.ToArray());
+        throw new InvalidOperationException($"The node is not of the expected type. Supported types are: {concatenatedNames}.");
+    }
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static void ThrowInvalidOperationException_NodeCycleDetected() => throw new InvalidOperationException("Node cycle detected");
+
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static void ThrowInvalidOperationException_NodeAlreadyHasParent() => throw new InvalidOperationException("Node already has a parent");
 }
