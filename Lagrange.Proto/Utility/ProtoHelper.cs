@@ -29,7 +29,9 @@ public static class ProtoHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int GetVarIntLength<T>(T value) where T : unmanaged, INumberBase<T>
     {
-        long v = long.CreateTruncating(value);
+        if (value == T.Zero) return 1;
+        
+        long v = long.CreateSaturating(value);
         return BitOperations.TrailingZeroCount(v) / 7 + 1;
     }
     
