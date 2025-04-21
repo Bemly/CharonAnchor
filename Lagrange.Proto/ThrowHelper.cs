@@ -6,6 +6,8 @@ using Lagrange.Proto.Serialization;
 namespace Lagrange.Proto;
 
 [StackTraceHidden]
+[DebuggerStepThrough]
+[ExcludeFromCodeCoverage] // This class is used to throw exceptions in a way that allows the compiler to optimize the code better.
 internal static class ThrowHelper
 {
     [DoesNotReturn]
