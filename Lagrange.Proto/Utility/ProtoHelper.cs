@@ -38,7 +38,7 @@ public static class ProtoHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe T ZigZagEncode<T>(T value) where T : unmanaged, INumber<T>
     {
-        if (sizeof(T) < 4)
+        if (sizeof(T) <= 4)
         {
             int v = int.CreateSaturating(value);
             return T.CreateTruncating((v << 1) ^ (v >> 31));
@@ -53,7 +53,7 @@ public static class ProtoHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe T ZigZagDecode<T>(T value) where T : unmanaged, INumber<T>
     {
-        if (sizeof(T) < 4)
+        if (sizeof(T) <= 4)
         {
             int v = int.CreateSaturating(value);
             return T.CreateTruncating((v >> 1) ^ -(v & 1));
@@ -76,12 +76,5 @@ public static class ProtoHelper
     public static int CountBytes(ReadOnlySpan<byte> str)
     {
         return GetVarIntLength(str.Length) + str.Length;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int CountProtoPackable<T>(T obj) where T : IProtoSerializable<T>
-    {
-        int length = T.MeasureHandler(obj);
-        return GetVarIntLength(length) + length;
     }
 }
