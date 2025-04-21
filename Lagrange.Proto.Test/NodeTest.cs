@@ -27,8 +27,13 @@ public class NodeTest
     {
         var node = ProtoObject.Parse(_bytes);
         var test = node[1].GetValue<int>();
+        var testArray = node[1].AsArray();
         
-        Assert.That(test, Is.EqualTo(_obj.Test1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(test, Is.EqualTo(_obj.Test1));
+            Assert.That(testArray, Has.Count.EqualTo(1));
+        });
     }
 
     [Test]

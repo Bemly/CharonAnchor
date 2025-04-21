@@ -26,6 +26,7 @@ public abstract partial class ProtoNode(WireType wireType)
     {
         if (this is ProtoArray array) return array;
         
+        Parent = null;
         return new ProtoArray(WireType, this);
     }
 
