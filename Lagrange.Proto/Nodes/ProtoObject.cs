@@ -42,9 +42,18 @@ public partial class ProtoObject() : ProtoNode(WireType.LengthDelimited)
     {
         if (_fields.TryGetValue(field, out var removed))
         {
-            DetachParent(removed);
-            var array = new ProtoArray(removed.WireType, removed, node);
-            node = array;
+            if (removed is not ProtoArray array)
+            {
+                DetachParent(removed);
+                array = new ProtoArray(removed.WireType, removed, node);
+                node = array;
+            }
+            else
+            {
+                array.Add(node);
+                node.AssignParent(array);
+                return;
+            }
         }
         
         _fields[field] = node;

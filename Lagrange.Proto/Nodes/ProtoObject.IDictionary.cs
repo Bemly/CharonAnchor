@@ -26,9 +26,19 @@ public partial class ProtoObject : IDictionary<int, ProtoNode>
         
         if (_fields.TryGetValue(field, out var removed))
         {
-            DetachParent(removed);
-            var array = new ProtoArray(removed.WireType, removed, value);
-            value = array;
+            if (removed is ProtoArray array)
+            {
+                array.Add(value);
+                DetachParent(value);
+                value.AssignParent(array);
+                return;
+            }
+            else
+            {
+                DetachParent(removed);
+                array = new ProtoArray(removed.WireType, removed, value);
+                value = array;
+            }
         }
         
         _fields[field] = value;
