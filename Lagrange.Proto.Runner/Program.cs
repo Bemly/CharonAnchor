@@ -1,5 +1,4 @@
-﻿using System.Buffers;
-using Lagrange.Proto.Serialization;
+﻿using Lagrange.Proto.Nodes;
 
 namespace Lagrange.Proto.Runner;
 
@@ -7,16 +6,18 @@ internal static partial class Program
 {
     private static void Main(string[] args)
     {
-        var test = new Test { Test1 = new Dictionary<int, int> { { 1, 2 }, { 3, 4 }, { 5, 6 } } };
+        var test = new ProtoObject()
+        {
+            { 1, new ProtoObject{ { 1, 2 } } },
+            { 1, new ProtoObject{ { 1, 2 } } },
+            { 3, 4 }, 
+            { 5, 6 }
+        };
 
-        var buffer = ProtoSerializer.Serialize(test);
-        var deserialized = ProtoSerializer.Deserialize<Test>(buffer);
-        Console.WriteLine(Convert.ToHexString(buffer));
-    }
+        var bytes = test.Serialize();
+        Console.WriteLine(Convert.ToHexString(bytes));
+        var parsed = ProtoObject.Parse(bytes);
 
-    public partial class Test
-    {
-        [ProtoMember(1)] [ProtoValueMember]
-        public Dictionary<int, int> Test1 { get; set; } = new();
+        int value = parsed[1][0][1].GetValue<int>();
     }
 }

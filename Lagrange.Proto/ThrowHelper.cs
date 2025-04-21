@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using Lagrange.Proto.Serialization;
 
 namespace Lagrange.Proto;
 
@@ -55,4 +56,8 @@ internal static class ThrowHelper
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static void ThrowInvalidOperationException_NodeAlreadyHasParent() => throw new InvalidOperationException("Node already has a parent");
+    
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static void ThrowInvalidOperationException_InvalidWireType(WireType wireType) => throw new InvalidOperationException($"Invalid wire type {wireType} for the node.");
 }

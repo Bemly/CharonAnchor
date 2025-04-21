@@ -1,5 +1,6 @@
 using Lagrange.Proto.Primitives;
 using Lagrange.Proto.Serialization;
+using Lagrange.Proto.Utility;
 
 namespace Lagrange.Proto.Nodes;
 
@@ -32,6 +33,16 @@ public sealed partial class ProtoArray : ProtoNode
 
             node.WriteTo(field, writer);
         }
+    }
+    
+    public override int Measure(int field)
+    {
+        int size = ProtoHelper.GetVarIntLength(field << 3 | (int)WireType) * (_list.Count - 1);
+        foreach (var node in _list)
+        {
+            size += node.Measure(field);
+        }
+        return size;
     }
     
     private protected override ProtoNode GetItem(int index)

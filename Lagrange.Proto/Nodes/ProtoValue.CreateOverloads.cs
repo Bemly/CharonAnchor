@@ -55,4 +55,6 @@ public partial class ProtoValue
     public static ProtoValue Create(ReadOnlyMemory<byte> value) => new ProtoValue<ReadOnlyMemory<byte>>(value, WireType.LengthDelimited);
     
     public static ProtoValue Create(ReadOnlyMemory<char> value) => new ProtoValue<ReadOnlyMemory<char>>(value, WireType.LengthDelimited);
+
+    public static ProtoValue Create<T>(T value) where T : IProtoSerializable<T> => new ProtoValue<T>(value, WireType.LengthDelimited);
 }

@@ -36,5 +36,7 @@ public static partial class ProtoTypeResolver
         Register(new ProtoReadOnlyMemoryCharConverter());
         Register(new ProtoMemoryByteConverter());
         Register(new ProtoMemoryCharConverter());
+
+        Register(new ProtoRawValueConverter());
     }
 }

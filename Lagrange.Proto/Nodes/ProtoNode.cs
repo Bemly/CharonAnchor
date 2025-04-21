@@ -33,6 +33,13 @@ public abstract partial class ProtoNode(WireType wireType)
     {
         if (this is ProtoObject obj) return obj;
 
+        if (this is ProtoValue<ProtoRawValue> rawValue)
+        {
+            var value = ProtoObject.Parse(rawValue.Value.Bytes.Span);
+            value.AssignParent(this);
+            return value;
+        }
+
         ThrowHelper.ThrowInvalidOperationException_NodeWrongType(nameof(ProtoObject));
         return null;
     }
@@ -62,6 +69,8 @@ public abstract partial class ProtoNode(WireType wireType)
         get => GetItem(field);
         set => SetItem(field, value);
     }
+    
+    public virtual T GetValue<T>() => throw new InvalidOperationException($"The node is not of the expected type. Supported types are: {typeof(T).Name}.");
 
     private protected virtual ProtoNode GetItem(int field)
     {
