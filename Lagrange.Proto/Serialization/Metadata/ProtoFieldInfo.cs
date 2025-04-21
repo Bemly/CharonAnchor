@@ -343,11 +343,11 @@ public class ProtoMapFieldInfo<TMap, TKey, TValue>(int field, WireType keyWireTy
         var map = _typedGet(target);
         int tag = (Field << 3) | (byte)WireType;
         
-        int size = ProtoHelper.GetVarIntLength(tag) * (map.Count - 1); // the length of the first item is not counted as it would be added by the caller
+        int size = ProtoHelper.GetVarIntLength(tag) * (map.Count - 1) + 2 * map.Count; // the length of the first item is not counted as it would be added by the caller
         foreach (var (key, value) in map)
         {
-            size += _typedKeyConverter.Measure(1, KeyWireType, key) + _typedValueConverter.Measure(2, ValueWireType, value);
-            size += 2; // 2 for the tag of key and value
+            int kvSize =  _typedKeyConverter.Measure(1, KeyWireType, key) + _typedValueConverter.Measure(2, ValueWireType, value);
+            size += kvSize + ProtoHelper.GetVarIntLength(kvSize);
         }
         
         return size;

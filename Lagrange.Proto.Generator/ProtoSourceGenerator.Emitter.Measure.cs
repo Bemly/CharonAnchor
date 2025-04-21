@@ -70,9 +70,22 @@ public partial class ProtoSourceGenerator
         private void EmitLengthStatement(SourceWriter source, int field, ProtoFieldInfo info)
         {
             var tag = ProtoHelper.EncodeVarInt(field << 3 | (byte)info.WireType);
-            string lengthMember = info.TypeSymbol.IsValueType && info.TypeSymbol.IsNullable()
-                ? GenerateLengthMember(field, info, $"{ObjectVarName}.{info.Symbol.Name}.Value")
-                : GenerateLengthMember(field, info, $"{ObjectVarName}.{info.Symbol.Name}");
+
+            string memberName;
+            if (info.TypeSymbol.IsValueType && info.TypeSymbol.IsNullable())
+            {
+                memberName = $"{ObjectVarName}.{info.Symbol.Name}.Value";
+            }
+            else if (info.ExtraTypeInfo.Count != 0)
+            {
+                memberName = $"{ObjectVarName}";
+            }
+            else
+            {
+                memberName = $"{ObjectVarName}.{info.Symbol.Name}";
+            }
+
+            string lengthMember = GenerateLengthMember(field, info, memberName);
             string expression;
 
             if (parser.IgnoreDefaultFields)
