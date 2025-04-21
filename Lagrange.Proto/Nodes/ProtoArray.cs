@@ -22,6 +22,14 @@ public sealed partial class ProtoArray : ProtoNode
     
     public ProtoArray(WireType wireType) : base(wireType) { }
 
+    public IEnumerable<T> GetValues<T>()
+    {
+        foreach (var item in _list)
+        {
+            yield return item.GetValue<T>();
+        }
+    }
+    
     public override void WriteTo(int field, ProtoWriter writer)
     {
         bool first = true;

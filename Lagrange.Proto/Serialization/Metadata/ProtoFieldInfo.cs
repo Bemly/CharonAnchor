@@ -253,6 +253,7 @@ public class ProtoMapFieldInfo<TMap, TKey, TValue>(int field, WireType keyWireTy
         Debug.Assert(_typedSet != null);
 
         var map = new TMap();
+        int tag;
         
         while (true)
         {
@@ -303,10 +304,10 @@ public class ProtoMapFieldInfo<TMap, TKey, TValue>(int field, WireType keyWireTy
             }
             
             map.Add(key, value);
-            if (reader.DecodeVarInt<int>() >> 3 != Field) break;
+            if ((tag = reader.DecodeVarInt<int>() >> 3) != Field) break;
         }
 
-        reader.Rewind(-ProtoHelper.GetVarIntLength((Field << 3) | (byte)WireType));
+        reader.Rewind(-ProtoHelper.GetVarIntLength(tag));
         
         _typedSet(target, map);
     }

@@ -6,4 +6,6 @@ namespace Lagrange.Proto;
 public class ProtoValueMemberAttribute : Attribute
 {
     public ProtoNumberHandling NumberHandling { get; init; } = ProtoNumberHandling.Default;
+    
+    public WireType? NodesWireType { get; init; }
 }

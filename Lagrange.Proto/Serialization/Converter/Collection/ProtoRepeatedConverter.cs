@@ -51,15 +51,16 @@ public abstract class ProtoRepeatedConverter<TCollection, TElement> : ProtoConve
     {
         var collection = Create();
         object? state = CreateState();
-        
+
+        int tag;
         while (true)
         {
             var item = _converter.Read(field, wireType, ref reader);
             Add(item, collection, state);
-            if (reader.DecodeVarInt<int>() >> 3 != field) break;
+            if ((tag = reader.DecodeVarInt<int>() >> 3) != field) break;
         }
 
-        reader.Rewind(-ProtoHelper.GetVarIntLength((field << 3) | (byte)wireType));
+        reader.Rewind(-ProtoHelper.GetVarIntLength(tag));
 
         return Finalize(collection, state);
     }
@@ -69,14 +70,15 @@ public abstract class ProtoRepeatedConverter<TCollection, TElement> : ProtoConve
         var collection = Create();
         object? state = CreateState();
 
+        int tag;
         while (true)
         {
             var item = _converter.ReadWithNumberHandling(field, wireType, ref reader, numberHandling);
             Add(item, collection, state);
-            if (reader.DecodeVarInt<int>() >> 3 != field) break;
+            if ((tag = reader.DecodeVarInt<int>() >> 3) != field) break;
         }
 
-        reader.Rewind(-ProtoHelper.GetVarIntLength((field << 3) | (byte)wireType));
+        reader.Rewind(-ProtoHelper.GetVarIntLength(tag));
 
         return Finalize(collection, state);
     }

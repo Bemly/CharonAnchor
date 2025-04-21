@@ -8,4 +8,6 @@ public class ProtoMemberAttribute(int field) : Attribute
     public int Field { get; } = field;
     
     public ProtoNumberHandling NumberHandling { get; init; } = ProtoNumberHandling.Default;
+    
+    public WireType NodesWireType { get; init; }
 }

@@ -5,6 +5,32 @@ namespace Lagrange.Proto.Generator;
 
 public class SymbolResolver
 {
+    private const string NodesTypeRef = "Lagrange.Proto.Nodes";
+
+    private static readonly string[] Nodes = ["ProtoNode", "ProtoValue", "ProtoArray", "ProtoObject"];
+
+    private static readonly string[] DynamicNodes = ["ProtoNode", "ProtoValue", "ProtoArray"];
+    
+    public static bool IsNodesType(ITypeSymbol type)
+    {
+        if (type is INamedTypeSymbol namedTypeSymbol)
+        {
+            return namedTypeSymbol.ContainingNamespace.ToString() == NodesTypeRef && (Nodes.Contains(namedTypeSymbol.Name) || namedTypeSymbol is { IsGenericType: true, Name: "ProtoValue" });
+        }
+
+        return false;
+    }
+    
+    public static bool IsDynamicNodesType(ITypeSymbol type)
+    {
+        if (type is INamedTypeSymbol namedTypeSymbol)
+        {
+            return namedTypeSymbol.ContainingNamespace.ToString() == NodesTypeRef && (DynamicNodes.Contains(namedTypeSymbol.Name) || namedTypeSymbol is { IsGenericType: true, Name: "ProtoValue" });
+        }
+
+        return false;
+    }
+    
     public static bool IsRepeatedType(ITypeSymbol type, [NotNullWhen(true)] out ITypeSymbol? elementType)
     {
         elementType = null;

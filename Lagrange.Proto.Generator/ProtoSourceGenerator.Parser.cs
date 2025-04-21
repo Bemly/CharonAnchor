@@ -109,7 +109,7 @@ public partial class ProtoSourceGenerator
                 if (wireType == WireType.LengthDelimited && typeSymbol.IsUserDefinedType())
                 {
                     var typeAttribute = typeSymbol.GetAttributes().FirstOrDefault(x => x.AttributeClass?.ToDisplayString() == ProtoPackableAttributeFullName);
-                    if (typeAttribute == null)
+                    if (typeAttribute == null && !SymbolResolver.IsNodesType(typeSymbol))
                     { 
                         ReportDiagnostics(NestedTypeMustBeProtoPackable, member.GetLocation(), typeSymbol.Name, identifier);
                         continue;
@@ -122,9 +122,9 @@ public partial class ProtoSourceGenerator
                     var valueWireType = ProtoHelper.GetWireType(valueType);
                     bool valueSigned = false;
 
-                    ReadProtoMemberAttribute(attribute, ref keyWireType, member, field, identifier, ref signed);
+                    ReadProtoMemberAttribute(attribute, typeSymbol, ref keyWireType, member, field, identifier, ref signed);
                     var valueAttribute = symbol.GetAttributes().FirstOrDefault(x => x.AttributeClass?.ToDisplayString() == ProtoValueMemberAttributeFullName);
-                    if (valueAttribute != null) ReadProtoMemberAttribute(valueAttribute, ref valueWireType, member, field, identifier, ref valueSigned);
+                    if (valueAttribute != null) ReadProtoMemberAttribute(valueAttribute, typeSymbol, ref valueWireType, member, field, identifier, ref valueSigned);
 
                     Fields[field] = new ProtoFieldInfo(symbol, typeSymbol, wireType, signed) 
                     { 
@@ -137,13 +137,13 @@ public partial class ProtoSourceGenerator
                 }
                 else
                 {
-                    ReadProtoMemberAttribute(attribute, ref wireType, member, field, identifier, ref signed);
+                    ReadProtoMemberAttribute(attribute, typeSymbol, ref wireType, member, field, identifier, ref signed);
                     Fields[field] = new ProtoFieldInfo(symbol, typeSymbol, wireType, signed);
                 }
             }
         }
 
-        private void ReadProtoMemberAttribute(AttributeData attribute, ref WireType wireType, MemberDeclarationSyntax member, int field, string identifier, ref bool signed)
+        private void ReadProtoMemberAttribute(AttributeData attribute, ITypeSymbol typeSymbol, ref WireType wireType, MemberDeclarationSyntax member, int field, string identifier, ref bool signed)
         {
             foreach (var argument in attribute.NamedArguments)
             {
@@ -164,6 +164,28 @@ public partial class ProtoSourceGenerator
                         break;
                     }
                 }
+            }
+            
+            if (SymbolResolver.IsDynamicNodesType(typeSymbol))
+            {
+                var nodesWireType = WireType.Unknown;
+                    
+                foreach (var kv in attribute.NamedArguments)
+                {
+                    switch (kv.Key)
+                    {
+                        case "NodesWireType":
+                            nodesWireType = (WireType)(kv.Value.Value ?? throw new InvalidOperationException("Unable to get wire type."));
+                            break;
+                    }
+                }
+                    
+                if (nodesWireType == WireType.Unknown)
+                {
+                    ReportDiagnostics(InvalidNodesWireType, member.GetLocation(), field, identifier);
+                    return;
+                }
+                wireType = nodesWireType;
             }
         }
 

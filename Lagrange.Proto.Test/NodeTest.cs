@@ -82,10 +82,45 @@ public class NodeTest
         
         Assert.That(bytes, Is.EqualTo(normalBytes));
     }
+    
+    [Test]
+    public void TestHybrid()
+    {
+        var node = new TestNodeHybrid
+        {
+            Test1 = 114514,
+            Test2 = new ProtoArray(WireType.VarInt, 1, 2, 3, 4, 5, 6, 7, 8, 9),
+            Test3 = new ProtoObject
+            {
+                { 1, 2 }, { 3, 4 }
+            }
+        };
+
+        var bytes = ProtoSerializer.SerializeProtoPackable(node);
+        var parsed = ProtoSerializer.DeserializeProtoPackable<TestNodeHybrid>(bytes);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(parsed.Test1, Is.EqualTo(node.Test1));
+            Assert.That(parsed.Test2.GetValues<int>(), Is.EqualTo(node.Test2.GetValues<int>()));
+            Assert.That(parsed.Test3[1].GetValue<int>(), Is.EqualTo(2));
+            Assert.That(parsed.Test3[3].GetValue<int>(), Is.EqualTo(4));
+        });
+    }
 }
 
 [ProtoPackable]
 public partial class TestNode
 {
     [ProtoMember(1)] public int Test1 { get; set; }
+}
+
+[ProtoPackable]
+public partial class TestNodeHybrid
+{
+    [ProtoMember(1)] public int Test1 { get; set; }
+    
+    [ProtoMember(2, NodesWireType = WireType.VarInt)] public ProtoArray Test2 { get; set; }
+    
+    [ProtoMember(3)] public ProtoObject Test3 { get; set; }
 }

@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using Lagrange.Proto.Nodes;
 
 namespace Lagrange.Proto.Serialization.Metadata;
 
@@ -124,7 +125,7 @@ public static partial class ProtoTypeResolver
         var attribute = member.GetCustomAttribute<ProtoMemberAttribute>();
         if (attribute == null) return null;
         
-        var wireType = DetermineWireType(type, attribute.NumberHandling);
+        var wireType = DetermineWireType(member.Name, type, attribute.NumberHandling, attribute.NodesWireType);
         var fieldInfo = new ProtoFieldInfo<TField>(attribute.Field, wireType, declared)
         {
             NumberHandling = attribute.NumberHandling
@@ -144,14 +145,14 @@ public static partial class ProtoTypeResolver
         var attribute = member.GetCustomAttribute<ProtoMemberAttribute>();
         if (attribute == null) return null;
         
-        var keyWireType = DetermineWireType(typeof(TKey), attribute.NumberHandling);
-        var valueHanding = member.GetCustomAttribute<ProtoValueMemberAttribute>()?.NumberHandling ?? ProtoNumberHandling.Default;
-        var valueWireType = DetermineWireType(typeof(TValue), valueHanding);
+        var keyWireType = DetermineWireType(member.Name, typeof(TKey), attribute.NumberHandling, attribute.NodesWireType);
+        var valueAttribute = member.GetCustomAttribute<ProtoValueMemberAttribute>();
+        var valueWireType = DetermineWireType(member.Name, typeof(TValue), valueAttribute?.NumberHandling ?? ProtoNumberHandling.Default, valueAttribute?.NodesWireType);
         
         var fieldInfo = new ProtoMapFieldInfo<TMap, TKey, TValue>(attribute.Field, keyWireType, valueWireType, declared)
         {
             NumberHandling = attribute.NumberHandling,
-            ValueNumberHandling = valueHanding
+            ValueNumberHandling = valueAttribute?.NumberHandling ?? ProtoNumberHandling.Default
         };
         
         DetermineAccessors(fieldInfo, member, false);
@@ -226,7 +227,7 @@ public static partial class ProtoTypeResolver
         }
     }
 
-    private static WireType DetermineWireType(Type fieldType, ProtoNumberHandling numberHandling)
+    private static WireType DetermineWireType(string fieldName, Type fieldType, ProtoNumberHandling numberHandling, WireType? nodesWireType = null)
     {
         if (fieldType.IsEnum) fieldType = Enum.GetUnderlyingType(fieldType);
         
@@ -244,6 +245,12 @@ public static partial class ProtoTypeResolver
             {
                 fieldType = Nullable.GetUnderlyingType(fieldType)!;
             }
+        }
+        
+        if (fieldType == typeof(ProtoNode) || fieldType == typeof(ProtoRawValue) || fieldType == typeof(ProtoArray))
+        {
+            if (nodesWireType is null or WireType.Unknown) ThrowHelper.ThrowInvalidOperationException_InvalidNodesWireType(fieldName);
+            return nodesWireType.Value;
         }
 
         var result = fieldType switch

@@ -62,4 +62,8 @@ internal static class ThrowHelper
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static void ThrowInvalidOperationException_InvalidWireType(WireType wireType) => throw new InvalidOperationException($"Invalid wire type {wireType} for the node.");
+    
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static void ThrowInvalidOperationException_InvalidNodesWireType(string fieldName) => throw new InvalidOperationException($"The wire type must be explicitly set for field {fieldName} as the wire type for the ProtoNode, ProtoValue, and ProtoArray types is not known at compile time, to set the wire type, use the NodesWireType Property in ProtoMember attribute");
 }

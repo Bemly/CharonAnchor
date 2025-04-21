@@ -19,18 +19,19 @@ public class ProtoArrayConverter : ProtoConverter<ProtoArray>
 
     public override ProtoArray Read(int field, WireType wireType, ref ProtoReader reader)
     {
-        var array = new ProtoArray(wireType, field);
+        var array = new ProtoArray(wireType);
         var converter = ProtoTypeResolver.GetConverter<ProtoRawValue>();
-        
+
+        int tag;
         while (true)
         {
             var value = converter.Read(field, wireType, ref reader);
             array.Add(new ProtoValue<ProtoRawValue>(value, wireType));
             
-            if (reader.DecodeVarInt<int>() >> 3 != field) break;
+            if ((tag = reader.DecodeVarInt<int>() >> 3) != field) break;
         }
 
-        reader.Rewind(-ProtoHelper.GetVarIntLength((field << 3) | (byte)wireType));
+        reader.Rewind(-ProtoHelper.GetVarIntLength(tag));
         return array;
     }
 }
