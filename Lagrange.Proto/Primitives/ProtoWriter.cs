@@ -1,5 +1,6 @@
 using System.Buffers;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -359,6 +360,7 @@ public class ProtoWriter : IDisposable
         _writer = null;
     }
     
+    [ExcludeFromCodeCoverage]
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private string DebuggerDisplay => $"BytesCommitted = {BytesCommitted} BytesPending = {BytesPending}";
 }

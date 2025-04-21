@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using Lagrange.Proto.Primitives;
 using Lagrange.Proto.Utility;
 
@@ -43,6 +44,7 @@ public abstract class ProtoFieldInfo(int field, WireType wireType, Type declared
     
     public abstract int Measure(object target);
         
+    [ExcludeFromCodeCoverage]
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private string DebuggerDisplay => $"Field = {Field}, WireType = {WireType}, PropertyType = {PropertyType}, DeclaredType = {DeclaredType}";
     
@@ -129,29 +131,27 @@ public class ProtoFieldInfo<T> : ProtoFieldInfo
     
     public override void Read(ref ProtoReader reader, object target)
     {
-        Debug.Assert(_typedEffectiveConverter != null);
-        
         T value = NumberHandling == ProtoNumberHandling.Default
-            ? _typedEffectiveConverter.Read(Field, WireType, ref reader)
-            : _typedEffectiveConverter.ReadWithNumberHandling(Field, WireType, ref reader, NumberHandling);
+            ? EffectiveConverter.Read(Field, WireType, ref reader)
+            : EffectiveConverter.ReadWithNumberHandling(Field, WireType, ref reader, NumberHandling);
         _typedSet?.Invoke(target, value);
     }
 
     public override void Write(ProtoWriter writer, object target)
     {
-        Debug.Assert(_typedEffectiveConverter != null && _typedGet != null);
+        Debug.Assert(_typedGet != null);
 
         T value = _typedGet.Invoke(target);
-        if (NumberHandling == ProtoNumberHandling.Default) _typedEffectiveConverter.Write(Field, WireType, writer, value);
-        else _typedEffectiveConverter.WriteWithNumberHandling(Field, WireType, writer, value, NumberHandling);
+        if (NumberHandling == ProtoNumberHandling.Default) EffectiveConverter.Write(Field, WireType, writer, value);
+        else EffectiveConverter.WriteWithNumberHandling(Field, WireType, writer, value, NumberHandling);
     }
     
     public override int Measure(object target)
     {
-        Debug.Assert(_typedEffectiveConverter != null && _typedGet != null);
+        Debug.Assert(_typedGet != null);
 
         T value = _typedGet.Invoke(target);
-        return _typedEffectiveConverter.Measure(Field, WireType, value);
+        return EffectiveConverter.Measure(Field, WireType, value);
     }
 }
 
@@ -250,7 +250,7 @@ public class ProtoMapFieldInfo<TMap, TKey, TValue>(int field, WireType keyWireTy
     
     public override void Read(ref ProtoReader reader, object target)
     {
-        Debug.Assert(_typedSet != null && _typedKeyConverter != null && _typedValueConverter != null);
+        Debug.Assert(_typedSet != null);
 
         var map = new TMap();
         
@@ -268,11 +268,11 @@ public class ProtoMapFieldInfo<TMap, TKey, TValue>(int field, WireType keyWireTy
                     switch (reader.DecodeVarInt<byte>() >> 3)
                     {
                         case 1:
-                            key = _typedKeyConverter.Read(Field, KeyWireType, ref reader);
+                            key = KeyEffectiveConverter.Read(Field, KeyWireType, ref reader);
                             foundKey = true;
                             break;
                         case 2:
-                            value = _typedValueConverter.Read(Field, ValueWireType, ref reader);
+                            value = ValueEffectiveConverter.Read(Field, ValueWireType, ref reader);
                             foundValue = true;
                             break;
                         default:
@@ -288,11 +288,11 @@ public class ProtoMapFieldInfo<TMap, TKey, TValue>(int field, WireType keyWireTy
                     switch (reader.DecodeVarInt<byte>() >> 3)
                     {
                         case 1:
-                            key = _typedKeyConverter.ReadWithNumberHandling(Field, KeyWireType, ref reader, NumberHandling);
+                            key = KeyEffectiveConverter.ReadWithNumberHandling(Field, KeyWireType, ref reader, NumberHandling);
                             foundKey = true;
                             break;
                         case 2:
-                            value = _typedValueConverter.ReadWithNumberHandling(Field, ValueWireType, ref reader, ValueNumberHandling);
+                            value = ValueEffectiveConverter.ReadWithNumberHandling(Field, ValueWireType, ref reader, ValueNumberHandling);
                             foundValue = true;
                             break;
                         default:
@@ -313,7 +313,7 @@ public class ProtoMapFieldInfo<TMap, TKey, TValue>(int field, WireType keyWireTy
 
     public override void Write(ProtoWriter writer, object target)
     {
-        Debug.Assert(_typedGet != null && _typedKeyConverter != null && _typedValueConverter != null);
+        Debug.Assert(_typedGet != null && KeyEffectiveConverter != null && ValueEffectiveConverter != null);
         
         var map = _typedGet(target);
         int tag = (Field << 3) | (byte)WireType;
@@ -324,21 +324,21 @@ public class ProtoMapFieldInfo<TMap, TKey, TValue>(int field, WireType keyWireTy
             if (first) first = false;
             else writer.EncodeVarInt(tag);
 
-            writer.EncodeVarInt(_typedKeyConverter.Measure(1, KeyWireType, key) + _typedValueConverter.Measure(2, ValueWireType, value) + 2); // 2 for the tag of key and value
+            writer.EncodeVarInt(KeyEffectiveConverter.Measure(1, KeyWireType, key) + ValueEffectiveConverter.Measure(2, ValueWireType, value) + 2); // 2 for the tag of key and value
             
             writer.WriteRawByte((byte)(8 | (byte)KeyWireType));
-            if (NumberHandling == ProtoNumberHandling.Default) _typedKeyConverter.Write(1, KeyWireType, writer, key);
-            else _typedKeyConverter.WriteWithNumberHandling(1, KeyWireType, writer, key, NumberHandling);
+            if (NumberHandling == ProtoNumberHandling.Default) KeyEffectiveConverter.Write(1, KeyWireType, writer, key);
+            else KeyEffectiveConverter.WriteWithNumberHandling(1, KeyWireType, writer, key, NumberHandling);
             
             writer.WriteRawByte((byte)(16 | (byte)ValueWireType));
-            if (ValueNumberHandling == ProtoNumberHandling.Default) _typedValueConverter.Write(2, ValueWireType, writer, value);
-            else _typedValueConverter.WriteWithNumberHandling(2, ValueWireType, writer, value, ValueNumberHandling);
+            if (ValueNumberHandling == ProtoNumberHandling.Default) ValueEffectiveConverter.Write(2, ValueWireType, writer, value);
+            else ValueEffectiveConverter.WriteWithNumberHandling(2, ValueWireType, writer, value, ValueNumberHandling);
         }
     }
 
     public override int Measure(object target)
     {
-        Debug.Assert(_typedGet != null && _typedKeyConverter != null && _typedValueConverter != null);
+        Debug.Assert(_typedGet != null);
         
         var map = _typedGet(target);
         int tag = (Field << 3) | (byte)WireType;
@@ -346,7 +346,7 @@ public class ProtoMapFieldInfo<TMap, TKey, TValue>(int field, WireType keyWireTy
         int size = ProtoHelper.GetVarIntLength(tag) * (map.Count - 1) + 2 * map.Count; // the length of the first item is not counted as it would be added by the caller
         foreach (var (key, value) in map)
         {
-            int kvSize =  _typedKeyConverter.Measure(1, KeyWireType, key) + _typedValueConverter.Measure(2, ValueWireType, value);
+            int kvSize =  KeyEffectiveConverter.Measure(1, KeyWireType, key) + ValueEffectiveConverter.Measure(2, ValueWireType, value);
             size += kvSize + ProtoHelper.GetVarIntLength(kvSize);
         }
         
