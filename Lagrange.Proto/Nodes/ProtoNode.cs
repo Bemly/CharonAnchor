@@ -8,7 +8,7 @@ public abstract partial class ProtoNode(WireType wireType)
     
     public WireType WireType { get; } = wireType;
 
-    internal void AssignParent(ProtoNode parent)
+    internal void AssignParent(ProtoNode? parent)
     {
         if (Parent != null) ThrowHelper.ThrowInvalidOperationException_NodeAlreadyHasParent();
 
@@ -26,8 +26,12 @@ public abstract partial class ProtoNode(WireType wireType)
     {
         if (this is ProtoArray array) return array;
         
+        var originalParent = Parent; // keep the original reference to the parent
         Parent = null;
-        return new ProtoArray(WireType, this);
+        var result = new ProtoArray(WireType, this);
+        result.AssignParent(originalParent);
+        
+        return result;
     }
 
     public ProtoObject AsObject()
@@ -37,7 +41,7 @@ public abstract partial class ProtoNode(WireType wireType)
         if (this is ProtoValue<ProtoRawValue> rawValue)
         {
             var value = ProtoObject.Parse(rawValue.Value.Bytes.Span);
-            value.AssignParent(this);
+            value.AssignParent(Parent);
             return value;
         }
 

@@ -33,6 +33,7 @@ public class NodeTest
         {
             Assert.That(test, Is.EqualTo(_obj.Test1));
             Assert.That(testArray, Has.Count.EqualTo(1));
+            Assert.That(testArray.Root, Is.SameAs(node));
         });
     }
 
