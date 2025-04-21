@@ -17,10 +17,15 @@ public class CollectionTest
             Test3 = new[] { 1.0f, 2.0f, 3.0f },
             Test4 = new TestCollection2
             {
-                Test4 = new Dictionary<int, string>
+                Test1 = new Dictionary<int, string>
                 {
                     { 1, "Test" },
                     { 2, "Test2" }
+                },
+                Test2 = new Dictionary<int, int>
+                {
+                    { 1, 1 },
+                    { 2, 2 }
                 }
             }
         };
@@ -37,7 +42,8 @@ public class CollectionTest
             Assert.That(test2.Test1, Is.EqualTo(_test.Test1));
             Assert.That(test2.Test2, Is.EqualTo(_test.Test2));
             Assert.That(test2.Test3, Is.EqualTo(_test.Test3));
-            Assert.That(test2.Test4.Test4, Is.EqualTo(_test.Test4.Test4));
+            Assert.That(test2.Test4.Test1, Is.EqualTo(_test.Test4.Test1));
+            Assert.That(test2.Test4.Test2, Is.EqualTo(_test.Test4.Test2));
         });
     }
     
@@ -52,7 +58,8 @@ public class CollectionTest
             Assert.That(test2.Test1, Is.EqualTo(_test.Test1));
             Assert.That(test2.Test2, Is.EqualTo(_test.Test2));
             Assert.That(test2.Test3, Is.EqualTo(_test.Test3));
-            Assert.That(test2.Test4.Test4, Is.EqualTo(_test.Test4.Test4));
+            Assert.That(test2.Test4.Test1, Is.EqualTo(_test.Test4.Test1));
+            Assert.That(test2.Test4.Test2, Is.EqualTo(_test.Test4.Test2));
         });
     }
 }
@@ -73,5 +80,8 @@ public partial class TestCollection
 [ProtoPackable]
 public partial class TestCollection2
 {
-    [ProtoMember(1)] public Dictionary<int, string> Test4 { get; set; } = new();
+    [ProtoMember(1)] public Dictionary<int, string> Test1 { get; set; } = new();
+    
+    [ProtoMember(2)] [ProtoValueMember(NumberHandling = ProtoNumberHandling.Signed)]
+    public Dictionary<int, int> Test2 { get; set; } = new();
 }

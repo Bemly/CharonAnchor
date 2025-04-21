@@ -261,7 +261,7 @@ public class ProtoMapFieldInfo<TMap, TKey, TValue>(int field, WireType keyWireTy
             TKey? key = default; bool foundKey = false;
             TValue? value = default; bool foundValue = false;
             
-            if (NumberHandling == ProtoNumberHandling.Default)
+            if (NumberHandling == ProtoNumberHandling.Default && ValueNumberHandling == ProtoNumberHandling.Default)
             {
                 while ((key is null || !foundKey) || (value is null || !foundValue))
                 {
