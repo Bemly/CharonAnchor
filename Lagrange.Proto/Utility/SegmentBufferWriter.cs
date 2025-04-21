@@ -6,7 +6,7 @@ namespace Lagrange.Proto.Utility;
 /// <summary>
 /// The cache-friendly buffer writer that can be used to write data to a buffer and then return it to the pool, please reuse this class instead of creating new instances.
 /// </summary>
-public sealed class SegmentBufferWriter : IBufferWriter<byte>, IDisposable
+internal sealed class SegmentBufferWriter : IBufferWriter<byte>, IDisposable
 {
     private const int DefaultSegmentSize = 2048;
     
