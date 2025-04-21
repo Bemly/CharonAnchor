@@ -1,4 +1,5 @@
-﻿using Lagrange.Proto.Serialization;
+﻿using System.Buffers;
+using Lagrange.Proto.Serialization;
 
 namespace Lagrange.Proto.Test;
 
@@ -116,6 +117,23 @@ public class ProtoTest
             Assert.That(obj.Test13, Is.EqualTo(_test.Test13));
             Assert.That(obj.Test14, Is.EqualTo(_test.Test14));
         });
+    }
+
+    [Test]
+    public void TestBufferedWriting()
+    {
+        var buffer = new ArrayBufferWriter<byte>();
+
+        ProtoSerializer.Serialize(buffer, _test);
+        var reflectionBytes = buffer.WrittenMemory.ToArray();
+        buffer.Clear();
+        
+        ProtoSerializer.SerializeProtoPackable(buffer, _test);
+        var srcGenBytes = buffer.WrittenMemory.ToArray();
+        buffer.Clear();
+        
+        Assert.That(reflectionBytes, Is.EqualTo(srcGenBytes));
+        Assert.That(reflectionBytes, Is.EqualTo(_bytes));
     }
 }
 
