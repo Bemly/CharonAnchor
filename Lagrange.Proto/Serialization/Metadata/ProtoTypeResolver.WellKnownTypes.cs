@@ -38,5 +38,9 @@ public static partial class ProtoTypeResolver
         Register(new ProtoMemoryCharConverter());
 
         Register(new ProtoRawValueConverter());
+        Register(new ProtoValueConverter());
+        Register(new ProtoArrayConverter());
+        Register(new ProtoObjectConverter());
+        Register(new ProtoNodeConverter());
     }
 }
