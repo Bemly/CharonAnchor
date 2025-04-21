@@ -155,12 +155,12 @@ public ref struct ProtoReader
             if (msbs0 == 0)
             {
                 varintPart1 = b1 & (msbs1 ^ msbs1);
-                _offset = (BitOperations.TrailingZeroCount(msbs1) + 1 + 64) >> 3;
+                _offset += (BitOperations.TrailingZeroCount(msbs1) + 1 + 64) >> 3;
             }
             else
             {
                 varintPart1 = 0;
-                _offset = len0 >> 3;
+                _offset += len0 >> 3;
             }
             
             return ExtractFromVector<T>(varintPart0, varintPart1);
