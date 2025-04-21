@@ -107,6 +107,59 @@ public class NodeTest
             Assert.That(parsed.Test3[3].GetValue<int>(), Is.EqualTo(4));
         });
     }
+
+    [Test]
+    public void TestOperators()
+    {
+        var node = new ProtoObject
+        {
+            { 1, true },
+            { 1, (byte)1 },
+            { 1, (sbyte)1 },
+            { 1, (short)1 },
+            { 1, (ushort)1 },
+            { 1, (int)1 },
+            { 1, (uint)1 },
+            { 1, (long)1 },
+            { 1, (ulong)1 },
+            { 1, (bool?)true },
+            { 1, (byte?)1 },
+            { 1, (sbyte?)1 },
+            { 1, (short?)1 },
+            { 1, (ushort?)1 },
+            { 1, (int?)1 },
+            { 1, (uint?)1 },
+            { 1, (long?)1 },
+            { 1, (ulong?)1 },
+            { 2, (float)1 },
+            { 3, (double)1 },
+            { 2, (float?)1 },
+            { 3, (double?)1 },
+            { 4, "Test" },
+            { 4, "Test".AsMemory() },
+            { 4, new byte[] { 1, 2, 3 } },
+            { 4, (ReadOnlyMemory<byte>)new byte[] { 1, 2, 3 }.AsMemory() }
+        };
+        
+        var bytes = node.Serialize();
+        var parsed = ProtoObject.Parse(bytes);
+        Assert.That(node[1].AsArray(), Has.Count.EqualTo(parsed[1].AsArray().GetValues<int>().ToArray().Length));
+        Assert.That((bool)parsed[1][0], Is.EqualTo(true));
+        Assert.That((bool)parsed[1][0].AsValue(), Is.EqualTo(true));
+        Assert.That((byte)parsed[1][1], Is.EqualTo((byte)1));
+        Assert.That((sbyte)parsed[1][2], Is.EqualTo((sbyte)1));
+        Assert.That((short)parsed[1][3], Is.EqualTo((short)1));
+        Assert.That((ushort)parsed[1][4], Is.EqualTo((ushort)1));
+        Assert.That((int)parsed[1][5], Is.EqualTo((int)1));
+        Assert.That((uint)parsed[1][6], Is.EqualTo((uint)1));
+        Assert.That((long)parsed[1][7], Is.EqualTo((long)1));
+        Assert.That((ulong)parsed[1][8], Is.EqualTo((ulong)1));
+        Assert.That((float)parsed[2][0], Is.EqualTo(1f));
+        Assert.That((double)parsed[3][0], Is.EqualTo(1d));
+        Assert.That((string)parsed[4][0], Is.EqualTo("Test"));
+        Assert.That((string)parsed[4][1], Is.EqualTo("Test"));
+        Assert.That((byte[])parsed[4][2], Is.EqualTo(new byte[] { 1, 2, 3 }));
+    }
 }
 
 [ProtoPackable]

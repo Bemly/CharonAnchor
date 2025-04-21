@@ -6,6 +6,7 @@ namespace Lagrange.Proto.Serialization.Metadata;
 
 [RequiresDynamicCode(ProtoSerializer.SerializationRequiresDynamicCodeMessage)]
 [RequiresUnreferencedCode(ProtoSerializer.SerializationRequiresDynamicCodeMessage)]
+[ExcludeFromCodeCoverage] // This class is not covered by unit tests, as it is used for reflection-based serialization.
 internal sealed class ReflectionMemberAccessor : MemberAccessor
 {
     public override Func<T>? CreateParameterlessConstructor<T>(ConstructorInfo? constructorInfo)
