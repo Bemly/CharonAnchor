@@ -7,16 +7,18 @@ public class ProtoObjectConverter : ProtoConverter<ProtoObject>
 {
     public override void Write(int field, WireType wireType, ProtoWriter writer, ProtoObject value)
     {
-        throw new NotImplementedException();
+        value.WriteTo(field, writer);
     }
 
     public override int Measure(int field, WireType wireType, ProtoObject value)
     {
-        throw new NotImplementedException();
+        return value.Measure(field);
     }
 
     public override ProtoObject Read(int field, WireType wireType, ref ProtoReader reader)
     {
-        throw new NotImplementedException();
+        int length = reader.DecodeVarInt<int>();
+        var subSpan = reader.CreateSpan(length);
+        return ProtoObject.Parse(subSpan);
     }
 }
