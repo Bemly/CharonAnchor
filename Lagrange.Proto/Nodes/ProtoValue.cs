@@ -35,7 +35,16 @@ public sealed class ProtoValue<TValue> : ProtoValue
     {
         if (Value is ProtoRawValue rawValue)
         {
-            if (WireType is not WireType.LengthDelimited) return (T)Convert.ChangeType(rawValue.Value, typeof(T));
+            if (WireType is not WireType.LengthDelimited)
+            {
+                if (WireType is not (WireType.Fixed32 or WireType.Fixed64))
+                {
+                    return (T)Convert.ChangeType(rawValue.Value, typeof(T));
+                }
+
+                long value = rawValue.Value;
+                return Unsafe.As<long, T>(ref value);
+            }
 
             if (typeof(T) == typeof(string)) return (T)(object)Encoding.UTF8.GetString(rawValue.Bytes.Span);
             if (typeof(T) == typeof(byte[])) return (T)(object)rawValue.Bytes.ToArray();
