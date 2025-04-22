@@ -10,7 +10,7 @@ namespace Lagrange.OneBot.Entity;
 
 [JsonSourceGenerationOptions(
     WriteIndented = true, 
-    GenerationMode = JsonSourceGenerationMode.Serialization,
+    GenerationMode = JsonSourceGenerationMode.Default,
     NumberHandling = JsonNumberHandling.AllowReadingFromString,
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     Converters = [typeof(BooleanConverter), typeof(HexConverter)])]

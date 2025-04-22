@@ -7,7 +7,7 @@ namespace Lagrange.Core.Utility;
 
 internal static partial class JsonHelper
 {
-    [JsonSourceGenerationOptions(GenerationMode = JsonSourceGenerationMode.Serialization)]
+    [JsonSourceGenerationOptions(GenerationMode = JsonSourceGenerationMode.Default)]
     [JsonSerializable(typeof(DefaultAndroidBotSignProvider.ResponseRoot<DefaultAndroidBotSignProvider.SignResponse>))]
     [JsonSerializable(typeof(DefaultAndroidBotSignProvider.ResponseRoot<string>))]
     [JsonSerializable(typeof(DefaultBotSignProvider.Root))]
@@ -15,7 +15,7 @@ internal static partial class JsonHelper
     [JsonSerializable(typeof(JsonObject))]
     private partial class CoreSerializerContext : JsonSerializerContext;
     
-    public static T? Deserialize<T>(string json) where T : class=> 
+    public static T? Deserialize<T>(string json) where T : class => 
         JsonSerializer.Deserialize(json, typeof(T), CoreSerializerContext.Default) as T;
     
     public static string Serialize<T>(T value) =>

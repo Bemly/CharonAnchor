@@ -10,7 +10,7 @@ public static class JsonHelper
         TypeInfoResolver = OneBotSerializerContext.Default
     };
     
-    public static T? Deserialize<T>(string json) where T : class=> 
+    public static T? Deserialize<T>(string json) where T : class => 
         JsonSerializer.Deserialize(json, typeof(T), OneBotSerializerContext.Default) as T;
     
     public static string Serialize<T>(T value) =>
