@@ -32,15 +32,18 @@ internal class ServiceContext
 
         foreach (var type in typeof(IService).Assembly.GetTypes()) 
         {
-            if (type.GetCustomAttribute<ServiceAttribute>() is { } attr && type.HasImplemented<IService>())
+            foreach (var attribute in type.GetCustomAttributes<EventSubscribeAttribute>())
             {
-                var service = (IService?)Activator.CreateInstance(type) ?? throw new InvalidOperationException("Failed to create service instance");
-                services[attr.Command] = service;
-                
-                foreach (var attribute in type.GetCustomAttributes<EventSubscribeAttribute>())
+                if ((attribute.Protocol & context.Config.Protocol) == Protocols.None) continue; // skip if not supported
+
+                if (type.GetCustomAttribute<ServiceAttribute>() is { } attr && type.HasImplemented<IService>())
                 {
-                    if ((attribute.Protocol & context.Config.Protocol) == Protocols.None) continue; // skip if not supported
-                    
+                    if (!services.TryGetValue(attr.Command, out var service))
+                    {
+                        service = (IService?)Activator.CreateInstance(type) ?? throw new InvalidOperationException("Failed to create service instance");
+                        services[attr.Command] = service;
+                    }
+                        
                     servicesEventType[attribute.EventType] = !servicesEventType.ContainsKey(attribute.EventType)
                         ? (attr, service)
                         : throw new InvalidOperationException($"Multiple services for event type: {attribute.EventType}");
