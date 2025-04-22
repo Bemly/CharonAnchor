@@ -1,8 +1,8 @@
-using ProtoBuf;
+using Lagrange.Proto;
 
 namespace Lagrange.Core.Internal.Packets.Message;
 
-[ProtoContract]
+[ProtoPackable]
 internal class Elem
 {
     

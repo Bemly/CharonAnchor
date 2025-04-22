@@ -10,11 +10,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="protobuf-net" Version="3.2.46" />
+      <Folder Include="Internal\Packets\Message\Elements\" />
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Internal\Packets\Message\Elements\" />
+      <ProjectReference Include="..\Lagrange.Proto.Generator\Lagrange.Proto.Generator.csproj" PrivateAssets="all" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+      <ProjectReference Include="..\Lagrange.Proto\Lagrange.Proto.csproj" />
     </ItemGroup>
 
 </Project>

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using Lagrange.Core.Utility.Binary;
-using ProtoBuf.Meta;
+using Lagrange.Proto;
+using Lagrange.Proto.Serialization;
 
 namespace Lagrange.Core.Utility;
 
@@ -8,35 +9,28 @@ internal static class ProtoHelper
 {
     private static readonly ConcurrentQueue<SegmentBufferWriter> BufferPool = new();
     
-    private static readonly RuntimeTypeModel Serializer = RuntimeTypeModel.Create();
-
-    static ProtoHelper()
-    {
-        Serializer.UseImplicitZeroDefaults = false; // don't use default values because QQ use proto2 that preserves default values
-    }
-    
-    public static void Serialize<T>(ref BinaryPacket dest, T value)
+    public static void Serialize<T>(ref BinaryPacket dest, T value) where T : IProtoSerializable<T>
     {
         if (!BufferPool.TryDequeue(out var writer))
         {
             writer = new SegmentBufferWriter();
         }
         
-        Serializer.Serialize(writer, value);
+        ProtoSerializer.SerializeProtoPackable(writer, value);
         writer.WriteTo(ref dest);
         writer.Clear();
         
         BufferPool.Enqueue(writer);
     }
     
-    public static ReadOnlyMemory<byte> Serialize<T>(T value)
+    public static ReadOnlyMemory<byte> Serialize<T>(T value) where T : IProtoSerializable<T>
     {
         if (!BufferPool.TryDequeue(out var writer))
         {
             writer = new SegmentBufferWriter();
         }
         
-        Serializer.Serialize(writer, value);
+        ProtoSerializer.SerializeProtoPackable(writer, value);
         var result = writer.CreateReadOnlyMemory();
         writer.Clear();
         BufferPool.Enqueue(writer);
@@ -44,5 +38,5 @@ internal static class ProtoHelper
         return result;
     }
 
-    public static T Deserialize<T>(ReadOnlySpan<byte> src) => Serializer.Deserialize<T>(src);
+    public static T Deserialize<T>(ReadOnlySpan<byte> src)  where T : IProtoSerializable<T> => ProtoSerializer.DeserializeProtoPackable<T>(src);
 }

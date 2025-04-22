@@ -1,7 +1,7 @@
 using Lagrange.Core.Common;
 using Lagrange.Core.Utility;
 using Lagrange.Core.Utility.Binary;
-using ProtoBuf;
+using Lagrange.Proto;
 
 namespace Lagrange.Core.Internal.Packets.Login;
 
@@ -133,8 +133,8 @@ internal ref struct TlvQrCode : IDisposable
 
 #pragma warning disable CS8618
 
-[ProtoContract]
-internal class TlvQrCodeD1
+[ProtoPackable]
+internal partial class TlvQrCodeD1
 {
     [ProtoMember(1)] public NTQrCodeInfo Sys { get; set; }
     
@@ -145,8 +145,8 @@ internal class TlvQrCodeD1
     [ProtoMember(4)] public byte[] Type { get; set; }
 }
 
-[ProtoContract]
-internal class NTQrCodeInfo
+[ProtoPackable]
+internal partial class NTQrCodeInfo
 {
     [ProtoMember(1)] public string OS { get; set; }
     

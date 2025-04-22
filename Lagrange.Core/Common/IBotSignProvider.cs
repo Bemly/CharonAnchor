@@ -3,7 +3,7 @@ using System.Text;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Lagrange.Core.Utility;
-using ProtoBuf;
+using Lagrange.Proto;
 
 namespace Lagrange.Core.Common;
 
@@ -125,7 +125,7 @@ internal class DefaultBotSignProvider(Protocols protocol, BotAppInfo appInfo) : 
 }
 
 [Serializable]
-[ProtoContract]
+[ProtoPackable]
 public class SsoSecureInfo
 {
     [ProtoMember(1)] public byte[]? SecSign { get; set; }

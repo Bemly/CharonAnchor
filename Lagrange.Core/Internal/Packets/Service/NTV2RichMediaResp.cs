@@ -1,12 +1,12 @@
-using ProtoBuf;
+using Lagrange.Proto;
 
 namespace Lagrange.Core.Internal.Packets.Service;
 
 // Resharper disable InconsistentNaming
 #pragma warning disable CS8618
 
-[ProtoContract]
-internal class NTV2RichMediaResp
+[ProtoPackable]
+internal partial class NTV2RichMediaResp
 {
     [ProtoMember(1)] public MultiMediaRespHead RespHead { get; set; }
     
@@ -29,8 +29,8 @@ internal class NTV2RichMediaResp
     [ProtoMember(99)] public byte[]? Extension { get; set; }
 }
 
-[ProtoContract]
-internal class MultiMediaRespHead
+[ProtoPackable]
+internal partial class MultiMediaRespHead
 {
     [ProtoMember(1)] public CommonHead Common { get; set; }
     
@@ -39,8 +39,8 @@ internal class MultiMediaRespHead
     [ProtoMember(3)] public string Message { get; set; }
 }
 
-[ProtoContract]
-internal class DownloadResp
+[ProtoPackable]
+internal partial class DownloadResp
 {
     [ProtoMember(1)] public string RKeyParam { get; set; }
     
@@ -51,8 +51,8 @@ internal class DownloadResp
     [ProtoMember(4)] public uint RKeyCreateTime { get; set; }
 }
 
-[ProtoContract]
-internal class DownloadInfo
+[ProtoPackable]
+internal partial class DownloadInfo
 {
     [ProtoMember(1)] public string Domain { get; set; }
     
@@ -69,8 +69,8 @@ internal class DownloadInfo
     [ProtoMember(7)] public VideoExtInfo VideoExtInfo { get; set; }
 }
 
-[ProtoContract]
-internal class IPv4
+[ProtoPackable]
+internal partial class IPv4
 {
     [ProtoMember(1)] public uint OutIP { get; set; }
     
@@ -83,8 +83,8 @@ internal class IPv4
     [ProtoMember(5)] public uint IPType { get; set; }
 }
 
-[ProtoContract]
-internal class IPv6
+[ProtoPackable]
+internal partial class IPv6
 {
     [ProtoMember(1)] public byte[] OutIP { get; set; }
     
@@ -97,8 +97,8 @@ internal class IPv6
     [ProtoMember(5)] public uint IPType { get; set; }
 }
 
-[ProtoContract]
-internal class UploadResp
+[ProtoPackable]
+internal partial class UploadResp
 {
     [ProtoMember(1)] public string? UKey { get; set; }
     
@@ -119,8 +119,8 @@ internal class UploadResp
     [ProtoMember(10)] public List<SubFileInfo> SubFileInfos { get; set; }
 }
 
-[ProtoContract]
-internal class RichMediaStorageTransInfo
+[ProtoPackable]
+internal partial class RichMediaStorageTransInfo
 {
     [ProtoMember(1)] public uint SubType { get; set; }
     
@@ -129,8 +129,8 @@ internal class RichMediaStorageTransInfo
     [ProtoMember(3)] public byte[] ExtValue { get; set; }
 }
 
-[ProtoContract]
-internal class SubFileInfo
+[ProtoPackable]
+internal partial class SubFileInfo
 {
     [ProtoMember(1)] public uint SubType { get; set; }
 
@@ -143,19 +143,19 @@ internal class SubFileInfo
     [ProtoMember(5)] public List<IPv6> IPv6s { get; set; }
 }
 
-[ProtoContract]
-internal class DownloadSafeResp { }
+[ProtoPackable]
+internal partial class DownloadSafeResp { }
 
-[ProtoContract]
-internal class UploadKeyRenewalResp
+[ProtoPackable]
+internal partial class UploadKeyRenewalResp
 {
     [ProtoMember(1)] public string Ukey { get; set; }
     
     [ProtoMember(2)] public ulong UkeyTtlSec { get; set; }
 }
 
-[ProtoContract]
-internal class MsgInfoAuthResp
+[ProtoPackable]
+internal partial class MsgInfoAuthResp
 {
     [ProtoMember(1)] public uint AuthCode { get; set; }
     
@@ -164,23 +164,23 @@ internal class MsgInfoAuthResp
     [ProtoMember(3)] public ulong ResultTime { get; set; }
 }
 
-[ProtoContract]
-internal class UploadCompletedResp
+[ProtoPackable]
+internal partial class UploadCompletedResp
 {
     [ProtoMember(1)] public ulong MsgSeq { get; set; }
 }
 
-[ProtoContract]
-internal class DeleteResp { }
+[ProtoPackable]
+internal partial class DeleteResp { }
 
-[ProtoContract]
-internal class DownloadRKeyResp
+[ProtoPackable]
+internal partial class DownloadRKeyResp
 {
     [ProtoMember(1)] public List<RKeyInfo> RKeys { get; set; }
 }
 
-[ProtoContract]
-internal class RKeyInfo
+[ProtoPackable]
+internal partial class RKeyInfo
 {
     [ProtoMember(1)] public string Rkey { get; set; }
     

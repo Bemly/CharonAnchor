@@ -1,10 +1,10 @@
 using Lagrange.Core.Common;
-using ProtoBuf;
+using Lagrange.Proto;
 
 namespace Lagrange.Core.Internal.Packets.Struct;
 
-[ProtoContract]
-internal class SsoReserveFields
+[ProtoPackable]
+internal partial class SsoReserveFields
 {
     [ProtoMember(8)] public byte[]? ClientIPCookie { get; set; }
 

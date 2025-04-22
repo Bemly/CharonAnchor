@@ -4,7 +4,7 @@ using Lagrange.Core.Common;
 using Lagrange.Core.Utility;
 using Lagrange.Core.Utility.Binary;
 using Lagrange.Core.Utility.Cryptography;
-using ProtoBuf;
+using Lagrange.Proto;
 
 namespace Lagrange.Core.Internal.Packets.Login;
 
@@ -324,8 +324,8 @@ internal ref struct Tlv : IDisposable
     }
 }
 
-[ProtoContract]
-internal class DeviceReport
+[ProtoPackable]
+internal partial class DeviceReport
 {
     [ProtoMember(1)] public string? AndroidId { get; set; }
     

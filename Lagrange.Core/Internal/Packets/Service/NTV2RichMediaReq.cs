@@ -1,12 +1,12 @@
-using ProtoBuf;
+using Lagrange.Proto;
 
 namespace Lagrange.Core.Internal.Packets.Service;
 
 // Resharper disable InconsistentNaming
 #pragma warning disable CS8618
 
-[ProtoContract]
-internal class NTV2RichMediaReq
+[ProtoPackable]
+internal partial class NTV2RichMediaReq
 {
     [ProtoMember(1)] public MultiMediaReqHead ReqHead { get; set; }
 
@@ -29,8 +29,8 @@ internal class NTV2RichMediaReq
     [ProtoMember(99)] public byte[]? Extension { get; set; }
 }
 
-[ProtoContract]
-internal class MultiMediaReqHead
+[ProtoPackable]
+internal partial class MultiMediaReqHead
 {
     [ProtoMember(1)] public CommonHead Common { get; set; }
 
@@ -39,16 +39,16 @@ internal class MultiMediaReqHead
     [ProtoMember(3)] public ClientMeta Client { get; set; }
 }
 
-[ProtoContract]
-internal class CommonHead
+[ProtoPackable]
+internal partial class CommonHead
 {
     [ProtoMember(1)] public uint RequestId { get; set; } // 1
 
     [ProtoMember(2)] public uint Command { get; set; } // 200
 }
 
-[ProtoContract]
-internal class SceneInfo
+[ProtoPackable]
+internal partial class SceneInfo
 {
     [ProtoMember(101)] public uint RequestType { get; set; } // 1
 
@@ -62,8 +62,8 @@ internal class SceneInfo
     [ProtoMember(202)] public GroupInfo? Group { get; set; }
 }
 
-[ProtoContract]
-internal class C2CUserInfo
+[ProtoPackable]
+internal partial class C2CUserInfo
 {
     [ProtoMember(1)] public uint AccountType { get; set; } // 2
 
@@ -71,28 +71,28 @@ internal class C2CUserInfo
 }
 
 
-[ProtoContract]
-internal class GroupInfo
+[ProtoPackable]
+internal partial class GroupInfo
 {
     [ProtoMember(1)] public long GroupUin { get; set; }
 }
 
-[ProtoContract]
-internal class ClientMeta
+[ProtoPackable]
+internal partial class ClientMeta
 {
     [ProtoMember(1)] public uint AgentType { get; set; } // 2
 }
 
-[ProtoContract]
-internal class DownloadReq
+[ProtoPackable]
+internal partial class DownloadReq
 {
     [ProtoMember(1)] public IndexNode Node { get; set; }
 
     [ProtoMember(2)] public DownloadExt Download { get; set; }
 }
 
-[ProtoContract]
-internal class IndexNode
+[ProtoPackable]
+internal partial class IndexNode
 {
     [ProtoMember(1)] public FileInfo Info { get; set; }
 
@@ -107,8 +107,8 @@ internal class IndexNode
     [ProtoMember(6)] public uint SubType { get; set; } // 0
 }
 
-[ProtoContract]
-internal class FileInfo
+[ProtoPackable]
+internal partial class FileInfo
 {
     [ProtoMember(1)] public uint FileSize { get; set; } // 0
 
@@ -129,8 +129,8 @@ internal class FileInfo
     [ProtoMember(9)] public uint Original { get; set; } // 0
 }
 
-[ProtoContract]
-internal class FileType
+[ProtoPackable]
+internal partial class FileType
 {
     [ProtoMember(1)] public uint Type { get; set; } // 2
 
@@ -141,8 +141,8 @@ internal class FileType
     [ProtoMember(4)] public uint VoiceFormat { get; set; } // 1
 }
 
-[ProtoContract]
-internal class DownloadExt
+[ProtoPackable]
+internal partial class DownloadExt
 {
     [ProtoMember(1)] public PicDownloadExt Pic { get; set; }
 
@@ -151,8 +151,8 @@ internal class DownloadExt
     [ProtoMember(3)] public PttDownloadExt Ptt { get; set; }
 }
 
-[ProtoContract]
-internal class VideoDownloadExt
+[ProtoPackable]
+internal partial class VideoDownloadExt
 {
     [ProtoMember(1)] public uint BusiType { get; set; } // 0
 
@@ -161,14 +161,14 @@ internal class VideoDownloadExt
     [ProtoMember(3)] public uint SubBusiType { get; set; } // 0
 }
 
-[ProtoContract]
-internal class PicDownloadExt { }
+[ProtoPackable]
+internal partial class PicDownloadExt { }
 
-[ProtoContract]
-internal class PttDownloadExt { }
+[ProtoPackable]
+internal partial class PttDownloadExt { }
 
-[ProtoContract]
-internal class PicUrlExtInfo
+[ProtoPackable]
+internal partial class PicUrlExtInfo
 {
     [ProtoMember(1)] public string OriginalParameter { get; set; }
 
@@ -177,22 +177,22 @@ internal class PicUrlExtInfo
     [ProtoMember(3)] public string ThumbParameter { get; set; }
 }
 
-[ProtoContract]
-internal class VideoExtInfo
+[ProtoPackable]
+internal partial class VideoExtInfo
 {
     [ProtoMember(1)] public uint VideoCodecFormat { get; set; }
 }
 
-[ProtoContract]
-internal class MsgInfo
+[ProtoPackable]
+internal partial class MsgInfo
 {
     [ProtoMember(1)] public List<MsgInfoBody> MsgInfoBody { get; set; }
 
     [ProtoMember(2)] public ExtBizInfo ExtBizInfo { get; set; }
 }
 
-[ProtoContract]
-internal class MsgInfoBody
+[ProtoPackable]
+internal partial class MsgInfoBody
 {
     [ProtoMember(1)] public IndexNode Index { get; set; }
 
@@ -207,7 +207,7 @@ internal class MsgInfoBody
     [ProtoMember(6)] public HashSum HashSum { get; set; }
 }
 
-[ProtoContract]
+[ProtoPackable]
 public class HashSum
 {
     [ProtoMember(201)] public C2cSource BytesPbReserveC2c;
@@ -215,26 +215,26 @@ public class HashSum
     [ProtoMember(202)] public TroopSource? TroopSource;
 }
 
-[ProtoContract]
+[ProtoPackable]
 public class C2cSource
 {
     [ProtoMember(2)] public string FriendUid;
 }
 
-[ProtoContract]
+[ProtoPackable]
 public class TroopSource
 {
     [ProtoMember(1)] public uint GroupUin;
 }
 
-[ProtoContract]
-internal class VideoInfo { }
+[ProtoPackable]
+internal partial class VideoInfo { }
 
-[ProtoContract]
-internal class AudioInfo { }
+[ProtoPackable]
+internal partial class AudioInfo { }
 
-[ProtoContract]
-internal class PictureInfo
+[ProtoPackable]
+internal partial class PictureInfo
 {
     [ProtoMember(1)] public string UrlPath { get; set; }
 
@@ -244,8 +244,8 @@ internal class PictureInfo
 }
 
 
-[ProtoContract]
-internal class ExtBizInfo
+[ProtoPackable]
+internal partial class ExtBizInfo
 {
     [ProtoMember(1)] public PicExtBizInfo Pic { get; set; }
 
@@ -256,8 +256,8 @@ internal class ExtBizInfo
     [ProtoMember(10)] public uint BusiType { get; set; }
 }
 
-[ProtoContract]
-internal class PttExtBizInfo
+[ProtoPackable]
+internal partial class PttExtBizInfo
 {
     [ProtoMember(1)] public ulong SrcUin { get; set; }
 
@@ -278,8 +278,8 @@ internal class PttExtBizInfo
     [ProtoMember(13)] public byte[] BytesGeneralFlags { get; set; }
 }
 
-[ProtoContract]
-internal class VideoExtBizInfo
+[ProtoPackable]
+internal partial class VideoExtBizInfo
 {
     [ProtoMember(1)] public uint FromScene { get; set; }
 
@@ -288,8 +288,8 @@ internal class VideoExtBizInfo
     [ProtoMember(3)] public byte[] BytesPbReserve { get; set; }
 }
 
-[ProtoContract]
-internal class PicExtBizInfo
+[ProtoPackable]
+internal partial class PicExtBizInfo
 {
     [ProtoMember(1)] public uint BizType { get; set; }
 
@@ -306,30 +306,30 @@ internal class PicExtBizInfo
     [ProtoMember(1003)] public uint OldFileId { get; set; }
 }
 
-[ProtoContract]
-internal class DownloadSafeReq
+[ProtoPackable]
+internal partial class DownloadSafeReq
 {
     [ProtoMember(1)] public IndexNode Index { get; set; }
 }
 
-[ProtoContract]
-internal class UploadKeyRenewalReq
+[ProtoPackable]
+internal partial class UploadKeyRenewalReq
 {
     [ProtoMember(1)] public string OldUKey { get; set; }
 
     [ProtoMember(2)] public uint SubType { get; set; }
 }
 
-[ProtoContract]
-internal class MsgInfoAuthReq
+[ProtoPackable]
+internal partial class MsgInfoAuthReq
 {
     [ProtoMember(1)] public byte[] Msg { get; set; }
 
     [ProtoMember(2)] public ulong AuthTime { get; set; }
 }
 
-[ProtoContract]
-internal class UploadCompletedReq
+[ProtoPackable]
+internal partial class UploadCompletedReq
 {
     [ProtoMember(1)] public bool SrvSendMsg { get; set; }
 
@@ -340,8 +340,8 @@ internal class UploadCompletedReq
     [ProtoMember(4)] public uint ClientSeq { get; set; }
 }
 
-[ProtoContract]
-internal class DeleteReq
+[ProtoPackable]
+internal partial class DeleteReq
 {
     [ProtoMember(1)] public List<IndexNode> Index { get; set; }
 
@@ -354,22 +354,22 @@ internal class DeleteReq
     [ProtoMember(5)] public ulong MsgTime { get; set; }
 }
 
-[ProtoContract]
-internal class DownloadRKeyReq
+[ProtoPackable]
+internal partial class DownloadRKeyReq
 {
     [ProtoMember(1)] public List<int> Types { get; set; }
 }
 
-[ProtoContract]
-internal class UploadInfo
+[ProtoPackable]
+internal partial class UploadInfo
 {
     [ProtoMember(1)] public FileInfo FileInfo { get; set; }
 
     [ProtoMember(2)] public uint SubFileType { get; set; }
 }
 
-[ProtoContract]
-internal class UploadReq
+[ProtoPackable]
+internal partial class UploadReq
 {
     [ProtoMember(1)] public List<UploadInfo> UploadInfo { get; set; }
 
