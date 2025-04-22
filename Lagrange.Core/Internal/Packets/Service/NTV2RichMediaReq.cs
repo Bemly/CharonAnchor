@@ -208,7 +208,7 @@ internal partial class MsgInfoBody
 }
 
 [ProtoPackable]
-public class HashSum
+internal partial class HashSum
 {
     [ProtoMember(201)] public C2cSource BytesPbReserveC2c;
 
@@ -216,13 +216,13 @@ public class HashSum
 }
 
 [ProtoPackable]
-public class C2cSource
+internal partial class C2cSource
 {
     [ProtoMember(2)] public string FriendUid;
 }
 
 [ProtoPackable]
-public class TroopSource
+internal partial class TroopSource
 {
     [ProtoMember(1)] public uint GroupUin;
 }

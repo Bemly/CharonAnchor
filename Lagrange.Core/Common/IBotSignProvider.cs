@@ -126,7 +126,7 @@ internal class DefaultBotSignProvider(Protocols protocol, BotAppInfo appInfo) : 
 
 [Serializable]
 [ProtoPackable]
-public class SsoSecureInfo
+public partial class SsoSecureInfo
 {
     [ProtoMember(1)] public byte[]? SecSign { get; set; }
     
