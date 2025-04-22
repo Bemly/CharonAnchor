@@ -28,12 +28,17 @@ public static class ProtoHelper
     };
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int GetVarIntLength<T>(T value) where T : unmanaged, INumberBase<T>
+    public static unsafe int GetVarIntLength<T>(T value) where T : unmanaged, INumberBase<T>
     {
         if (value == T.Zero) return 1;
-        
-        int leading = BitOperations.LeadingZeroCount(ProtoWriter.PackScalar<T>(ulong.CreateSaturating(value)));
-        return 8 - ((leading - 1) >> 3);
+
+        if (sizeof(T) <= 4)
+        {
+            int leading = BitOperations.LeadingZeroCount(ProtoWriter.PackScalar<T>(ulong.CreateSaturating(value)));
+            return 8 - ((leading - 1) >> 3);
+        }
+
+        return BitOperations.TrailingZeroCount(ulong.CreateSaturating(value)) / 7 + 1;
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
