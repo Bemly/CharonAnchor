@@ -105,7 +105,7 @@ internal ref struct Tlv : IDisposable
     {
         WriteTlv(0x106);
         
-        _writer.Write(_keystore.WLoginSigs.EncryptedA1);
+        _writer.Write(_keystore.WLoginSigs.A1);
         
         _writer.ExitLengthBarrier<short>(false);
     }

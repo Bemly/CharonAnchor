@@ -29,33 +29,51 @@ public class BotKeystore
         return new BotKeystore
         {
             Guid = guid,
-            DeviceName = "Lagrange"
+            DeviceName = "Lagrange-114514"
         };
     }
 }
 
 public class WLoginSigs
 {
-    public byte[] A2 { get; set; } = [];
+    public byte[] A2 { get; set; } = []; // Tlv10A
     
-    public byte[] D2 { get; set; } = [];
+    public byte[] A2Key { get; set; } = new byte[16]; // Tlv10D
     
-    public byte[] D2Key { get; set; } = new byte[16];
+    public byte[] D2 { get; set; } = []; // Tlv143
     
-    public byte[] EncryptedA1 { get; set; } = [];
+    public byte[] D2Key { get; set; } = new byte[16]; // Tlv305
     
-    internal byte[]? NoPicSig { get; set; }
+    public byte[] A1 { get; set; } = []; // Tlv106
+    
+    public byte[] A1Key { get; set; } = new byte[16]; // Tlv10C
+    
+    internal byte[]? NoPicSig { get; set; } // Tlv16A
     
     internal byte[]? QrSig { get; set; }
     
     public byte[] TgtgtKey { get; set; } = [];
     
+    public byte[] Ksid { get; set; } = [];
+    
+    public byte[] SuperKey { get; set; } = [];
+    
+    public byte[] StKey { get; set; } = [];
+    
+    public byte[] StWeb { get; set; } = [];
+    
+    public byte[] St { get; set; } = [];
+    
+    public byte[] WtSessionTicket { get; set; } = [];
+    
+    public byte[] WtSessionTicketKey { get; set; } = [];
+
     public void Clear()
     {
         A2 = [];
         D2 = [];
         D2Key = new byte[16];
-        EncryptedA1 = [];
+        A1 = [];
         NoPicSig = null;
         QrSig = null;
         TgtgtKey = [];

@@ -1,6 +1,10 @@
+using Lagrange.Core.Common;
 using Lagrange.Core.Events.EventArgs;
 using Lagrange.Core.Internal.Events.Login;
 using Lagrange.Core.Internal.Events.System;
+using Lagrange.Core.Internal.Services.System;
+using Lagrange.Core.Utility;
+using Lagrange.Core.Utility.Binary;
 
 namespace Lagrange.Core.Internal.Logic;
 
@@ -108,14 +112,25 @@ internal class WtExchangeLogic : ILogic, IDisposable
             case { State: TransEmp12EventResp.TransEmpState.Confirmed, Data: { } data }:
                 _context.Keystore.WLoginSigs.TgtgtKey = data.TgtgtKey;
                 _context.Keystore.WLoginSigs.NoPicSig = data.NoPicSig;
-                _context.Keystore.WLoginSigs.EncryptedA1 = data.TempPassword;
+                _context.Keystore.WLoginSigs.A1 = data.TempPassword;
                 _context.Keystore.Uin = transEmp12.Uin;
 
                 _queryStateTimer.Change(Timeout.Infinite, Timeout.Infinite);
 
                 var result = await _context.EventContext.SendEvent<LoginEventResp>(new LoginEventReq(LoginEventReq.Command.Tgtgt));
-            
-                _transEmpSource.TrySetResult(true);
+
+                if (result?.RetCode == 0)
+                {
+                    ReadWLoginSigs(result.Tlvs);
+                    _transEmpSource.TrySetResult(true);
+                }
+                else
+                {
+                    _context.LogError(Tag, $"Login failed: {result?.RetCode} | Message: {result?.Error}");
+                    _transEmpSource.TrySetResult(false);
+                }
+                
+                _context.EventInvoker.PostEvent(new BotLoginEvent(result?.RetCode ?? byte.MaxValue, result?.Error));
                 break;
             case { State: TransEmp12EventResp.TransEmpState.Canceled or TransEmp12EventResp.TransEmpState.Invalid or TransEmp12EventResp.TransEmpState.CodeExpired }:
                 _context.LogCritical(Tag, $"QR Code State: {transEmp12.State}");
@@ -128,6 +143,73 @@ internal class WtExchangeLogic : ILogic, IDisposable
                 break;
         }
     });
+
+    private void ReadWLoginSigs(Dictionary<ushort, byte[]> tlvs)
+    {
+        foreach (var (tag, value) in tlvs)
+        {
+            switch (tag)
+            {
+                case 0x103:
+                    _context.Keystore.WLoginSigs.StWeb = value;
+                    break;
+                case 0x143:
+                    _context.Keystore.WLoginSigs.D2 = value;
+                    break;
+                case 0x108:
+                    _context.Keystore.WLoginSigs.Ksid = value;
+                    break;
+                case 0x10A:
+                    _context.Keystore.WLoginSigs.A2 = value;
+                    break;
+                case 0x10C:
+                    _context.Keystore.WLoginSigs.A1Key = value;
+                    break;
+                case 0x10D:
+                    _context.Keystore.WLoginSigs.A2Key = value;
+                    break;
+                case 0x10E:
+                    _context.Keystore.WLoginSigs.StKey = value;
+                    break;
+                case 0x114:
+                    _context.Keystore.WLoginSigs.St = value;
+                    break;
+                case 0x11A:
+                    var reader = new BinaryPacket(value.AsSpan());
+                    reader.Read<ushort>(); // FaceId
+                    byte age = reader.Read<byte>();
+                    byte gender = reader.Read<byte>();
+                    string nickname = reader.ReadString(Prefix.Int8 | Prefix.LengthOnly);
+                    _context.BotInfo = new BotInfo(age, gender, nickname);
+                    break;
+                case 0x133:
+                    _context.Keystore.WLoginSigs.WtSessionTicket = value;
+                    break;
+                case 0x134:
+                    _context.Keystore.WLoginSigs.WtSessionTicketKey = value;
+                    break;
+                case 0x305:
+                    _context.Keystore.WLoginSigs.D2Key = value;
+                    break;
+                case 0x106:
+                    _context.Keystore.WLoginSigs.A1 = value;
+                    break;
+                case 0x16A:
+                    _context.Keystore.WLoginSigs.NoPicSig = value;
+                    break;
+                case 0x16D:
+                    _context.Keystore.WLoginSigs.SuperKey = value;
+                    break;
+                case 0x543:
+                    var resp = ProtoHelper.Deserialize<ThirdPartyLoginResponse>(value);
+                    _context.Keystore.Uid = resp.CommonInfo.RspNT.Uid;
+                    break;
+                default:
+                    _context.LogTrace(Tag, $"Unknown TLV: {tag:X}");
+                    break;
+            }
+        }
+    }
 
     public void Dispose()
     {

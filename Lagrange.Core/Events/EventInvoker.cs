@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using Lagrange.Core.Events.EventArgs;
@@ -17,6 +18,7 @@ public class EventInvoker(BotContext context) : IDisposable
     
     public delegate Task LagrangeAsyncEventHandler<in TEvent>(BotContext context, TEvent e) where TEvent : EventBase;
     
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "DynamicMethod is not supported in AOT, but this if block is not executed in AOT")]
     public void RegisterEvent<TEvent>(LagrangeEventHandler<TEvent> handler) where TEvent : EventBase
     {
         Debug.Assert(!handler.Method.IsStatic);
@@ -43,6 +45,7 @@ public class EventInvoker(BotContext context) : IDisposable
         }
     }
     
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "DynamicMethod is not supported in AOT, but this if block is not executed in AOT")]
     public void RegisterEvent<TEvent>(LagrangeAsyncEventHandler<TEvent> handler) where TEvent : EventBase
     {
         Debug.Assert(!handler.Method.IsStatic);
