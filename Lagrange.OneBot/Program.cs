@@ -1,4 +1,5 @@
-﻿using Lagrange.OneBot.Utility.Extension;
+﻿using System.Text;
+using Lagrange.OneBot.Utility.Extension;
 using Microsoft.Extensions.Hosting;
 
 namespace Lagrange.OneBot;
@@ -7,6 +8,9 @@ internal static class Program
 {
     public static async Task Main(string[] args)
     {
+        Console.OutputEncoding = Encoding.UTF8;
+        Console.InputEncoding = Encoding.UTF8;
+        
         if (!File.Exists("appsettings.json"))
         {
             Console.WriteLine("No exist config file, create it now...");
