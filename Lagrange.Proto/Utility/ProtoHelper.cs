@@ -1,6 +1,7 @@
 ﻿using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Lagrange.Proto.Primitives;
 
 namespace Lagrange.Proto.Utility;
 
@@ -31,8 +32,8 @@ public static class ProtoHelper
     {
         if (value == T.Zero) return 1;
         
-        long v = long.CreateSaturating(value);
-        return BitOperations.TrailingZeroCount(v) / 7 + 1;
+        int leading = BitOperations.LeadingZeroCount(ProtoWriter.PackScalar<T>(ulong.CreateSaturating(value)));
+        return 8 - ((leading - 1) >> 3);
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

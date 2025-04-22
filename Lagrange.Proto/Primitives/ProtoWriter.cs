@@ -208,7 +208,7 @@ public class ProtoWriter : IDisposable
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static unsafe ulong PackScalar<T>(ulong v) where T : unmanaged, INumberBase<T>
+    internal static unsafe ulong PackScalar<T>(ulong v) where T : unmanaged, INumberBase<T>
     {
         if (Bmi2.X64.IsSupported)
         {
