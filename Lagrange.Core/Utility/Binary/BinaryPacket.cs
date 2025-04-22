@@ -297,7 +297,7 @@ internal ref struct BinaryPacket
         _span[.._offset].CopyTo(_bytesToReturnToPool.AsSpan());
 
         _span = _bytesToReturnToPool.AsSpan();
-        _buffer = ref _span.GetPinnableReference();
+        _buffer = ref Unsafe.Add(ref MemoryMarshal.GetReference(_span), _offset);
     }
     
     /// <summary>
