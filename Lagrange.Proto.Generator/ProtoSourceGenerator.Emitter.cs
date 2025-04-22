@@ -79,7 +79,7 @@ public partial class ProtoSourceGenerator
             }
         }
         
-        private string GetFileName() => $"{parser.TypeDeclarations.Reverse<string>().Aggregate(string.Empty, (x, y) => $"{x}.{y.Split(' ').Last()}").TrimStart('.')}.g.cs";
+        private string GetFileName() => $"{parser.Namespace}{parser.TypeDeclarations.Reverse<string>().Aggregate(string.Empty, (x, y) => $"{x}.{y.Split(' ').Last()}").TrimStart('.')}.g.cs";
         
         private static void EmitIfNotNullStatement(SourceWriter source, string variableName, Action<SourceWriter> emitAction)
         {
