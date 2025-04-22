@@ -5,6 +5,7 @@ using Lagrange.Core.Internal.Events.System;
 using Lagrange.Core.Internal.Services.System;
 using Lagrange.Core.Utility;
 using Lagrange.Core.Utility.Binary;
+using ThirdPartyLoginResponse = Lagrange.Core.Internal.Packets.System.ThirdPartyLoginResponse;
 
 namespace Lagrange.Core.Internal.Logic;
 
@@ -74,7 +75,9 @@ internal class WtExchangeLogic : ILogic, IDisposable
             
             _context.Keystore.WLoginSigs.QrSig = transEmp31.QrSig;
             _queryStateTimer.Change(0, 2000);
-            return await _transEmpSource.Task;
+            bool isLoginSuccess = await _transEmpSource.Task;
+
+            if (isLoginSuccess) return await Online();
         }
         else
         {
@@ -86,6 +89,16 @@ internal class WtExchangeLogic : ILogic, IDisposable
 
     private async Task<bool> Online()
     {
+        var infoSync = await _context.EventContext.SendEvent<InfoSyncEventResp>(new InfoSyncEventReq());
+        if (infoSync == null) return false;
+
+        if (infoSync.Message == "register success")
+        {
+            _context.EventInvoker.PostEvent(new BotOnlineEvent(BotOnlineEvent.Reasons.Login));
+            _ssoHeartBeatTimer.Change(0, 270 * 1000);
+            return true;
+        }
+
         return false;
     }
 
@@ -94,9 +107,9 @@ internal class WtExchangeLogic : ILogic, IDisposable
         await _context.EventContext.SendEvent<AliveEvent>(new AliveEvent());
     });
     
-    private void OnSsoHeartBeat(object? state) => Task.Run(() =>
+    private void OnSsoHeartBeat(object? state) => Task.Run(async () =>
     {
-        
+        await _context.EventContext.SendEvent<SsoHeartBeatEventResp>(new SsoHeartBeatEventReq());
     });
     
     private void OnQueryState(object? state) => Task.Run(async () =>

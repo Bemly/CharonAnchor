@@ -1,6 +1,3 @@
 namespace Lagrange.Core.Internal.Events;
 
-internal class ProtocolEvent
-{
-    
-}
+internal class ProtocolEvent;

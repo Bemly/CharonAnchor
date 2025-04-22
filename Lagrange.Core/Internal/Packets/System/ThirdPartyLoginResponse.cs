@@ -1,6 +1,6 @@
 using Lagrange.Proto;
 
-namespace Lagrange.Core.Internal.Services.System;
+namespace Lagrange.Core.Internal.Packets.System;
 
 [ProtoPackable]
 internal partial class ThirdPartyLoginResponse

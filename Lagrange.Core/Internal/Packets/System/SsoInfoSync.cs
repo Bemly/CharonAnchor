@@ -1,6 +1,6 @@
 using Lagrange.Proto;
 
-namespace Lagrange.Core.Internal.Services.System;
+namespace Lagrange.Core.Internal.Packets.System;
 
 [ProtoPackable]
 public partial class SsoC2CMsgCookie
@@ -11,11 +11,11 @@ public partial class SsoC2CMsgCookie
 [ProtoPackable]
 public partial class SsoC2CSyncInfo
 {
-    [ProtoMember(1)] public byte[] C2CMsgCookie { get; set; } = Array.Empty<byte>();
+    [ProtoMember(1)] public SsoC2CMsgCookie C2CMsgCookie { get; set; } = new();
 
     [ProtoMember(2)] public ulong C2CLastMsgTime { get; set; }
 
-    [ProtoMember(3)] public byte[] LastC2CMsgCookie { get; set; } = Array.Empty<byte>();
+    [ProtoMember(3)] public SsoC2CMsgCookie LastC2CMsgCookie { get; set; } = new();
 }
 
 [ProtoPackable]
@@ -33,7 +33,7 @@ public partial class DeviceInfo
 }
 
 [ProtoPackable]
-public partial class OnLineBusinessInfo
+public partial class OnlineBusinessInfo
 {
     [ProtoMember(1)] public uint NotifySwitch { get; set; }
 
@@ -45,7 +45,7 @@ public partial class RegisterInfo
 {
     [ProtoMember(1)] public string Guid { get; set; } = "";
 
-    [ProtoMember(2)] public uint KickPc { get; set; }
+    [ProtoMember(2)] public uint KickPC { get; set; }
 
     [ProtoMember(3)] public string BuildVer { get; set; } = "";
 
@@ -55,15 +55,17 @@ public partial class RegisterInfo
 
     [ProtoMember(6)] public DeviceInfo DeviceInfo { get; set; } = new();
 
-    [ProtoMember(7)] public uint SetMut { get; set; }
+    [ProtoMember(7)] public uint SetMute { get; set; }
 
     [ProtoMember(8)] public uint RegisterVendorType { get; set; }
 
     [ProtoMember(9)] public uint RegType { get; set; }
 
-    [ProtoMember(10)] public OnLineBusinessInfo OnlineBusiInfo { get; set; } = new();
+    [ProtoMember(10)] public OnlineBusinessInfo BusinessInfo { get; set; } = new();
 
     [ProtoMember(11)] public uint BatteryStatus { get; set; }
+    
+    [ProtoMember(12)] public int Field12 { get; set; }
 }
 
 [ProtoPackable]
@@ -83,7 +85,7 @@ public partial class CurAppState
 }
 
 [ProtoPackable]
-public partial class SsoSyncInfoRequest
+public partial class SsoInfoSyncRequest
 {
     [ProtoMember(1)] public uint SyncFlag { get; set; }
 
