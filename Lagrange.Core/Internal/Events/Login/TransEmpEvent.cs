@@ -13,9 +13,11 @@ internal class TransEmp31EventResp(string url, byte[] image, byte[] qrSig) : Pro
 
 internal class TransEmp12EventReq : ProtocolEvent;
 
-internal class TransEmp12EventResp(byte state, (byte[], byte[], byte[])? data) : ProtocolEvent
+internal class TransEmp12EventResp(byte state, long uin, (byte[], byte[], byte[])? data) : ProtocolEvent
 {
     public TransEmpState State { get; } = (TransEmpState)state;
+    
+    public long Uin { get; } = uin;
 
     public (byte[] TgtgtKey, byte[] NoPicSig, byte[] TempPassword)? Data { get; } = data;
 

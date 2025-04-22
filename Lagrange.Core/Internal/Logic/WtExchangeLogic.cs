@@ -109,10 +109,13 @@ internal class WtExchangeLogic : ILogic, IDisposable
                 _context.Keystore.WLoginSigs.TgtgtKey = data.TgtgtKey;
                 _context.Keystore.WLoginSigs.NoPicSig = data.NoPicSig;
                 _context.Keystore.WLoginSigs.EncryptedA1 = data.TempPassword;
-            
-                // TODO: DO LOGIN RESULT
-                _transEmpSource.TrySetResult(true);
+                _context.Keystore.Uin = transEmp12.Uin;
+
                 _queryStateTimer.Change(Timeout.Infinite, Timeout.Infinite);
+
+                var result = await _context.EventContext.SendEvent<LoginEventResp>(new LoginEventReq(LoginEventReq.Command.Tgtgt));
+            
+                _transEmpSource.TrySetResult(true);
                 break;
             case { State: TransEmp12EventResp.TransEmpState.Canceled or TransEmp12EventResp.TransEmpState.Invalid or TransEmp12EventResp.TransEmpState.CodeExpired }:
                 _context.LogCritical(Tag, $"QR Code State: {transEmp12.State}");

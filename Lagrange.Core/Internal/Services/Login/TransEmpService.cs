@@ -57,10 +57,10 @@ internal class TransEmpService : BaseService<ProtocolEvent, ProtocolEvent>
                     int retry = reader.Read<int>();
                     var tlvs = ProtocolHelper.TlvUnPack(ref reader);
 
-                    return new ValueTask<ProtocolEvent?>(new TransEmp12EventResp(retCode, (tlvs[0x1e], tlvs[0x19], tlvs[0x18])));
+                    return new ValueTask<ProtocolEvent?>(new TransEmp12EventResp(retCode, uin, (tlvs[0x1e], tlvs[0x19], tlvs[0x18])));
                 }
 
-                return new ValueTask<ProtocolEvent?>(new TransEmp12EventResp(retCode, null));
+                return new ValueTask<ProtocolEvent?>(new TransEmp12EventResp(retCode, 0, null));
             }
             default:
             {

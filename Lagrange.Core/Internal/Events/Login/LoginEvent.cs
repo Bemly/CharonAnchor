@@ -1,8 +1,13 @@
 ﻿namespace Lagrange.Core.Internal.Events.Login;
 
-internal class LoginEventReq : ProtocolEvent
+internal class LoginEventReq(LoginEventReq.Command cmd) : ProtocolEvent
 {
+    public enum Command
+    {
+        Tgtgt = 0x09
+    }
     
+    public Command Cmd { get; } = cmd;
 }
 
 internal class LoginEventResp : ProtocolEvent

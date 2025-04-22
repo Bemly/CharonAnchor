@@ -54,10 +54,10 @@ internal ref struct Tlv : IDisposable
         WriteTlv(0x100);
         
         _writer.Write((ushort)0); // db buf ver
-        _writer.Write(_appInfo.SsoVersion); // sso ver, dont over 7
+        _writer.Write(5); // sso ver, dont over 7
         _writer.Write(_appInfo.AppId);
         _writer.Write(_appInfo.SubAppId);
-        _writer.Write(8001u); // app client ver
+        _writer.Write<int>(_appInfo.AppClientVersion); // app client ver
         _writer.Write(_appInfo.SdkInfo.MainSigMap);
         
         _writer.ExitLengthBarrier<short>(false);
@@ -189,7 +189,7 @@ internal ref struct Tlv : IDisposable
         tlv.Tlv128();
         tlv.Tlv124();
 
-        var span = tlv._writer.CreateReadOnlySpan();
+        var span = tlv.CreateReadOnlySpan();
         Span<byte> encrypted = stackalloc byte[TeaProvider.GetCipherLength(span.Length)];
         TeaProvider.Encrypt(span, encrypted, _keystore.WLoginSigs.TgtgtKey);
         tlv.Dispose();
