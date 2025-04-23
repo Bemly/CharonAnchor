@@ -7,12 +7,14 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>13</LangVersion>
         <IsPackable>true</IsPackable>
-        <PublishAot>true</PublishAot>
+        <Version>1.0.0</Version>
+        <Authors>Linwenxuan04</Authors>
+        <Description>The Blazing-fast Code-first C# Google Protocol Buffer Serializer</Description>
+        <RepositoryType>git</RepositoryType>
+        <PackageProjectUrl>https://github.com/LagrangeDev/LagrangeV2</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/LagrangeDev/LagrangeV2</RepositoryUrl>
+        <AssemblyVersion>1.0.0</AssemblyVersion>
     </PropertyGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\Lagrange.Proto.Generator\Lagrange.Proto.Generator.csproj" ReferenceOutputAssembly="false" PackAsAnalyzer="true" />
-    </ItemGroup>
 
     <ItemGroup>
       <None Update="Serialization\Metadata\ProtoTypeResolver.WellKnownTypes.tt">
