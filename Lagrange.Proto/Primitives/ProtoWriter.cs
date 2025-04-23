@@ -25,6 +25,8 @@ public class ProtoWriter : IDisposable
     public int BytesPending { get; private set; }
     
     public long BytesCommitted { get; private set; }
+    
+    public long BytesWritten => BytesCommitted + BytesPending;
 
     public ProtoWriter() { }
     
@@ -189,21 +191,28 @@ public class ProtoWriter : IDisposable
         }
         else
         {
-            var stage1 = PackVector<T>(v).AsSByte();
-            var minimum = Vector128.Create(-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-            var exists = Sse2.Or(Sse2.CompareGreaterThan(stage1, Vector128<sbyte>.Zero), minimum);
-            uint bits = (uint)Sse2.MoveMask(exists);
-            
-            byte bytes = (byte)(32 - BitOperations.LeadingZeroCount(bits));
-            var mask = Sse2.CompareLessThan(Ascend, Vector128.Create((sbyte)bytes));
-            
-            var shift = Sse2.ShiftRightLogical128BitLane(mask, 1);
-            var msbmask = Sse2.And(shift, Vector128.Create((sbyte)-128));
-            var merged = Sse2.Or(stage1, msbmask);
-            
-            ref byte destination = ref MemoryMarshal.GetReference(_memory.Span);
-            Unsafe.As<byte, Vector128<sbyte>>(ref Unsafe.Add(ref destination, BytesPending)) = merged;
-            BytesPending += bytes;
+            if (Sse2.IsSupported)
+            {
+                var stage1 = PackVector<T>(v).AsSByte();
+                var minimum = Vector128.Create(-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                var exists = Sse2.Or(Sse2.CompareGreaterThan(stage1, Vector128<sbyte>.Zero), minimum);
+                uint bits = (uint)Sse2.MoveMask(exists);
+
+                byte bytes = (byte)(32 - BitOperations.LeadingZeroCount(bits));
+                var mask = Sse2.CompareLessThan(Ascend, Vector128.Create((sbyte)bytes));
+
+                var shift = Sse2.ShiftRightLogical128BitLane(mask, 1);
+                var msbmask = Sse2.And(shift, Vector128.Create((sbyte)-128));
+                var merged = Sse2.Or(stage1, msbmask);
+
+                ref byte destination = ref MemoryMarshal.GetReference(_memory.Span);
+                Unsafe.As<byte, Vector128<sbyte>>(ref Unsafe.Add(ref destination, BytesPending)) = merged;
+                BytesPending += bytes;
+            }
+            else
+            {
+                
+            }
         }
     }
     

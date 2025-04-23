@@ -7,6 +7,23 @@ namespace Lagrange.Proto.Utility;
 
 public static class ProtoHelper
 {
+    /*
+     *     private static final int[] VAR_INT_LENGTHS = new int[65];
+
+    static {
+        for (int i = 0; i <= 64; ++i) {
+            VAR_INT_LENGTHS[i] = (63 - i) / 7;
+        }
+    }
+     */
+    
+    private static readonly int[] VarIntLengths = new int[65];
+    
+    static ProtoHelper()
+    {
+        for (int i = 0; i <= 64; ++i) VarIntLengths[i] = (63 - i) / 7;
+    }
+    
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static int GetVarIntMin(int length) => length switch
     {
@@ -31,14 +48,17 @@ public static class ProtoHelper
     public static unsafe int GetVarIntLength<T>(T value) where T : unmanaged, INumberBase<T>
     {
         if (value == T.Zero) return 1;
-
+        
         if (sizeof(T) <= 4)
         {
-            int leading = BitOperations.LeadingZeroCount(ProtoWriter.PackScalar<T>(ulong.CreateSaturating(value)));
-            return 8 - ((leading - 1) >> 3);
+            int leadingZeros = BitOperations.LeadingZeroCount(uint.CreateSaturating(value));
+            return (((38 - leadingZeros) * 0b10010010010010011) >> 19) + (leadingZeros >> 5);
         }
-
-        return BitOperations.TrailingZeroCount(ulong.CreateSaturating(value)) / 7 + 1;
+        else
+        {
+            int leadingZeros = BitOperations.LeadingZeroCount(ulong.CreateSaturating(value));
+            return (((70 - leadingZeros) * 0b10010010010010011) >> 19) + (leadingZeros >> 6);
+        }
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
