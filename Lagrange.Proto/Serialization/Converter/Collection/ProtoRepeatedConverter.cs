@@ -60,7 +60,7 @@ public abstract class ProtoRepeatedConverter<TCollection, TElement> : ProtoConve
             if ((tag = reader.DecodeVarInt<int>() >> 3) != field) break;
         }
 
-        reader.Rewind(-ProtoHelper.GetVarIntLength(tag));
+        reader.Rewind(-ProtoHelper.GetVarIntLength(tag << 3));
 
         return Finalize(collection, state);
     }
@@ -78,7 +78,7 @@ public abstract class ProtoRepeatedConverter<TCollection, TElement> : ProtoConve
             if ((tag = reader.DecodeVarInt<int>() >> 3) != field) break;
         }
 
-        reader.Rewind(-ProtoHelper.GetVarIntLength(tag));
+        reader.Rewind(-ProtoHelper.GetVarIntLength(tag << 3));
 
         return Finalize(collection, state);
     }

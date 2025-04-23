@@ -31,7 +31,7 @@ public class ProtoArrayConverter : ProtoConverter<ProtoArray>
             if ((tag = reader.DecodeVarInt<int>() >> 3) != field) break;
         }
 
-        reader.Rewind(-ProtoHelper.GetVarIntLength(tag));
+        reader.Rewind(-ProtoHelper.GetVarIntLength(tag << 3));
         return array;
     }
 }

@@ -307,7 +307,7 @@ public class ProtoMapFieldInfo<TMap, TKey, TValue>(int field, WireType keyWireTy
             if ((tag = reader.DecodeVarInt<int>() >> 3) != Field) break;
         }
 
-        reader.Rewind(-ProtoHelper.GetVarIntLength(tag));
+        reader.Rewind(-ProtoHelper.GetVarIntLength(tag << 3));
         
         _typedSet(target, map);
     }
