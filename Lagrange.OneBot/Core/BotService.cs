@@ -1,4 +1,5 @@
-﻿using Lagrange.Core;
+﻿using System.Collections.Concurrent;
+using Lagrange.Core;
 using Lagrange.Core.Common.Interface;
 using Lagrange.Core.Events.EventArgs;
 using Lagrange.OneBot.Utility;
@@ -9,8 +10,10 @@ using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace Lagrange.OneBot.Core;
 
-public partial class BotService(ILogger<BotService> logger, ILogger<BotContext> botLogger, BotContext context, IConfiguration config) : IHostedService
+public partial class BotService(ILogger<BotService> logger, ILoggerFactory loggerFactory, BotContext context, IConfiguration config) : IHostedService
 {
+    private readonly ConcurrentDictionary<string, ILogger> _contextLoggers = new();
+    
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         context.EventInvoker.RegisterEvent<BotLogEvent>((_, @event) =>
@@ -25,7 +28,9 @@ public partial class BotService(ILogger<BotService> logger, ILogger<BotContext> 
                 Lagrange.Core.Events.EventArgs.LogLevel.Trace => LogLevel.Trace,
                 _ => throw new ArgumentOutOfRangeException()
             };
-            botLogger.Log(level, @event.Message);
+            
+            var contextLogger = _contextLoggers.GetOrAdd(@event.Tag, _ => loggerFactory.CreateLogger(@event.Tag));
+            Log.LogBotMessage(contextLogger, level, @event.Message);
         });
         
         context.EventInvoker.RegisterEvent<BotQrCodeEvent>(async (_, @event) =>
@@ -57,6 +62,9 @@ public partial class BotService(ILogger<BotService> logger, ILogger<BotContext> 
 
     private static partial class Log
     {
+        [LoggerMessage(Message = "{message}", EventId = 0)]
+        public static partial void LogBotMessage(ILogger logger, LogLevel level, string message);
+
         [LoggerMessage(Level = LogLevel.Information, EventId = 0, Message = "Fetch QrCode Success, Expiration: {expiration} seconds, Url: {url}")]
         public static partial void QrCodeSuccess(ILogger logger, int expiration, string url);
         
