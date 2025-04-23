@@ -137,7 +137,7 @@ internal sealed class SegmentBufferWriter : IBufferWriter<byte>, IDisposable
         _position = 0;
         _bytesWritten = 0;
 
-        while (size < _totalSize)
+        while (size > _totalSize)
         {
             RentSegment(size);
         }
