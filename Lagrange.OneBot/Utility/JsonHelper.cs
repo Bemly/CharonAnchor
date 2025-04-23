@@ -5,11 +5,6 @@ namespace Lagrange.OneBot.Utility;
 
 public static class JsonHelper
 {
-    public static readonly JsonSerializerOptions Options = new()
-    {
-        TypeInfoResolver = OneBotSerializerContext.Default
-    };
-    
     public static T? Deserialize<T>(string json) where T : class => 
         JsonSerializer.Deserialize(json, typeof(T), OneBotSerializerContext.Default) as T;
     

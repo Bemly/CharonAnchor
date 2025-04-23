@@ -62,8 +62,9 @@ public partial class BotService(ILogger<BotService> logger, ILoggerFactory logge
         bool result = await context.Login(cancellationToken);
         if (!result)
         {
-            logger.LogError("Login failed");
-            Process.GetCurrentProcess().Kill();
+            logger.LogCritical("Login failed, process would exit in 10 seconds");
+            await Task.Delay(TimeSpan.FromSeconds(10), cancellationToken);
+            Environment.Exit(-1);
         }
     }
 
