@@ -51,9 +51,7 @@ public class HexConverter : JsonConverter<byte[]>
     {
         if (reader.TokenType == JsonTokenType.String)
         {
-            return reader.TryGetBytesFromBase64(out var bytes)
-                ? bytes 
-                : Convert.FromHexString(reader.GetString() ?? string.Empty);
+            return Convert.FromHexString(reader.GetString() ?? string.Empty);
         }
         throw new JsonException();
     }
