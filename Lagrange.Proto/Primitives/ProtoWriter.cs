@@ -211,7 +211,18 @@ public class ProtoWriter : IDisposable
             }
             else
             {
+                ref byte first = ref MemoryMarshal.GetReference(_memory.Span);
                 
+                while (true)
+                {
+                    if (v < 0x80)
+                    {
+                        Unsafe.Add(ref first, BytesPending++) = (byte)v;
+                        break;
+                    }
+                    Unsafe.Add(ref first, BytesPending++) = (byte)((uint)v | 0xFFFFFF80);
+                    v >>= 7;
+                }
             }
         }
     }
