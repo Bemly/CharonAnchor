@@ -53,7 +53,7 @@ public partial class BotService(ILogger<BotService> logger, ILoggerFactory logge
             Log.QrCodeState(logger, level, @event.State);
         });
         
-        context.EventInvoker.RegisterEvent<BotLoginEvent>(async (_, _) =>
+        context.EventInvoker.RegisterEvent<BotOnlineEvent>(async (_, _) =>
         {
             var keystore = context.Keystore;
             await File.WriteAllBytesAsync($"Lagrange-{keystore.Uin}.keystore", JsonHelper.SerializeToUtf8Bytes(keystore), cancellationToken);
