@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Diagnostics;
 using Lagrange.Core;
 using Lagrange.Core.Common.Interface;
 using Lagrange.Core.Events.EventArgs;
@@ -52,7 +53,18 @@ public partial class BotService(ILogger<BotService> logger, ILoggerFactory logge
             Log.QrCodeState(logger, level, @event.State);
         });
         
+        context.EventInvoker.RegisterEvent<BotLoginEvent>(async (_, _) =>
+        {
+            var keystore = context.Keystore;
+            await File.WriteAllBytesAsync($"Lagrange-{keystore.Uin}.keystore", JsonHelper.SerializeToUtf8Bytes(keystore), cancellationToken);
+        });
+        
         bool result = await context.Login(cancellationToken);
+        if (!result)
+        {
+            logger.LogError("Login failed");
+            Process.GetCurrentProcess().Kill();
+        }
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)

@@ -20,17 +20,27 @@ public static class HostApplicationBuilderExtension
     {
         var option = new AccountOption();
         builder.Configuration.GetSection("Account").Bind(option);
-        
-        builder.Services.AddSingleton<BotContext>(_ => BotFactory.Create(new BotConfig
+
+        var config = new BotConfig
         {
             UseIPv6Network = option.UseIPv6Network,
             GetOptimumServer = option.GetOptimumServer,
             AutoReconnect = option.AutoReconnect,
             Protocol = option.Protocol,
             AutoReLogin = option.AutoReLogin
-        }));
-        builder.Services.AddHostedService<BotService>();
+        };
+
+        string? file = Directory.GetFiles(".").FirstOrDefault(f => f.EndsWith(".keystore"));
+        if (file != null && JsonHelper.Deserialize<BotKeystore>(File.ReadAllText(file)) is { } keystore)
+        {
+            builder.Services.AddSingleton<BotContext>(_ => BotFactory.Create(config, keystore));
+        }
+        else
+        {
+            builder.Services.AddSingleton<BotContext>(_ => BotFactory.Create(config));
+        }
         
+        builder.Services.AddHostedService<BotService>();
         return builder;
     }
     
