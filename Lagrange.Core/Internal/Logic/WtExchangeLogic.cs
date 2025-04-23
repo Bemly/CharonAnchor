@@ -95,6 +95,8 @@ internal class WtExchangeLogic : ILogic, IDisposable
         if (infoSync.Message == "register success")
         {
             _context.EventInvoker.PostEvent(new BotOnlineEvent(BotOnlineEvent.Reasons.Login));
+            _context.IsOnline = true;
+            
             _ssoHeartBeatTimer.Change(0, 270 * 1000);
             return true;
         }

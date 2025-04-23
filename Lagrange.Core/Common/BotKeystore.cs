@@ -1,13 +1,12 @@
+using System.Text.Json.Serialization;
 using Lagrange.Core.Utility.Cryptography;
 
 namespace Lagrange.Core.Common;
 
 public class BotKeystore
 {
-    private BotKeystore()
-    {
-        
-    }
+    [JsonConstructor]
+    public BotKeystore() { }
     
     public long Uin { get; set; }
     
