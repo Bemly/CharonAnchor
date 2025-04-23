@@ -151,9 +151,6 @@ internal class WtExchangeLogic : ILogic, IDisposable
                 _transEmpSource.TrySetResult(false);
                 _queryStateTimer.Change(Timeout.Infinite, Timeout.Infinite);
                 break;
-            default:
-                _context.LogInfo(Tag, $"QRCode State: {transEmp12.State}");
-                break;
         }
     });
 
