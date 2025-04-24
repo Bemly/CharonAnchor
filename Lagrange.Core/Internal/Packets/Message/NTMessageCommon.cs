@@ -3,7 +3,7 @@ using Lagrange.Proto;
 namespace Lagrange.Core.Internal.Packets.Message;
 
 [ProtoPackable]
-internal partial class Message
+internal partial class CommonMessage
 {
     [ProtoMember(1)] public RoutingHead RoutingHead { get; set; } = new();
     
@@ -21,7 +21,7 @@ internal partial class ContentHead
     
     [ProtoMember(3)] public int C2CCommand { get; set; }
     
-    [ProtoMember(4)] public long PlayModeRandom { get; set; }
+    [ProtoMember(4)] public long Random { get; set; }
     
     [ProtoMember(5)] public long MsgSeq { get; set; }
     
@@ -37,7 +37,7 @@ internal partial class ContentHead
     
     [ProtoMember(11)] public long NtMsgSeq { get; set; }
     
-    [ProtoMember(12)] public long MsgUid { get; set; }
+    [ProtoMember(12)] public ulong MsgUid { get; set; }
 }
 
 [ProtoPackable]

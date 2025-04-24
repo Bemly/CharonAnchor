@@ -13,15 +13,8 @@ internal class InfoSyncPushService : BaseService<InfoSyncPushEvent, InfoSyncPush
 {
     protected override ValueTask<InfoSyncPushEvent?> Parse(ReadOnlyMemory<byte> input, BotContext context)
     {
+        var obj = ProtoObject.Parse(input.Span);
         var push = ProtoHelper.Deserialize<InfoSyncPush>(input.Span);
-
-        if (push.PushFlag == 2)
-        {
-            var obj = ProtoObject.Parse(input.Span);
-
-            var field7 = obj[7].AsObject();
-            var field8 = obj[8].AsObject();
-        }
         
         return base.Parse(input, context);
     }

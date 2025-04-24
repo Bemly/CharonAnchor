@@ -1,3 +1,4 @@
+using Lagrange.Core.Internal.Packets.Message;
 using Lagrange.Proto;
 
 namespace Lagrange.Core.Internal.Packets.System;
@@ -16,6 +17,10 @@ internal partial class InfoSyncPush
     [ProtoMember(5)] public uint RetryFlag { get; set; }
 
     [ProtoMember(6)] public List<GroupNode> GroupNodes { get; set; } = [];
+
+    [ProtoMember(7)] public GroupSystemNotifications Notifications { get; set; } = new();
+    
+    [ProtoMember(8)] public SystemNotifications SysNotifications { get; set; } = new();
     
     [ProtoMember(10)] public uint UseInitCacheData { get; set; }
 
@@ -49,7 +54,7 @@ internal partial class GroupNode
     
     [ProtoMember(10)] public ulong LongestMsgSeq { get; set; }
     
-    [ProtoMember(11)] public uint UinFlagEx2 { get; set; }
+    [ProtoMember(11)] public ulong UinFlagEx2 { get; set; }
     
     [ProtoMember(12)] public uint ImportantMsgLatestSeq { get; set; }
     
@@ -60,34 +65,49 @@ internal partial class GroupNode
     [ProtoMember(15)] public uint NeedToCheckSeqOnAioOpen { get; set; }
 }
 
-[ProtoPackable]
-internal partial class C2CNode
-{
-    [ProtoMember(1)] public long PeerId { get; set; }
-    
-    [ProtoMember(3)] public ulong LastReadTime { get; set; }
-    
-    [ProtoMember(4)] public ulong LastReadSeq { get; set; }
-    
-    [ProtoMember(5)] public ulong LastMsgSeq { get; set; }
-    
-    [ProtoMember(6)] public ulong LastMsgTime { get; set; }
-    
-    [ProtoMember(7)] public bool IsComplete { get; set; }
-    
-    [ProtoMember(8)] public uint MsgCount { get; set; }
-    
-    [ProtoMember(9)] public uint C2CType { get; set; }
-    
-    [ProtoMember(10)] public uint ServiceType { get; set; }
-    
-    [ProtoMember(11)] public ulong FromTinyId { get; set; }
-    
-    [ProtoMember(12)] public ulong ToTinyId { get; set; }
-}
 
 [ProtoPackable]
 internal partial class GuildNode
 {
     [ProtoMember(1)] public ulong PeerId { get; set; }
+}
+
+[ProtoPackable]
+internal partial class GroupSystemNotifications
+{
+    [ProtoMember(3)] public List<GroupSystemNotificationsInfo> Infos { get; set; } = [];
+}
+
+[ProtoPackable]
+internal partial class SystemNotifications
+{
+    // Field 3 and Field 5 is timestamp, IDK
+    
+    [ProtoMember(4)] public List<SystemNotificationsInfo> Infos { get; set; } = [];
+}
+
+[ProtoPackable]
+internal partial class GroupSystemNotificationsInfo
+{
+    [ProtoMember(3)] public long GroupCode { get; set; }
+    
+    [ProtoMember(4)] public uint StartSeq { get; set; }
+    
+    [ProtoMember(5)] public uint EndSeq { get; set; }
+
+    [ProtoMember(6)] public List<CommonMessage> Messages { get; set; } = [];
+    
+    [ProtoMember(8)] public long LastSpeakTimestamp { get; set; }
+}
+
+[ProtoPackable]
+internal partial class SystemNotificationsInfo
+{
+    [ProtoMember(1)] public long PeerUin { get; set; }
+
+    [ProtoMember(2)] public string PeerUid { get; set; } = string.Empty; // if PeerUid == PeerUin.ToString(), indicates that this is a group
+    
+    [ProtoMember(5)] public long LastSpeakTimestamp { get; set; }
+    
+    [ProtoMember(8)] public List<CommonMessage> Messages { get; set; } = [];
 }
