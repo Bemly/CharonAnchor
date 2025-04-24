@@ -35,19 +35,19 @@ internal static class PowProvider
         if (tgt.Length == 32)
         {
             var start = DateTime.Now;
-            var hash = SHA256.HashData(Convert.FromHexString(inputNum.ToString("X").PadLeft(256, '0')));
+            var hash = SHA256.HashData(inputNum.ToByteArray(true, true));
             
             while (!Vector256.EqualsAll(Unsafe.As<byte, Vector256<byte>>(ref MemoryMarshal.GetReference(tgt)), Unsafe.As<byte, Vector256<byte>>(ref MemoryMarshal.GetArrayDataReference(hash))))
             {
                 inputNum++;
-                hash = SHA256.HashData(Convert.FromHexString(inputNum.ToString("X").PadLeft(256, '0')));
+                hash = SHA256.HashData(inputNum.ToByteArray(true, true));
                 cnt++;
                 
                 if (cnt > 6000000) throw new Exception("Calculating PoW cost too much time, maybe something wrong");
             }
             
             ok = true;
-            dst = Convert.FromHexString(inputNum.ToString("X").PadLeft(256, '0'));
+            dst = inputNum.ToByteArray(true, true);
             elapsed = (int)(DateTime.Now - start).TotalMilliseconds;
         }
         else
@@ -78,12 +78,13 @@ internal static class PowProvider
     /// </summary>
     public static byte[] GenerateTlv548()
     {
-        var src = RandomNumberGenerator.GetBytes(127);
-        while (src[0] == 0 || src[0] == 255) src[0] = (byte)(Random.Shared.Next() % 256);
+        var src = RandomNumberGenerator.GetBytes(128);
+        src[0] = 21;
+        
         var srcNum = new BigInteger(src, true, true);
         const int cnt = 10000;
         var dstNum = srcNum + new BigInteger(cnt);
-        var dst = Convert.FromHexString(dstNum.ToString("X").PadLeft(256, '0'));
+        var dst = dstNum.ToByteArray(true, true);
         var tgt = SHA256.HashData(dst);
         
         var writer = new BinaryPacket(stackalloc byte[0x200]);
