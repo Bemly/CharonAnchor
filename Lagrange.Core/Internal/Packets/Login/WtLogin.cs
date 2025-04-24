@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Text;
 using Lagrange.Core.Common;
 using Lagrange.Core.Internal.Packets.Struct;
 using Lagrange.Core.Utility.Binary;
@@ -111,10 +112,30 @@ internal class WtLogin : StructBase
         tlvs.Tlv516();
         tlvs.Tlv521Android();
         tlvs.Tlv525();
-        tlvs.TlvRaw(0x544, energy);
+        tlvs.Tlv544(energy);
         tlvs.Tlv545();
-        tlvs.TlvRaw(0x548, PowProvider.GenerateTlv548());
-        tlvs.TlvRaw(0x553, attach);
+        tlvs.Tlv548(PowProvider.GenerateTlv548());
+        tlvs.Tlv553(attach);
+        // 542 smsExtraData
+        
+        return BuildPacket(0x810, tlvs.CreateReadOnlySpan());
+    }
+
+    public async Task<ReadOnlyMemory<byte>> BuildOicq02Android(string ticket)
+    {
+        var sign = (IAndroidBotSignProvider)_context.PacketContext.SignProvider;
+        var energy = await sign.GetEnergy(_context.BotUin, "810_2");
+        var attach = await sign.GetDebugXwid(_context.BotUin, "810_2");
+        
+        using var tlvs = new Tlv(0x02, _context);
+        
+        tlvs.Tlv193(Encoding.UTF8.GetBytes(ticket));
+        tlvs.Tlv008();
+        if (Keystore.State.Tlv104 is { } tlv104) tlvs.Tlv104(tlv104);
+        tlvs.Tlv116();
+        if (Keystore.State.Tlv547 is { } tlv547) tlvs.Tlv547(tlv547);
+        tlvs.Tlv544(energy);
+        tlvs.Tlv553(attach);
         // 542 smsExtraData
         
         return BuildPacket(0x810, tlvs.CreateReadOnlySpan());

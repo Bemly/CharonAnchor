@@ -4,12 +4,15 @@ internal class LoginEventReq(LoginEventReq.Command cmd, string password = "") : 
 {
     public enum Command
     {
-        Tgtgt = 0x09
+        Tgtgt = 0x09,
+        Captcha = 0x02
     }
     
     public Command Cmd { get; } = cmd;
     
     public string Password { get; } = password;
+
+    public string Ticket { get; init; } = string.Empty;
 }
 
 internal class LoginEventResp : ProtocolEvent

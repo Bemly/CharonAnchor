@@ -9,4 +9,7 @@ public static class BotExt
     
     public static Task<bool> Login(this BotContext context, CancellationToken token = default) =>
         context.EventContext.GetLogic<WtExchangeLogic>().Login(0, null, token);
+
+    public static bool SubmitCaptcha(this BotContext context, string ticket, string randStr) =>
+        context.EventContext.GetLogic<WtExchangeLogic>().SubmitCaptcha(ticket, randStr);
 }

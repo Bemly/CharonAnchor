@@ -1,12 +1,13 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using Lagrange.Core.Common;
 using Lagrange.Core.Events.EventArgs;
 using Lagrange.Core.Internal.Context;
 using Lagrange.Core.Internal.Events.Login;
 using Lagrange.Core.Internal.Events.System;
-using Lagrange.Core.Internal.Services.System;
 using Lagrange.Core.Utility;
 using Lagrange.Core.Utility.Binary;
+using Lagrange.Core.Utility.Cryptography;
 using Lagrange.Core.Utility.Extension;
 using ThirdPartyLoginResponse = Lagrange.Core.Internal.Packets.System.ThirdPartyLoginResponse;
 
@@ -104,10 +105,46 @@ internal class WtExchangeLogic : ILogic, IDisposable
                 Random.Shared.NextBytes(_context.Keystore.WLoginSigs.TgtgtKey);
                 
                 var result = await _context.EventContext.SendEvent<LoginEventResp>(new LoginEventReq(LoginEventReq.Command.Tgtgt, password));
+                if (result == null) return false;
+
+                if (result.State == LoginEventResp.States.CaptchaVerify)
+                {
+                    if (result.Tlvs.TryGetValue(0x104, out var tlv104))
+                    {
+                        _context.Keystore.State.Tlv104 = tlv104;
+                        _context.LogDebug(Tag, $"Tlv104 received, length: {tlv104.Length}");
+                    }
+                    
+                    if (result.Tlvs.TryGetValue(0x546, out var tlv546))
+                    {
+                        _context.Keystore.State.Tlv547 = PowProvider.GenerateTlv547(tlv546);
+                        _context.LogDebug(Tag, $"Tlv546 received, calculated Tlv547 with length {_context.Keystore.State.Tlv547.Length}");
+                    }
+                    
+                    string captchaUrl = Encoding.UTF8.GetString(result.Tlvs[0x192]);
+                    _context.LogInfo(Tag, $"Captcha required, URL: {captchaUrl}");
+                    _context.EventInvoker.PostEvent(new BotCaptchaEvent(captchaUrl));
+                    
+                    _captchaSource = new TaskCompletionSource<(string, string)>();
+                    var (ticket, _) = await _captchaSource.Task;
+                    _context.LogInfo(Tag, $"Captcha ticket: {ticket}, try to login");
+                    
+                    _token?.ThrowIfCancellationRequested();
+                    result = await _context.EventContext.SendEvent<LoginEventResp>(new LoginEventReq(LoginEventReq.Command.Captcha) { Ticket = ticket });
+                }
             }
         }
         
         return false;
+    }
+    
+    public bool SubmitCaptcha(string ticket, string randStr)
+    {
+        if (_captchaSource == null) return false;
+        
+        _captchaSource.TrySetResult((ticket, randStr));
+        _captchaSource = null;
+        return true;
     }
 
     private async Task<bool> Online()

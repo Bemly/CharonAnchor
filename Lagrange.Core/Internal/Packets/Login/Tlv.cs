@@ -117,6 +117,15 @@ internal ref struct Tlv : IDisposable
         _writer.ExitLengthBarrier<short>(false);
     }
 
+    public void Tlv104(byte[] verificationToken)
+    {
+        WriteTlv(0x104);
+        
+        _writer.Write(verificationToken);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+
     public void Tlv106Pwd(string password)
     {
         var md5 = MD5.HashData(Encoding.UTF8.GetBytes(password));
@@ -416,6 +425,15 @@ internal ref struct Tlv : IDisposable
         
         _writer.ExitLengthBarrier<short>(false);
     }
+
+    public void Tlv193(byte[] ticket)
+    {
+        WriteTlv(0x193);
+        
+        _writer.Write(ticket);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
     
     public void Tlv318()
     {
@@ -516,6 +534,15 @@ internal ref struct Tlv : IDisposable
         _writer.ExitLengthBarrier<short>(false);
     }
 
+    public void Tlv544(byte[] energy)
+    {
+        WriteTlv(0x544);
+        
+        _writer.Write(energy);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+
     public void Tlv545()
     {
         WriteTlv(0x545);
@@ -525,11 +552,29 @@ internal ref struct Tlv : IDisposable
         _writer.ExitLengthBarrier<short>(false);
     }
     
-    public void TlvRaw(short tag, ReadOnlySpan<byte> data)
+    public void Tlv547(byte[] clientPow)
     {
-        WriteTlv(tag);
+        WriteTlv(0x547);
         
-        _writer.Write(data);
+        _writer.Write(clientPow);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+    
+    public void Tlv548(byte[] nativeGetTestData)
+    {
+        WriteTlv(0x548);
+        
+        _writer.Write(nativeGetTestData);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+    
+    public void Tlv553(byte[] fekitAttach)
+    {
+        WriteTlv(0x553);
+        
+        _writer.Write(fekitAttach);
         
         _writer.ExitLengthBarrier<short>(false);
     }

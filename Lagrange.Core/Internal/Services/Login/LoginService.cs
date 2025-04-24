@@ -49,6 +49,7 @@ internal class LoginServiceAndroid : BaseService<LoginEventReq, LoginEventResp>
         return input.Cmd switch
         {
             LoginEventReq.Command.Tgtgt =>  await _packet.Value.BuildOicq09Android(input.Password),
+            LoginEventReq.Command.Captcha => await _packet.Value.BuildOicq02Android(input.Ticket),
             _ => throw new ArgumentOutOfRangeException(nameof(input), $"Unknown command: {input.Cmd}")
         };
     }
