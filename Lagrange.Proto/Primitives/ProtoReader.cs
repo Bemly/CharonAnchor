@@ -154,7 +154,7 @@ public ref struct ProtoReader
             
             if (msbs0 == 0)
             {
-                varintPart1 = b1 & (msbs1 ^ msbs1);
+                varintPart1 = b1 & (msbs1 ^ msbs1 - 1);
                 _offset += (BitOperations.TrailingZeroCount(msbs1) + 1 + 64) >> 3;
             }
             else
