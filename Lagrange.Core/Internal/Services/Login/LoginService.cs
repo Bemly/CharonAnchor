@@ -31,7 +31,42 @@ internal class LoginService : BaseService<LoginEventReq, LoginEventResp>
     {
         if (!_packet.IsValueCreated) _packet = new Lazy<WtLogin>(() => new WtLogin(context));
 
-        var payload = _packet.Value.Parse(input.Span, out ushort command);
+        var result = Common.Parse(_packet.Value, input, context);
+        return new ValueTask<LoginEventResp?>(result);
+    }
+}
+
+[EventSubscribe<LoginEventReq>(Protocols.Android)]
+[Service("wtlogin.login", RequestType.D2Auth, EncryptType.EncryptEmpty)]
+internal class LoginServiceAndroid : BaseService<LoginEventReq, LoginEventResp>
+{
+    private Lazy<WtLogin> _packet = new();
+
+    protected override async ValueTask<ReadOnlyMemory<byte>> Build(LoginEventReq input, BotContext context)
+    {
+        if (!_packet.IsValueCreated) _packet = new Lazy<WtLogin>(() => new WtLogin(context));
+
+        return input.Cmd switch
+        {
+            LoginEventReq.Command.Tgtgt =>  await _packet.Value.BuildOicq09Android(input.Password),
+            _ => throw new ArgumentOutOfRangeException(nameof(input), $"Unknown command: {input.Cmd}")
+        };
+    }
+
+    protected override ValueTask<LoginEventResp?> Parse(ReadOnlyMemory<byte> input, BotContext context)
+    {
+        if (!_packet.IsValueCreated) _packet = new Lazy<WtLogin>(() => new WtLogin(context));
+
+        var result = Common.Parse(_packet.Value, input, context);
+        return new ValueTask<LoginEventResp?>(result);
+    }
+}
+
+file static class Common
+{
+    public static LoginEventResp Parse(WtLogin packet, ReadOnlyMemory<byte> input, BotContext context)
+    {
+        var payload = packet.Parse(input.Span, out ushort command);
         var reader = new BinaryPacket(payload);
         Debug.Assert(command == 0x810);
         
@@ -46,7 +81,7 @@ internal class LoginService : BaseService<LoginEventReq, LoginEventResp>
             string errorTitle = errorReader.ReadString(Prefix.Int16 | Prefix.LengthOnly);
             string errorMessage = errorReader.ReadString(Prefix.Int16 | Prefix.LengthOnly);
             
-            return new ValueTask<LoginEventResp?>(new LoginEventResp(state, (errorTitle, errorMessage)));
+            return new LoginEventResp(state, (errorTitle, errorMessage));
         }
 
         if (tlvs.TryGetValue(0x119, out var tgtgt))
@@ -56,30 +91,9 @@ internal class LoginService : BaseService<LoginEventReq, LoginEventResp>
             var tlv119Reader = new BinaryPacket(tlv119);
             var tlvCollection = ProtocolHelper.TlvUnPack(ref tlv119Reader);
             
-            return new ValueTask<LoginEventResp?>(new LoginEventResp(state, tlvCollection));
+            return new LoginEventResp(state, tlvCollection);
         }
 
-        return new ValueTask<LoginEventResp?>(new LoginEventResp(state, new Dictionary<ushort, byte[]>()));
-    }
-}
-
-[EventSubscribe<LoginEventReq>(Protocols.Android)]
-[Service("wtlogin.login", RequestType.D2Auth, EncryptType.EncryptEmpty)]
-internal class LoginServiceAndroid : BaseService<LoginEventReq, LoginEventResp>
-{
-    private Lazy<WtLogin> _packet = new();
-
-    protected override ValueTask<ReadOnlyMemory<byte>> Build(LoginEventReq input, BotContext context)
-    {
-        if (!_packet.IsValueCreated) _packet = new Lazy<WtLogin>(() => new WtLogin(context));
-
-        return base.Build(input, context);
-    }
-
-    protected override ValueTask<LoginEventResp?> Parse(ReadOnlyMemory<byte> input, BotContext context)
-    {
-        if (!_packet.IsValueCreated) _packet = new Lazy<WtLogin>(() => new WtLogin(context));
-
-        return base.Parse(input, context);
+        return new LoginEventResp(state, tlvs);
     }
 }

@@ -12,7 +12,8 @@ internal class PacketContext(BotContext context)
     private readonly BotKeystore _keystore = context.Keystore;
     private readonly SsoPacker _ssoPacker = new(context);
     private readonly ServicePacker _servicePacker = new(context);
-    private readonly IBotSignProvider _signProvider = context.Config.SignProvider ?? context.Config.Protocol switch
+    
+    internal readonly IBotSignProvider SignProvider = context.Config.SignProvider ?? context.Config.Protocol switch
     {
         Protocols.Linux or Protocols.Windows or Protocols.MacOs => new DefaultBotSignProvider(context.Config.Protocol, context.AppInfo),
         Protocols.AndroidPhone or Protocols.AndroidPad => new DefaultAndroidBotSignProvider(context),
@@ -34,7 +35,7 @@ internal class PacketContext(BotContext context)
                 {
                     if (IBotSignProvider.IsWhiteListCommand(packet.Command))
                     {
-                        var secInfo = await _signProvider.GetSecSign(_keystore.Uin, packet.Command, packet.Sequence, packet.Data);
+                        var secInfo = await SignProvider.GetSecSign(_keystore.Uin, packet.Command, packet.Sequence, packet.Data);
                         var sso = _ssoPacker.BuildProtocol12(packet, secInfo);
                         frame = _servicePacker.BuildProtocol12(sso, options);
                     }

@@ -34,7 +34,7 @@ internal class ServiceContext
         {
             foreach (var attribute in type.GetCustomAttributes<EventSubscribeAttribute>())
             {
-                if ((attribute.Protocol & context.Config.Protocol) == Protocols.None) continue; // skip if not supported
+                if ((~attribute.Protocol & context.Config.Protocol) != Protocols.None) continue; // skip if not supported
 
                 if (type.GetCustomAttribute<ServiceAttribute>() is { } attr && type.HasImplemented<IService>())
                 {

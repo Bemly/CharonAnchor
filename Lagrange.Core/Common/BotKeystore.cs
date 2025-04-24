@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text.Json.Serialization;
 using Lagrange.Core.Utility.Cryptography;
 
@@ -18,6 +19,8 @@ public class BotKeystore
     public WLoginSigs WLoginSigs { get; set; } = new();
     
     public byte[] Guid { get; set; } = [];
+    public string AndroidId { get; set; } = string.Empty;
+    public string Qimei { get; set; } = string.Empty;
     public string DeviceName { get; set; } = string.Empty;
 
     public static BotKeystore CreateEmpty()
@@ -25,9 +28,13 @@ public class BotKeystore
         var guid = new byte[16];
         Random.Shared.NextBytes(guid);
         
+        var androidId = new byte[8];
+        Random.Shared.NextBytes(androidId);
+        
         return new BotKeystore
         {
             Guid = guid,
+            AndroidId = Convert.ToHexString(androidId),
             DeviceName = "Lagrange-114514"
         };
     }
@@ -66,6 +73,8 @@ public class WLoginSigs
     public byte[] WtSessionTicket { get; set; } = [];
     
     public byte[] WtSessionTicketKey { get; set; } = [];
+    
+    public byte[] RandomKey { get; set; } = new byte[16];
 
     public void Clear()
     {
@@ -76,5 +85,7 @@ public class WLoginSigs
         NoPicSig = null;
         QrSig = null;
         TgtgtKey = [];
+        RandomKey = new byte[16];
+        RandomNumberGenerator.Fill(RandomKey);
     }
 }

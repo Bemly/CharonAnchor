@@ -164,11 +164,11 @@ internal class DefaultAndroidBotSignProvider(BotContext context) : IAndroidBotSi
             var payload = new JsonObject
             {
                 ["uin"] = uin,
-                ["command"] = cmd,
+                ["cmd"] = cmd,
                 ["seq"] = seq,
                 ["buffer"] = Convert.ToHexString(body.Span),
                 ["guid"] = Convert.ToHexString(context.Keystore.Guid),
-                ["version"] = context.AppInfo.CurrentVersion
+                ["version"] = context.AppInfo.PtVersion
             };
             
             var response = await _client.PostAsync($"{_url}/sign", new StringContent(payload.ToJsonString(), Encoding.UTF8, "application/json"));
@@ -201,7 +201,7 @@ internal class DefaultAndroidBotSignProvider(BotContext context) : IAndroidBotSi
                 ["data"] = data,
                 ["guid"] = Convert.ToHexString(context.Keystore.Guid),
                 ["ver"] = context.AppInfo.SdkInfo.SdkVersion,
-                ["version"] = context.AppInfo.CurrentVersion
+                ["version"] = context.AppInfo.PtVersion
             };
             
             var response = await _client.PostAsync($"{_url}/energy", new StringContent(payload.ToJsonString(), Encoding.UTF8, "application/json"));
@@ -226,7 +226,7 @@ internal class DefaultAndroidBotSignProvider(BotContext context) : IAndroidBotSi
                 ["uin"] = uin,
                 ["data"] = data,
                 ["guid"] = Convert.ToHexString(context.Keystore.Guid),
-                ["version"] = context.AppInfo.CurrentVersion
+                ["version"] = context.AppInfo.PtVersion
             };
             
             var response = await _client.PostAsync($"{_url}/get_tlv553", new StringContent(payload.ToJsonString(), Encoding.UTF8, "application/json"));
@@ -250,7 +250,7 @@ internal class DefaultAndroidBotSignProvider(BotContext context) : IAndroidBotSi
     [Serializable]
     internal class ResponseRoot<T>
     {
-        [JsonPropertyName("value")] public T Value { get; set; } = default!;
+        [JsonPropertyName("data")] public T Value { get; set; } = default!;
     }
     
     [Serializable]

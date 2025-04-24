@@ -1,6 +1,6 @@
 ﻿namespace Lagrange.Core.Internal.Events.Login;
 
-internal class LoginEventReq(LoginEventReq.Command cmd) : ProtocolEvent
+internal class LoginEventReq(LoginEventReq.Command cmd, string password = "") : ProtocolEvent
 {
     public enum Command
     {
@@ -8,11 +8,15 @@ internal class LoginEventReq(LoginEventReq.Command cmd) : ProtocolEvent
     }
     
     public Command Cmd { get; } = cmd;
+    
+    public string Password { get; } = password;
 }
 
 internal class LoginEventResp : ProtocolEvent
 {
     public byte RetCode { get; }
+    
+    public States State => (States)RetCode;
     
     public (string, string)? Error { get; }
     
@@ -29,5 +33,26 @@ internal class LoginEventResp : ProtocolEvent
     {
         RetCode = retCode;
         Tlvs = tlvs;
+    }
+
+    public enum States
+    {
+        Success = 0,
+        CaptchaVerify = 2,
+        SmsRequired = 160,
+        DeviceLock = 204,
+        DeviceLockViaSmsNewArea = 239,
+
+        PreventByIncorrectPassword = 1,
+        PreventByReceiveIssue = 3,
+        PreventByTokenExpired = 15,
+        PreventByAccountBanned = 40,
+        PreventByOperationTimeout = 155,
+        PreventBySmsSentFailed = 162,
+        PreventByIncorrectSmsCode = 163,
+        PreventByLoginDenied = 167,
+        PreventByOutdatedVersion = 235,
+        PreventByHighRiskOfEnvironment = 237,
+        Unknown = 240,
     }
 }

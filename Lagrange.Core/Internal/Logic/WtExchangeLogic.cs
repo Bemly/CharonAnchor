@@ -1,10 +1,13 @@
+using System.Diagnostics.CodeAnalysis;
 using Lagrange.Core.Common;
 using Lagrange.Core.Events.EventArgs;
+using Lagrange.Core.Internal.Context;
 using Lagrange.Core.Internal.Events.Login;
 using Lagrange.Core.Internal.Events.System;
 using Lagrange.Core.Internal.Services.System;
 using Lagrange.Core.Utility;
 using Lagrange.Core.Utility.Binary;
+using Lagrange.Core.Utility.Extension;
 using ThirdPartyLoginResponse = Lagrange.Core.Internal.Packets.System.ThirdPartyLoginResponse;
 
 namespace Lagrange.Core.Internal.Logic;
@@ -29,6 +32,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
 
     private TaskCompletionSource<string>? _smsSource;
 
+    [DynamicDependency(DynamicallyAccessedMemberTypes.PublicConstructors, typeof(EventContext))]
     public WtExchangeLogic(BotContext context)
     {
         _context = context;
@@ -56,6 +60,8 @@ internal class WtExchangeLogic : ILogic, IDisposable
 
         if (_context.Keystore.WLoginSigs is { D2.Length: not 0, A2.Length: not 0 })
         {
+            _context.LogInfo(Tag, "Valid session detected, doing online task");
+
             bool online = await Online();
             if (online) return true;
         }
@@ -65,8 +71,16 @@ internal class WtExchangeLogic : ILogic, IDisposable
 
     private async Task<bool> ManualLogin(long uin, string? password)
     {
+        if (string.IsNullOrEmpty(password) && _context.Config.Protocol.IsAndroid())
+        {
+            _context.LogCritical(Tag, "Android Platform can not use QRLogin, Please fill in password");
+            return false;
+        }
+        
         if (string.IsNullOrEmpty(password))
         {
+            _context.LogInfo(Tag, "Password is empty or null, use QRCode Login");
+            
             var transEmp31 = await _context.EventContext.SendEvent<TransEmp31EventResp>(new TransEmp31EventReq());
             if (transEmp31 == null) return false; // TODO: Log error
 
@@ -81,7 +95,16 @@ internal class WtExchangeLogic : ILogic, IDisposable
         }
         else
         {
-            
+            _context.LogInfo(Tag, "Password is filled, try to login");
+
+            if (_context.Config.Protocol.IsAndroid())
+            {
+                _context.Keystore.Uin = uin;
+                _context.Keystore.WLoginSigs.TgtgtKey = new byte[16];
+                Random.Shared.NextBytes(_context.Keystore.WLoginSigs.TgtgtKey);
+                
+                var result = await _context.EventContext.SendEvent<LoginEventResp>(new LoginEventReq(LoginEventReq.Command.Tgtgt, password));
+            }
         }
         
         return false;

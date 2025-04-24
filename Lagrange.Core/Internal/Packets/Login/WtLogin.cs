@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Lagrange.Core.Common;
 using Lagrange.Core.Internal.Packets.Struct;
 using Lagrange.Core.Utility.Binary;
 using Lagrange.Core.Utility.Cryptography;
@@ -70,13 +71,51 @@ internal class WtLogin : StructBase
         tlvs.Tlv018();
         tlvs.Tlv141();
         tlvs.Tlv177();
-        tlvs.Tlv191();
+        tlvs.Tlv191(0);
         tlvs.Tlv100();
         tlvs.Tlv107();
         tlvs.Tlv318();
         tlvs.Tlv16A();
         tlvs.Tlv166();
         tlvs.Tlv521();
+        
+        return BuildPacket(0x810, tlvs.CreateReadOnlySpan());
+    }
+    
+    public async Task<ReadOnlyMemory<byte>> BuildOicq09Android(string password)
+    {
+        var sign = (IAndroidBotSignProvider)_context.PacketContext.SignProvider;
+        var energy = await sign.GetEnergy(_context.BotUin, "810_9");
+        var attach = await sign.GetDebugXwid(_context.BotUin, "810_9");
+        
+        using var tlvs = new Tlv(0x09, _context);
+        
+        tlvs.Tlv018Android();
+        tlvs.Tlv001();
+        tlvs.Tlv106Pwd(password);
+        tlvs.Tlv116();
+        tlvs.Tlv100Android();
+        tlvs.Tlv107Android();
+        tlvs.Tlv142();
+        tlvs.Tlv144Report();
+        tlvs.Tlv145();
+        tlvs.Tlv147();
+        tlvs.Tlv154();
+        tlvs.Tlv141Android();
+        tlvs.Tlv008();
+        tlvs.Tlv511();
+        tlvs.Tlv187();
+        tlvs.Tlv188();
+        tlvs.Tlv191(0x82);
+        tlvs.Tlv177();
+        tlvs.Tlv516();
+        tlvs.Tlv521Android();
+        tlvs.Tlv525();
+        tlvs.TlvRaw(0x544, energy);
+        tlvs.Tlv545();
+        tlvs.TlvRaw(0x548, PowProvider.GenerateTlv548());
+        tlvs.TlvRaw(0x553, attach);
+        // 542 smsExtraData
         
         return BuildPacket(0x810, tlvs.CreateReadOnlySpan());
     }
@@ -98,7 +137,7 @@ internal class WtLogin : StructBase
         writer.Write((byte)3);
         writer.Write((byte)EncryptMethod.EM_ECDH_ST);
         writer.Write(0);
-        writer.Write((byte)19);
+        writer.Write((byte)2);
         writer.Write((short)0); // insId
         writer.Write(AppInfo.AppClientVersion); // insId
         writer.Write(0); // retryTime
@@ -144,12 +183,9 @@ internal class WtLogin : StructBase
 
     private void BuildEncryptHead(ref BinaryPacket writer)
     {
-        Span<byte> random = stackalloc byte[16];
-        Random.Shared.NextBytes(random);
-        
         writer.Write((byte)1);
         writer.Write((byte)1);
-        writer.Write(random);
+        writer.Write(Keystore.WLoginSigs.RandomKey);
         writer.Write((short)0x102); // encrypt type
         writer.Write(Keystore.Secp192K1.PackPublic(true), Prefix.Int16 | Prefix.LengthOnly);
     }
@@ -165,11 +201,40 @@ internal class WtLogin : StructBase
         ushort sequence = reader.Read<ushort>();
         uint uin = reader.Read<uint>();
         byte flag = reader.Read<byte>();
-        ushort retryTime = reader.Read<ushort>();
+        byte encryptType = reader.Read<byte>();
+        byte state = reader.Read<byte>();
+        var encrypted = reader.ReadBytes()[..^1]; // remove last byte
+
+        byte[] key;
+        switch (encryptType)
+        {
+            case 0:
+            {
+                key = state == 180 ? Keystore.WLoginSigs.RandomKey : _shareKey;
+                break;
+            }
+            case 3:
+            {
+                key = Keystore.WLoginSigs.WtSessionTicketKey;
+                break;
+            }
+            case 4:
+            {
+                var raw = TeaProvider.Decrypt(encrypted, _shareKey);
+                var rawReader = new BinaryPacket(raw.AsSpan());
+                var publicKey = rawReader.ReadBytes(Prefix.Int16 | Prefix.LengthOnly);
+                key = Keystore.Secp192K1.KeyExchange(publicKey.ToArray(), true);
+                encrypted = rawReader.ReadBytes();
+                break;
+            }
+            default:
+            {
+                throw new Exception($"Unknown encrypt type: {encryptType}");
+            }
+        }
         
-        var encrypted = reader.ReadBytes();
-        var span = MemoryMarshal.CreateSpan(ref MemoryMarshal.GetReference(encrypted), encrypted.Length - 1);
-        TeaProvider.Decrypt(span, span, _shareKey);
+        var span = MemoryMarshal.CreateSpan(ref MemoryMarshal.GetReference(encrypted), encrypted.Length);
+        TeaProvider.Decrypt(span, span, key);
         return TeaProvider.CreateDecryptSpan(span);
     }
 

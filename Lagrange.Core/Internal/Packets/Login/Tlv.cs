@@ -13,7 +13,7 @@ internal ref struct Tlv : IDisposable
     private BinaryPacket _writer;
 
     private short _count;
-    private bool _prefixed;
+    private readonly bool _prefixed;
     
     private readonly BotKeystore _keystore;
     private readonly BotAppInfo _appInfo;
@@ -25,7 +25,7 @@ internal ref struct Tlv : IDisposable
         _keystore = context.Keystore;
         _appInfo = context.AppInfo;
         
-        _writer = new BinaryPacket(500);
+        _writer = new BinaryPacket(1000);
         if (command > 0)
         {
             _writer.Write(command);
@@ -34,6 +34,31 @@ internal ref struct Tlv : IDisposable
         _writer.Skip(2);
     }
 
+    public void Tlv001()
+    {
+        WriteTlv(0x1);
+        
+        _writer.Write<short>(0x0001);
+        _writer.Write(Random.Shared.Next());
+        _writer.Write((uint)_keystore.Uin);
+        _writer.Write((uint)DateTimeOffset.Now.ToUnixTimeSeconds());
+        _writer.Write(0); // dummy IP Address
+        _writer.Write<short>(0x0000);
+
+        _writer.ExitLengthBarrier<short>(false);
+    }
+
+    public void Tlv008()
+    {
+        WriteTlv(0x08);
+
+        _writer.Write<ushort>(0);
+        _writer.Write(2052); // locale_id
+        _writer.Write<ushort>(0);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+    
     public void Tlv018()
     {
         WriteTlv(0x18);
@@ -48,6 +73,21 @@ internal ref struct Tlv : IDisposable
         
         _writer.ExitLengthBarrier<short>(false);
     }
+
+    public void Tlv018Android()
+    {
+        WriteTlv(0x18);
+        
+        _writer.Write<short>(0x0001);
+        _writer.Write(0x00000600u);
+        _writer.Write(_appInfo.AppId);
+        _writer.Write<int>(_appInfo.AppClientVersion);
+        _writer.Write((uint)_keystore.Uin);
+        _writer.Write<short>(0x0000);
+        _writer.Write<short>(0x0000);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
     
     public void Tlv100()
     {
@@ -55,6 +95,20 @@ internal ref struct Tlv : IDisposable
         
         _writer.Write((ushort)0); // db buf ver
         _writer.Write(5); // sso ver, dont over 7
+        _writer.Write(_appInfo.AppId);
+        _writer.Write(_appInfo.SubAppId);
+        _writer.Write<int>(_appInfo.AppClientVersion); // app client ver
+        _writer.Write(_appInfo.SdkInfo.MainSigMap);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+
+    public void Tlv100Android()
+    {
+        WriteTlv(0x100);
+
+        _writer.Write<ushort>(1); // db buf ver
+        _writer.Write(_appInfo.SsoVersion); // sso ver, dont over 7
         _writer.Write(_appInfo.AppId);
         _writer.Write(_appInfo.SubAppId);
         _writer.Write<int>(_appInfo.AppClientVersion); // app client ver
@@ -121,6 +175,27 @@ internal ref struct Tlv : IDisposable
         
         _writer.ExitLengthBarrier<short>(false);
     }
+    
+    public void Tlv107Android()
+    {
+        WriteTlv(0x107);
+
+        _writer.Write((ushort)0); // pic type
+        _writer.Write((byte)0); // captcha type
+        _writer.Write((ushort)0); // pic size
+        _writer.Write((byte)1); // ret type
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+
+    public void Tlv109()
+    {
+        WriteTlv(0x109);
+        
+        _writer.Write(MD5.HashData(Encoding.UTF8.GetBytes(_keystore.AndroidId)));
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
 
     public void Tlv116()
     {
@@ -139,6 +214,19 @@ internal ref struct Tlv : IDisposable
         WriteTlv(0x124);
         
         _writer.Skip(12);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+
+    public void Tlv124Android()
+    {
+        WriteTlv(0x124);
+        
+        _writer.Write("android", Prefix.Int16 | Prefix.LengthOnly);
+        _writer.Write("13", Prefix.Int16 | Prefix.LengthOnly); // os version
+        _writer.Write<short>(0x02); // network type
+        _writer.Write("", Prefix.Int16 | Prefix.LengthOnly); // sim info
+        _writer.Write("wifi", Prefix.Int32 | Prefix.LengthOnly); // apn
         
         _writer.ExitLengthBarrier<short>(false);
     }
@@ -166,6 +254,18 @@ internal ref struct Tlv : IDisposable
         _writer.Write((ushort)0);
         _writer.Write("Unknown", Prefix.Int16 | Prefix.LengthOnly);
         _writer.Write(0u);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+    
+    public void Tlv141Android()
+    {
+        WriteTlv(0x141);
+        
+        _writer.Write((ushort)1);
+        _writer.Write("", Prefix.Int16 | Prefix.LengthOnly);
+        _writer.Write("", Prefix.Int16 | Prefix.LengthOnly);
+        _writer.Write("wifi", Prefix.Int16 | Prefix.LengthOnly);
         
         _writer.ExitLengthBarrier<short>(false);
     }
@@ -201,6 +301,28 @@ internal ref struct Tlv : IDisposable
         _writer.ExitLengthBarrier<short>(false);
     }
 
+    public void Tlv144Report()
+    {
+        var tlv = new Tlv(-1, _context);
+        
+        tlv.Tlv109();
+        tlv.Tlv52D();
+        tlv.Tlv124Android();
+        tlv.Tlv128();
+        tlv.Tlv16E();
+
+        var span = tlv.CreateReadOnlySpan();
+        Span<byte> encrypted = stackalloc byte[TeaProvider.GetCipherLength(span.Length)];
+        TeaProvider.Encrypt(span, encrypted, _keystore.WLoginSigs.TgtgtKey);
+        tlv.Dispose();
+        
+        WriteTlv(0x144);
+        
+        _writer.Write(encrypted);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+
     public void Tlv145()
     {
         WriteTlv(0x145);
@@ -217,6 +339,15 @@ internal ref struct Tlv : IDisposable
         _writer.Write(_appInfo.AppId);
         _writer.Write(_appInfo.PtVersion, Prefix.Int16 | Prefix.LengthOnly);
         _writer.Write(_appInfo.ApkSignatureMd5, Prefix.Int16 | Prefix.LengthOnly);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+    
+    public void Tlv154()
+    {
+        WriteTlv(0x154);
+        
+        _writer.Write(0);  // seq
         
         _writer.ExitLengthBarrier<short>(false);
     }
@@ -259,11 +390,29 @@ internal ref struct Tlv : IDisposable
         _writer.ExitLengthBarrier<short>(false);
     }
     
-    public void Tlv191()
+    public void Tlv187()
+    {
+        WriteTlv(0x187);
+        
+        _writer.Write(MD5.HashData([0x02, 0x00, 0x00, 0x00, 0x00, 0x00])); // Dummy Mac Address
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+    
+    public void Tlv188()
+    {
+        WriteTlv(0x188);
+        
+        _writer.Write(MD5.HashData(Encoding.UTF8.GetBytes(_keystore.AndroidId)));
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+    
+    public void Tlv191(byte k)
     {
         WriteTlv(0x191);
         
-        _writer.Write((byte)0);
+        _writer.Write(k);
         
         _writer.ExitLengthBarrier<short>(false);
     }
@@ -271,6 +420,47 @@ internal ref struct Tlv : IDisposable
     public void Tlv318()
     {
         WriteTlv(0x318);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+    
+    public void Tlv511()
+    {
+        WriteTlv(0x511);
+
+        string[] domains =
+        [
+            "office.qq.com",
+            "qun.qq.com",
+            "gamecenter.qq.com",
+            "docs.qq.com",
+            "mail.qq.com",
+            "tim.qq.com",
+            "ti.qq.com",
+            "vip.qq.com",
+            "tenpay.com",
+            "qqweb.qq.com",
+            "qzone.qq.com",
+            "mma.qq.com",
+            "game.qq.com",
+            "openmobile.qq.com",
+            "connect.qq.com"
+        ];
+        
+        _writer.Write<short>((short)domains.Length);
+        foreach (string domain in domains)
+        {
+            _writer.Write(domain, Prefix.Int16 | Prefix.LengthOnly);
+        }
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+
+    public void Tlv516()
+    {
+        WriteTlv(0x516);
+        
+        _writer.Write(0);
         
         _writer.ExitLengthBarrier<short>(false);
     }
@@ -285,22 +475,61 @@ internal ref struct Tlv : IDisposable
         _writer.ExitLengthBarrier<short>(false);
     }
     
+    public void Tlv521Android()
+    {
+        WriteTlv(0x521);
+        
+        _writer.Write(0);
+        _writer.Write("", Prefix.Int16 | Prefix.LengthOnly);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+
+    public void Tlv525()
+    {
+        WriteTlv(0x525);
+        
+        _writer.Write<short>(1); // tlvCount
+        _writer.Write<short>(0x536); // tlv536
+        _writer.Write([0x02, 0x01, 0x00], Prefix.Int16 | Prefix.LengthOnly);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+    
     public void Tlv52D()
     {
         WriteTlv(0x52D);
         
         var report = new DeviceReport
         {
-            AndroidId = "unknown",
-            Baseband = "Linux version 4.19.157-perf-g92c089fc2d37 (builder@pangu-build-component-vendor-272092-qncbv-vttl3-61r9m) (clang version 10.0.7 for Android NDK, GNU ld (binutils-2.27-bd24d23f) 2.27.0.20170315) #1 SMP PREEMPT Wed Jun 5 13:27:08 UTC 2024",
-            BootId = "REL",
+            BootId = "unknown",
+            ProcVersion = "Linux version 4.19.157-perf-g92c089fc2d37 (builder@pangu-build-component-vendor-272092-qncbv-vttl3-61r9m) (clang version 10.0.7 for Android NDK, GNU ld (binutils-2.27-bd24d23f) 2.27.0.20170315) #1 SMP PREEMPT Wed Jun 5 13:27:08 UTC 2024",
+            CodeName = "REL",
             Bootloader = "V816.0.6.0.TKHCNXM",
-            Codename = "Redmi/alioth/alioth:13/TKQ1.221114.001/V816.0.6.0.TKHCNXM:user/release-keys",
-            Incremental = "3ed8347e5a15e7c3",
-            InnerVer = "",
-            Version = "V816.0.6.0.TKHCNXM"
+            Fingerprint = "Redmi/alioth/alioth:13/TKQ1.221114.001/V816.0.6.0.TKHCNXM:user/release-keys",
+            AndroidId = _keystore.AndroidId,
+            BaseBand = "",
+            InnerVersion = "V816.0.6.0.TKHCNXM"
         };
         ProtoHelper.Serialize(ref _writer, report);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+
+    public void Tlv545()
+    {
+        WriteTlv(0x545);
+        
+        _writer.Write(_keystore.Qimei);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+    
+    public void TlvRaw(short tag, ReadOnlySpan<byte> data)
+    {
+        WriteTlv(tag);
+        
+        _writer.Write(data);
         
         _writer.ExitLengthBarrier<short>(false);
     }
@@ -327,21 +556,21 @@ internal ref struct Tlv : IDisposable
 [ProtoPackable]
 internal partial class DeviceReport
 {
-    [ProtoMember(1)] public string? AndroidId { get; set; }
+    [ProtoMember(1)] public string? Bootloader { get; set; }
     
-    [ProtoMember(2)] public string? Baseband { get; set; }
+    [ProtoMember(2)] public string? ProcVersion { get; set; }
     
-    [ProtoMember(3)] public string? BootId { get; set; }
+    [ProtoMember(3)] public string? CodeName { get; set; }
     
-    [ProtoMember(4)] public string? Bootloader { get; set; }
+    [ProtoMember(4)] public string? Incremental { get; set; }
     
-    [ProtoMember(5)] public string? Codename { get; set; }
+    [ProtoMember(5)] public string? Fingerprint { get; set; }
     
-    [ProtoMember(6)] public string? Fingerprint { get; set; }
+    [ProtoMember(6)] public string? BootId { get; set; }
     
-    [ProtoMember(7)] public string? Incremental { get; set; }
+    [ProtoMember(7)] public string? AndroidId { get; set; }
     
-    [ProtoMember(8)] public string? InnerVer { get; set; }
+    [ProtoMember(8)] public string? BaseBand { get; set; }
     
-    [ProtoMember(9)] public string? Version { get; set; }
+    [ProtoMember(9)] public string? InnerVersion { get; set; }
 }
