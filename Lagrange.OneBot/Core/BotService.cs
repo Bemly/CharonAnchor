@@ -7,11 +7,18 @@ using Lagrange.OneBot.Utility;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace Lagrange.OneBot.Core;
 
-public partial class BotService(ILogger<BotService> logger, ILoggerFactory loggerFactory, BotContext context, IConfiguration config) : IHostedService
+public partial class BotService(
+    ILogger<BotService> logger,
+    ILoggerFactory loggerFactory, 
+    BotContext context, 
+    IConfiguration config, 
+    IOptionsSnapshot<AccountOption> options,
+    ICaptchaResolver captchaResolver) : IHostedService
 {
     private readonly ConcurrentDictionary<string, ILogger> _contextLoggers = new();
     
@@ -59,7 +66,13 @@ public partial class BotService(ILogger<BotService> logger, ILoggerFactory logge
             await File.WriteAllBytesAsync($"Lagrange-{keystore.Uin}.keystore", JsonHelper.SerializeToUtf8Bytes(keystore), cancellationToken);
         });
         
-        bool result = await context.Login(cancellationToken);
+        context.EventInvoker.RegisterEvent<BotCaptchaEvent>(async (_, @event) =>
+        {
+            var (ticket, randstr) = await captchaResolver.ResolveCaptchaAsync(@event.CaptchaUrl, cancellationToken);
+            context.SubmitCaptcha(ticket, randstr);
+        });
+        
+        bool result = await context.Login(options.Value.Uin, options.Value.Password ?? string.Empty, cancellationToken);
         if (!result)
         {
             logger.LogCritical("Login failed, process would exit in 10 seconds");

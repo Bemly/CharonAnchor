@@ -7,6 +7,8 @@ public class AccountOption
 {
     public long Uin { get; set; }
     
+    public string? Password { get; set; }
+    
     public Protocols Protocol { get; set; }
     
     public bool UseIPv6Network { get; set; } = false;

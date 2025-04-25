@@ -17,9 +17,10 @@ namespace Lagrange.OneBot.Utility.Extension;
 public static class HostApplicationBuilderExtension
 {
     public static HostApplicationBuilder ConfigureCore(this HostApplicationBuilder builder)
-    {
+    { 
         var option = new AccountOption();
         builder.Configuration.GetSection("Account").Bind(option);
+        builder.Services.Configure<AccountOption>(builder.Configuration.GetSection("Account"));
 
         var config = new BotConfig
         {
@@ -90,6 +91,7 @@ public static class HostApplicationBuilderExtension
     public static HostApplicationBuilder ConfigureServices(this HostApplicationBuilder builder)
     {
         builder.Services.AddSingleton<StorageService>();
+        builder.Services.AddSingleton<ICaptchaResolver, OnlineCaptchaResolver>();
         return builder;
     }
 }
