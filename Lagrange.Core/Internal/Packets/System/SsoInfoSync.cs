@@ -65,7 +65,7 @@ public partial class RegisterInfo
 
     [ProtoMember(11)] public uint BatteryStatus { get; set; }
     
-    [ProtoMember(12)] public int Field12 { get; set; }
+    [ProtoMember(12)] public int? Field12 { get; set; }
 }
 
 [ProtoPackable]

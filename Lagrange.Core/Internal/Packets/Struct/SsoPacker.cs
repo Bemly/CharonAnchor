@@ -2,6 +2,7 @@ using Lagrange.Core.Common;
 using Lagrange.Core.Utility;
 using Lagrange.Core.Utility.Binary;
 using Lagrange.Core.Utility.Compression;
+using Lagrange.Core.Utility.Extension;
 
 namespace Lagrange.Core.Internal.Packets.Struct;
 
@@ -100,6 +101,12 @@ internal class SsoPacker(BotContext context) : StructBase(context)
             Uid = Keystore.Uid,
             SecInfo = secInfo
         };
+
+        if (context.Config.Protocol.IsAndroid())
+        {
+            reserved.MsgType = 32;
+            reserved.NtCoreVersion = 100;
+        }
      
         writer.EnterLengthBarrier<int>();
         ProtoHelper.Serialize(ref writer, reserved);
