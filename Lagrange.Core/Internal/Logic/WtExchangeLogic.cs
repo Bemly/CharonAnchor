@@ -132,6 +132,19 @@ internal class WtExchangeLogic : ILogic, IDisposable
                     _token?.ThrowIfCancellationRequested();
                     result = await _context.EventContext.SendEvent<LoginEventResp>(new LoginEventReq(LoginEventReq.Command.Captcha) { Ticket = ticket });
                 }
+                
+                if (result?.RetCode == 0)
+                {
+                    ReadWLoginSigs(result.Tlvs);
+                    _context.EventInvoker.PostEvent(new BotLoginEvent(0, null));
+
+                    return await Online();
+                }
+                else
+                {
+                    _context.LogError(Tag, $"Login failed: {result?.RetCode} | Message: {result?.Error}");
+                    _context.EventInvoker.PostEvent(new BotLoginEvent(result?.RetCode ?? byte.MaxValue, result?.Error));
+                }
             }
         }
         
