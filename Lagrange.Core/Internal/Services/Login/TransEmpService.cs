@@ -45,9 +45,9 @@ internal class TransEmpService : BaseService<ProtocolEvent, ProtocolEvent>
             {
                 var sig = reader.ReadBytes(Prefix.Int16 | Prefix.LengthOnly);
                 var tlvs = ProtocolHelper.TlvUnPack(ref reader);
-                var tlvD1 = ProtoHelper.Deserialize<TlvQrCodeD1>(tlvs[0xD1]);
+                var tlvD1 = ProtoHelper.Deserialize<QrExtInfo>(tlvs[0xD1]);
                 
-                return new ValueTask<ProtocolEvent?>(new TransEmp31EventResp(tlvD1.Url, tlvs[0x17], sig.ToArray()));
+                return new ValueTask<ProtocolEvent?>(new TransEmp31EventResp(tlvD1.QrUrl, tlvs[0x17], sig.ToArray()));
             }
             case 0x12:
             {

@@ -23,7 +23,45 @@ internal ref struct TlvQrCode : IDisposable
         _writer = new BinaryPacket(300);
         _writer.Skip(2);
     }
+    
+    public void Tlv02()
+    {
+        WriteTlv(0x2);
 
+        _writer.Write(0);
+        _writer.Write(0x0B);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+
+    public void Tlv04()
+    {
+        WriteTlv(0x4);
+        
+        _writer.Write<short>(0x00); // uin for 0, uid for 1
+        _writer.Write(_keystore.Uin.ToString(), Prefix.Int16 | Prefix.LengthOnly);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+    
+    public void Tlv09()
+    {
+        WriteTlv(0x09);
+        
+        _writer.Write(_appInfo.PackageName);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+
+    public void Tlv15()
+    {
+        WriteTlv(0x15);
+
+        _writer.Write(0);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+    
     public void Tlv16()
     {
         WriteTlv(0x16);
@@ -38,8 +76,26 @@ internal ref struct TlvQrCode : IDisposable
         
         _writer.ExitLengthBarrier<short>(false);
     }
-
+    
     public void Tlv18()
+    {
+        WriteTlv(0x18);
+        
+        _writer.Write(_keystore.WLoginSigs.A1);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+    
+    public void Tlv19()
+    {
+        WriteTlv(0x19);
+        
+        _writer.Write(_keystore.WLoginSigs.NoPicSig);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+
+    public void Tlv1B()
     {
         WriteTlv(0x1B);
         
@@ -85,6 +141,15 @@ internal ref struct TlvQrCode : IDisposable
         _writer.ExitLengthBarrier<short>(false);
     }
     
+    public void Tlv39()
+    {
+        WriteTlv(0x39);
+        
+        _writer.Write(0x01);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+    
     public void Tlv66()
     {
         WriteTlv(0x66);
@@ -94,18 +159,46 @@ internal ref struct TlvQrCode : IDisposable
         _writer.ExitLengthBarrier<short>(false);
     }
 
+    public void Tlv68()
+    {
+        WriteTlv(0x68);
+        
+        _writer.Write(_keystore.Guid);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+
     public void TlvD1()
     {
         WriteTlv(0xD1);
         
-        var obj = new TlvQrCodeD1
+        var obj = new QrExtInfo
         {
-            Sys = new NTQrCodeInfo
+            DevInfo = new DevInfo
             {
-                OS = _appInfo.Os,
-                Name = _keystore.DeviceName
+                DevType = _appInfo.Os,
+                DevName = _keystore.DeviceName
             },
-            Type = [0x30, 0xD1]
+            GenInfo = new GenInfo
+            {
+                Field6 = 1
+            }
+        };
+        ProtoHelper.Serialize(ref _writer, obj);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+
+    public void Tlv12C()
+    {
+        WriteTlv(0x12C);
+        
+        var obj = new ScanExtInfo
+        {
+            Guid = _keystore.Guid,
+            Imei = _keystore.AndroidId,
+            ScanScene = 1,
+            AllowAutoRenewTicket = true
         };
         ProtoHelper.Serialize(ref _writer, obj);
         
@@ -129,26 +222,4 @@ internal ref struct TlvQrCode : IDisposable
     {
         _writer.Dispose();
     }
-}
-
-#pragma warning disable CS8618
-
-[ProtoPackable]
-internal partial class TlvQrCodeD1
-{
-    [ProtoMember(1)] public NTQrCodeInfo Sys { get; set; }
-    
-    [ProtoMember(2)] public string Url { get; set; }
-    
-    [ProtoMember(3)] public string QrSig { get; set; }
-    
-    [ProtoMember(4)] public byte[] Type { get; set; }
-}
-
-[ProtoPackable]
-internal partial class NTQrCodeInfo
-{
-    [ProtoMember(1)] public string OS { get; set; }
-    
-    [ProtoMember(2)] public string Name { get; set; }
 }

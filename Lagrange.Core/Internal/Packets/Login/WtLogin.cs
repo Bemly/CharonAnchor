@@ -33,7 +33,7 @@ internal class WtLogin : StructBase
         
         using var tlvs = new TlvQrCode(_context);
         tlvs.Tlv16();
-        tlvs.Tlv18();
+        tlvs.Tlv1B();
         tlvs.Tlv1D();
         tlvs.Tlv33();
         tlvs.Tlv35();
@@ -42,7 +42,7 @@ internal class WtLogin : StructBase
         
         writer.Write(tlvs.CreateReadOnlySpan());
 
-        return BuildCode2dPacket(0x31, writer.CreateReadOnlySpan());
+        return BuildCode2dPacket(0x31, writer.CreateReadOnlySpan(), EncryptMethod.EM_ECDH_ST);
     }
 
     public ReadOnlyMemory<byte> BuildTransEmp12()
@@ -56,8 +56,62 @@ internal class WtLogin : StructBase
         writer.Write<byte>(0);
         writer.Write(ReadOnlySpan<byte>.Empty, Prefix.Int16 | Prefix.LengthOnly);
         writer.Write<ushort>(0); // tlv count = 0
+
+        return BuildCode2dPacket(0x12, writer.CreateReadOnlySpan(), EncryptMethod.EM_ECDH_ST);
+    }
+
+    public ReadOnlyMemory<byte> BuildQrlogin19(byte[] k) // VerifyCode
+    {
+        using var writer = new BinaryPacket(stackalloc byte[300]);
+        writer.Write<ushort>(0);
+        writer.Write(AppInfo.AppId);
+        writer.Write(Keystore.Uin);
+        writer.Write(k, Prefix.Int16 | Prefix.LengthOnly); // code in java, k in qrcode url
+        writer.Write(Keystore.WLoginSigs.A2, Prefix.Int16 | Prefix.LengthOnly);
+        writer.Write(Keystore.Guid);
         
-        return BuildCode2dPacket(0x12, writer.CreateReadOnlySpan());
+        writer.Write<byte>(1);
+        writer.Write<short>(0);
+        writer.Write<byte>(8);
+
+        foreach (short tlv in (Span<short>)[0x03, 0x05, 0x20, 0x35, 0x36]) // Tencent named it tlv....
+        {
+            writer.Write(tlv);
+        }
+        
+        using var tlvs = new TlvQrCode(_context);
+        tlvs.Tlv09();
+        tlvs.Tlv12C();
+        tlvs.Tlv39();
+        
+        writer.Write(tlvs.CreateReadOnlySpan());
+        
+        return BuildCode2dPacket(0x13, writer.CreateReadOnlySpan(), EncryptMethod.EM_ST, true);
+    }
+    
+    public ReadOnlyMemory<byte> BuildQrlogin20(byte[] k) // CloseCode
+    {
+        using var writer = new BinaryPacket(stackalloc byte[300]);
+        writer.Write<ushort>(0);
+        writer.Write(AppInfo.AppId);
+        writer.Write(k, Prefix.Int16 | Prefix.LengthOnly); // code in java, k in qrcode url
+        writer.Write(Keystore.WLoginSigs.A2, Prefix.Int16 | Prefix.LengthOnly);
+        
+        writer.Write<byte>(8);
+        using var tlvs = new TlvQrCode(_context);
+        tlvs.Tlv02();
+        tlvs.Tlv04();
+        tlvs.Tlv15();
+        tlvs.Tlv68();
+        tlvs.Tlv16();
+        tlvs.Tlv18();
+        tlvs.Tlv19();
+        tlvs.Tlv1D();
+        tlvs.Tlv12C();
+        
+        writer.Write(tlvs.CreateReadOnlySpan());
+        
+        return BuildCode2dPacket(0x14, writer.CreateReadOnlySpan(), EncryptMethod.EM_ST, true);
     }
 
     public ReadOnlyMemory<byte> BuildOicq09()
@@ -89,7 +143,7 @@ internal class WtLogin : StructBase
         var energy = await sign.GetEnergy(_context.BotUin, "810_9");
         var attach = await sign.GetDebugXwid(_context.BotUin, "810_9");
         
-        using var tlvs = new Tlv(0x09, _context);
+        using var tlvs = new Tlv(0x09, _context); // if login by email, add tlv104(sessionToken) and tlv112(username / email)
         
         tlvs.Tlv018Android();
         tlvs.Tlv001();
@@ -167,15 +221,32 @@ internal class WtLogin : StructBase
         return BuildPacket(0x810, tlvs.CreateReadOnlySpan(), EncryptMethod.EM_ECDH);
     }
     
-    private ReadOnlyMemory<byte> BuildPacket(short command, scoped ReadOnlySpan<byte> payload,
-        EncryptMethod method = EncryptMethod.EM_ECDH_ST) // corrected
+    private ReadOnlyMemory<byte> BuildPacket(
+        short command, 
+        scoped ReadOnlySpan<byte> payload,
+        EncryptMethod method = EncryptMethod.EM_ECDH_ST,
+        bool useWtSession = false) // corrected
     {
+        ReadOnlySpan<byte> key;
+
+        switch (method)
+        {
+            case EncryptMethod.EM_ECDH or EncryptMethod.EM_ECDH_ST:
+                key = _shareKey;
+                break;
+            case EncryptMethod.EM_ST:
+                key = useWtSession ? Keystore.WLoginSigs.WtSessionTicketKey : Keystore.WLoginSigs.RandomKey;
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(method), method, null);
+        }
+        
         int cipherLength = TeaProvider.GetCipherLength(payload.Length);
         var writer = new BinaryPacket(cipherLength + 80);
         Span<byte> cipher = stackalloc byte[cipherLength];
-        TeaProvider.Encrypt(payload, cipher, _shareKey);
+        TeaProvider.Encrypt(payload, cipher, key);
         
-        writer.Write((byte)2);
+        writer.Write((byte)2); // getRequestEncrptedPackage
         writer.EnterLengthBarrier<short>();
         
         writer.Write((short)8001); // version
@@ -189,7 +260,7 @@ internal class WtLogin : StructBase
         writer.Write((short)0); // insId
         writer.Write(AppInfo.AppClientVersion); // insId
         writer.Write(0); // retryTime
-        BuildEncryptHead(ref writer);
+        BuildEncryptHead(ref writer, useWtSession);
         writer.Write(cipher);
         writer.Write((byte)3);
         
@@ -198,7 +269,12 @@ internal class WtLogin : StructBase
         return writer.ToArray();
     }
 
-    private ReadOnlyMemory<byte> BuildCode2dPacket(short command, scoped ReadOnlySpan<byte> tlv)
+    private ReadOnlyMemory<byte> BuildCode2dPacket(
+        short command,
+        scoped ReadOnlySpan<byte> tlv,
+        EncryptMethod method,
+        bool encrypt = false,
+        bool useWtSession = false)
     {
         using var reqBody = new BinaryPacket(stackalloc byte[48 + tlv.Length]);
         reqBody.Write((uint)DateTimeOffset.Now.ToUnixTimeSeconds());
@@ -213,29 +289,38 @@ internal class WtLogin : StructBase
         reqBody.Write(0); // trans_emp sequence
         reqBody.Write(Keystore.Uin); // dummy uin
         reqBody.Write(tlv);
-        reqBody.Write((byte)3);
+        reqBody.Write((byte)3); // oicq.wlogin_sdk.code2d.c.get_request
         reqBody.ExitLengthBarrier<short>(true, 1);
         
-        var reqSpan = reqBody.CreateReadOnlySpan();
+        var reqSpan = encrypt
+            ? TeaProvider.Encrypt(reqBody.CreateReadOnlySpan(), Keystore.WLoginSigs.StKey)
+            : reqBody.CreateReadOnlySpan();
         using var writer = new BinaryPacket(stackalloc byte[14 + reqSpan.Length]);
-        writer.Write((byte)0x00);
+        writer.Write(Convert.ToByte(encrypt)); // flag for encrypt, if 1, encrypt by StKey
         writer.Write((ushort)reqSpan.Length);
         writer.Write(AppInfo.AppId);
         writer.Write((uint)0x72); // Role
-        writer.Write(ReadOnlySpan<byte>.Empty, Prefix.Int16 | Prefix.LengthOnly); // uSt
+        writer.Write(encrypt ? Keystore.WLoginSigs.St : ReadOnlySpan<byte>.Empty, Prefix.Int16 | Prefix.LengthOnly); // uSt
         writer.Write(ReadOnlySpan<byte>.Empty, Prefix.Int8 | Prefix.LengthOnly); // rollback
-        writer.Write(reqSpan);
+        writer.Write(reqSpan); // oicq.wlogin_sdk.request.d0
 
-        return BuildPacket(0x812, writer.CreateReadOnlySpan());
+        return BuildPacket(0x812, writer.CreateReadOnlySpan(), method, useWtSession);
     }
 
-    private void BuildEncryptHead(ref BinaryPacket writer)
+    private void BuildEncryptHead(ref BinaryPacket writer, bool useWtSession)
     {
-        writer.Write((byte)1);
-        writer.Write((byte)1);
-        writer.Write(Keystore.WLoginSigs.RandomKey);
-        writer.Write((short)0x102); // encrypt type
-        writer.Write(Keystore.Secp192K1.PackPublic(true), Prefix.Int16 | Prefix.LengthOnly);
+        if (useWtSession)
+        {
+            writer.Write(Keystore.WLoginSigs.WtSessionTicket, Prefix.Int16 | Prefix.LengthOnly);
+        }
+        else
+        {
+            writer.Write((byte)1);
+            writer.Write((byte)1);
+            writer.Write(Keystore.WLoginSigs.RandomKey);
+            writer.Write((short)0x102); // encrypt type
+            writer.Write(Keystore.Secp192K1.PackPublic(true), Prefix.Int16 | Prefix.LengthOnly);
+        }
     }
 
     public ReadOnlySpan<byte> Parse(ReadOnlySpan<byte> input, out ushort command)
@@ -308,7 +393,7 @@ internal class WtLogin : StructBase
     {
         EM_ST = 0x45,
         EM_ECDH = 0x07,
-        EM_ECDH_ST = 0x87,
+        EM_ECDH_ST = 0x87, // same with EM_ECDH, but controlled with a flag, if flag is set to 1, the ST would be used
         EM_NULL = 0xff
     }
 }
