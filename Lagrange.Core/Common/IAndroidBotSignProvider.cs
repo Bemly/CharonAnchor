@@ -143,8 +143,8 @@ public interface IAndroidBotSignProvider : IBotSignProvider
         "FeedCloudSvr.trpc.feedcloud.commreader.ComReader.GetMainPageBasicData", "OidbSvc.0x5eb_common",
         "OidbSvcTrpcTcp.0xaf6_0", "IncreaseURLSvr.QQHeadUrlReq"
     ];
-    
-    internal static new bool IsWhiteListCommand(string cmd) => WhiteListCommand.Contains(cmd);
+
+    internal new bool IsWhiteListCommand(string cmd) => WhiteListCommand.Contains(cmd);
     
     public Task<byte[]> GetEnergy(long uin, string data);
 
@@ -155,7 +155,7 @@ internal class DefaultAndroidBotSignProvider(BotContext context) : IAndroidBotSi
 {
     private readonly HttpClient _client = new();
 
-    private readonly string _url = "";
+    private readonly string _url = "http://127.0.0.1";
     
     public async Task<SsoSecureInfo?> GetSecSign(long uin, string cmd, int seq, ReadOnlyMemory<byte> body)
     {

@@ -33,7 +33,7 @@ internal class PacketContext(BotContext context)
             {
                 case RequestType.D2Auth:
                 {
-                    if (IBotSignProvider.IsWhiteListCommand(packet.Command))
+                    if (SignProvider.IsWhiteListCommand(packet.Command))
                     {
                         var secInfo = await SignProvider.GetSecSign(_keystore.Uin, packet.Command, packet.Sequence, packet.Data);
                         var sso = _ssoPacker.BuildProtocol12(packet, secInfo);

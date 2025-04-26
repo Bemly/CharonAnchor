@@ -52,7 +52,7 @@ public interface IBotSignProvider
         "OidbSvcTrpcTcp.0x6d9_4"
     ];
     
-    internal static bool IsWhiteListCommand(string cmd) => WhiteListCommand.Contains(cmd);
+    internal bool IsWhiteListCommand(string cmd) => WhiteListCommand.Contains(cmd);
 
     Task<SsoSecureInfo?> GetSecSign(long uin, string cmd, int seq, ReadOnlyMemory<byte> body);
 }
