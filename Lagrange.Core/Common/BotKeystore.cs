@@ -54,8 +54,8 @@ public class WLoginSigs
     public byte[] A1 { get; set; } = []; // Tlv106
     
     public byte[] A1Key { get; set; } = new byte[16]; // Tlv10C
-    
-    internal byte[]? NoPicSig { get; set; } // Tlv16A
+
+    public byte[] NoPicSig { get; set; } = [];// Tlv16A
     
     internal byte[]? QrSig { get; set; }
     
@@ -83,7 +83,6 @@ public class WLoginSigs
         D2 = [];
         D2Key = new byte[16];
         A1 = [];
-        NoPicSig = null;
         QrSig = null;
         TgtgtKey = [];
         RandomKey = new byte[16];

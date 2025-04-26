@@ -124,9 +124,9 @@ public class BotAppInfo
         {
             SdkBuildTime = 1740483688,
             SdkVersion = "6.0.0.2568",
-            MiscBitMap = 184024956,
+            MiscBitMap = 150470524,
             SubSigMap = 66560,
-            MainSigMap = 34869472
+            MainSigMap = 16724722
         },
         AppClientVersion = 0
     };
@@ -145,9 +145,9 @@ public class BotAppInfo
         {
             SdkBuildTime = 1740483688,
             SdkVersion = "6.0.0.2568",
-            MiscBitMap = 184024956,
+            MiscBitMap = 150470524,
             SubSigMap = 66560,
-            MainSigMap = 34869472,
+            MainSigMap = 16724722,
         },
         AppClientVersion = 0
     };
