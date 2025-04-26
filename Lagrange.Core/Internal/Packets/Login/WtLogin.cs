@@ -140,8 +140,35 @@ internal class WtLogin : StructBase
         
         return BuildPacket(0x810, tlvs.CreateReadOnlySpan());
     }
+
+    public async Task<ReadOnlyMemory<byte>> BuildOicq04Android(string qid)
+    {
+        var sign = (IAndroidBotSignProvider)_context.PacketContext.SignProvider;
+        var attach = await sign.GetDebugXwid(_context.BotUin, "810_4");
+        
+        using var tlvs = new Tlv(0x04, _context);
+        
+        tlvs.Tlv100();
+        tlvs.Tlv112(qid);
+        tlvs.Tlv107Android();
+        tlvs.Tlv154();
+        tlvs.Tlv008();
+        tlvs.Tlv553(attach);
+        tlvs.Tlv521Android();
+        tlvs.Tlv124Android();
+        tlvs.Tlv128();
+        tlvs.Tlv116();
+        tlvs.Tlv191(0x82);
+        tlvs.Tlv11B();
+        tlvs.Tlv52D();
+        tlvs.Tlv548(PowProvider.GenerateTlv548());
+        // 542 smsExtraData
+        
+        return BuildPacket(0x810, tlvs.CreateReadOnlySpan(), EncryptMethod.EM_ECDH);
+    }
     
-    private ReadOnlyMemory<byte> BuildPacket(short command, scoped ReadOnlySpan<byte> payload) // corrected
+    private ReadOnlyMemory<byte> BuildPacket(short command, scoped ReadOnlySpan<byte> payload,
+        EncryptMethod method = EncryptMethod.EM_ECDH_ST) // corrected
     {
         int cipherLength = TeaProvider.GetCipherLength(payload.Length);
         var writer = new BinaryPacket(cipherLength + 80);
@@ -156,7 +183,7 @@ internal class WtLogin : StructBase
         writer.Write((short)0); // sequence
         writer.Write((uint)Keystore.Uin);
         writer.Write((byte)3);
-        writer.Write((byte)EncryptMethod.EM_ECDH_ST);
+        writer.Write((byte)method);
         writer.Write(0);
         writer.Write((byte)2);
         writer.Write((short)0); // insId

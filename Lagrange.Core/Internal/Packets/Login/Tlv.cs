@@ -206,6 +206,15 @@ internal ref struct Tlv : IDisposable
         _writer.ExitLengthBarrier<short>(false);
     }
 
+    public void Tlv112(string qid)
+    {
+        WriteTlv(0x112);
+        
+        _writer.Write(qid);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+
     public void Tlv116()
     {
         WriteTlv(0x116);
@@ -214,6 +223,15 @@ internal ref struct Tlv : IDisposable
         _writer.Write(_appInfo.SdkInfo.MiscBitMap); // miscBitMap
         _writer.Write(_appInfo.SdkInfo.SubSigMap);
         _writer.Write((byte)0); // length of subAppId
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+    
+    public void Tlv11B()
+    {
+        WriteTlv(0x11B);
+
+        _writer.Write((byte)2);
         
         _writer.ExitLengthBarrier<short>(false);
     }

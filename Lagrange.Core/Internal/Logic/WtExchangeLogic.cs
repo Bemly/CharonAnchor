@@ -70,6 +70,30 @@ internal class WtExchangeLogic : ILogic, IDisposable
         return await ManualLogin(uin, password);
     }
 
+    public async Task<long> ResolveUinByQid(string qid)
+    {
+        if (!_context.SocketContext.Connected)
+        {
+            await _context.SocketContext.Connect();
+            _heartBeatTimer.Change(0, 2000);
+        }
+        
+        var result = await _context.EventContext.SendEvent<UinResolveEventResp>(new UinResolveEventReq(qid));
+        if (result is { State: 0, Info: { } info })
+        {
+            _context.Keystore.Uin = info.Item1;
+            _context.Keystore.State.Tlv104 = result.Tlv104;
+            _context.LogInfo(Tag, $"Uin resolved: {info.Item1}, Qid: {info.Item2}");
+            return info.Item1;
+        }
+        else if (result is { Error: { } error })
+        {
+            _context.LogError(Tag, $"Failed to resolve uin: {error.Item1} | {error.Item2}");
+        }
+
+        return 0;
+    }
+
     private async Task<bool> ManualLogin(long uin, string? password)
     {
         if (string.IsNullOrEmpty(password) && _context.Config.Protocol.IsAndroid())
