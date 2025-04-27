@@ -124,7 +124,7 @@ public ref struct ProtoReader
                 {
                     sizeof(byte) => T.CreateTruncating(Bmi2.X64.ParallelBitExtract(varintPart, 0x000000000000017f)),
                     sizeof(ushort) => T.CreateTruncating(Bmi2.X64.ParallelBitExtract(varintPart, 0x0000000000037f7f)),
-                    sizeof(uint) => T.CreateTruncating(Bmi2.X64.ParallelBitExtract(varintPart, 0x00000000007f7f7f)),
+                    sizeof(uint) => T.CreateTruncating(Bmi2.X64.ParallelBitExtract(varintPart, 0x0000000f7f7f7f7f)),
                     _ => throw new NotSupportedException()
                 };
             }
