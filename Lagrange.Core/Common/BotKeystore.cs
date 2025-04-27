@@ -76,6 +76,10 @@ public class WLoginSigs
     public byte[] WtSessionTicketKey { get; set; } = [];
     
     public byte[] RandomKey { get; set; } = new byte[16];
+    
+    public byte[] SKey { get; set; } = [];
+    
+    public Dictionary<string, string> PsKey { get; set; } = new();
 
     public void Clear()
     {

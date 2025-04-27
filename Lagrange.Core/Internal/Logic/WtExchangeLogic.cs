@@ -347,12 +347,17 @@ internal class WtExchangeLogic : ILogic, IDisposable
                     _context.Keystore.WLoginSigs.St = value;
                     break;
                 case 0x11A:
+                {
                     var reader = new BinaryPacket(value.AsSpan());
                     reader.Read<ushort>(); // FaceId
                     byte age = reader.Read<byte>();
                     byte gender = reader.Read<byte>();
                     string nickname = reader.ReadString(Prefix.Int8 | Prefix.LengthOnly);
                     _context.BotInfo = new BotInfo(age, gender, nickname);
+                }
+                    break;
+                case 0x120:
+                    _context.Keystore.WLoginSigs.SKey = value;
                     break;
                 case 0x133:
                     _context.Keystore.WLoginSigs.WtSessionTicket = value;
@@ -372,6 +377,18 @@ internal class WtExchangeLogic : ILogic, IDisposable
                 case 0x16D:
                     _context.Keystore.WLoginSigs.SuperKey = value;
                     break;
+                case 0x512:
+                {
+                    var reader = new BinaryPacket(value.AsSpan());
+                    short domainCount = reader.Read<short>();
+                    for (int i = 0; i < domainCount; i++)
+                    {
+                        string domain = reader.ReadString(Prefix.Int16 | Prefix.LengthOnly);
+                        string key = reader.ReadString(Prefix.Int16 | Prefix.LengthOnly);
+                        _context.Keystore.WLoginSigs.PsKey[domain] = key;
+                    }
+                    break;
+                }
                 case 0x543:
                     var resp = ProtoHelper.Deserialize<ThirdPartyLoginResponse>(value);
                     _context.Keystore.Uid = resp.CommonInfo.RspNT.Uid;
