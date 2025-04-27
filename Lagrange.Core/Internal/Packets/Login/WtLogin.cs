@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.Runtime.InteropServices;
 using System.Text;
 using Lagrange.Core.Common;
@@ -71,10 +72,12 @@ internal class WtLogin : StructBase
         writer.Write(Keystore.Guid);
         
         writer.Write<byte>(1);
-        writer.Write<short>(0);
+        writer.Write<short>(1);
         writer.Write<byte>(8);
 
-        foreach (short tlv in (Span<short>)[0x03, 0x05, 0x20, 0x35, 0x36]) // Tencent named it tlv....
+        var t = (Span<short>) [0x03, 0x05, 0x20, 0x35, 0x36];
+        writer.Write((short)t.Length);
+        foreach (short tlv in t) // Tencent named it tlv....
         {
             writer.Write(tlv);
         }
@@ -86,7 +89,7 @@ internal class WtLogin : StructBase
         
         writer.Write(tlvs.CreateReadOnlySpan());
         
-        return BuildCode2dPacket(0x13, writer.CreateReadOnlySpan(), EncryptMethod.EM_ST, true);
+        return BuildCode2dPacket(0x13, writer.CreateReadOnlySpan(), EncryptMethod.EM_ST, true, true);
     }
     
     public ReadOnlyMemory<byte> BuildQrlogin20(byte[] k) // CloseCode
@@ -111,7 +114,26 @@ internal class WtLogin : StructBase
         
         writer.Write(tlvs.CreateReadOnlySpan());
         
-        return BuildCode2dPacket(0x14, writer.CreateReadOnlySpan(), EncryptMethod.EM_ST, true);
+        return BuildCode2dPacket(0x14, writer.CreateReadOnlySpan(), EncryptMethod.EM_ST, true, true);
+    }
+    
+    public ReadOnlyMemory<byte> BuildQrlogin22(byte[] k)
+    {
+        using var writer = new BinaryPacket(stackalloc byte[300]);
+        writer.Write<ushort>(0);
+        writer.Write(AppInfo.AppId);
+        writer.Write(k, Prefix.Int16 | Prefix.LengthOnly); // code in java, k in qrcode url
+        writer.Write(_context.Keystore.Uin); // uin
+        writer.Write<byte>(8);
+        writer.Write(Keystore.WLoginSigs.A2, Prefix.Int16 | Prefix.LengthOnly);
+        
+        writer.Write<short>(0);
+        using var tlvs = new TlvQrCode(_context);
+        tlvs.Tlv12C();
+        
+        writer.Write(tlvs.CreateReadOnlySpan());
+        
+        return BuildCode2dPacket(0x16, writer.CreateReadOnlySpan(), EncryptMethod.EM_ST, true, true);
     }
 
     public ReadOnlyMemory<byte> BuildOicq09()
@@ -323,7 +345,7 @@ internal class WtLogin : StructBase
         reqBody.EnterLengthBarrier<short>();
         reqBody.Write(command);
         reqBody.Skip(21);
-        reqBody.Write((byte)3);
+        reqBody.Write((byte)3); // flag, 4 for oidb_func, 1 for register, 3 for code_2d, 2 for name_func, 5 for devlock
         reqBody.Write((short)0x00); // close
         reqBody.Write((short)0x32); // Version Code: 50
         reqBody.Write(0); // trans_emp sequence
@@ -413,18 +435,21 @@ internal class WtLogin : StructBase
 
     public ReadOnlySpan<byte> ParseCode2dPacket(ReadOnlySpan<byte> input, out ushort command)
     {
-        var reader = new BinaryPacket(input);
+        byte encrypt = input[1];
+        short layer = BinaryPrimitives.ReadInt16BigEndian(input[2..]);
+
+        var span = encrypt == 0 ? input.Slice(5, layer) : TeaProvider.Decrypt(input.Slice(5, layer), _context.Keystore.WLoginSigs.StKey);
+        var reader = new BinaryPacket(span);
         
-        reader.Skip(5);
         byte header = reader.Read<byte>();
         ushort length = reader.Read<ushort>();
         command = reader.Read<ushort>();
         reader.Skip(21);
         byte flag = reader.Read<byte>();
         ushort retryTime = reader.Read<ushort>();
-        ushort sequence = reader.Read<ushort>();
-        uint uin = reader.Read<uint>();
-        ulong timestamp = reader.Read<ulong>();
+        ushort version = reader.Read<ushort>();
+        uint sequence = reader.Read<uint>();
+        long uin = reader.Read<long>();
 
         return reader.ReadBytes();
     }

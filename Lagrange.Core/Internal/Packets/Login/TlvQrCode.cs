@@ -196,7 +196,7 @@ internal ref struct TlvQrCode : IDisposable
         var obj = new ScanExtInfo
         {
             Guid = _keystore.Guid,
-            Imei = _keystore.AndroidId,
+            Imei = _keystore.Qimei,
             ScanScene = 1,
             AllowAutoRenewTicket = true
         };
