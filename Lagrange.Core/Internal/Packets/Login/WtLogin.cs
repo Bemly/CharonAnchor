@@ -97,6 +97,7 @@ internal class WtLogin : StructBase
         using var writer = new BinaryPacket(stackalloc byte[300]);
         writer.Write<ushort>(0);
         writer.Write(AppInfo.AppId);
+        writer.Write(Keystore.Uin);
         writer.Write(k, Prefix.Int16 | Prefix.LengthOnly); // code in java, k in qrcode url
         writer.Write(Keystore.WLoginSigs.A2, Prefix.Int16 | Prefix.LengthOnly);
         
