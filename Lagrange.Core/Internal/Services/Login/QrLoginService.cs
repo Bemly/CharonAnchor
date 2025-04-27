@@ -87,16 +87,22 @@ internal class QrLoginService : BaseService<ProtocolEvent, ProtocolEvent>
             }
             else
             {
-                string message = reader.ReadString(Prefix.Int16 | Prefix.LengthOnly);
-                return new ValueTask<ProtocolEvent?>(new VerifyCodeEventResp(state, message, string.Empty, string.Empty, null));
+                var misc110Data = reader.ReadBytes(Prefix.Int16 | Prefix.LengthOnly);
+                var tlvs = ProtocolHelper.TlvUnPack(ref reader);
+                string message = Encoding.UTF8.GetString(tlvs[0x36]);
+            
+                return new ValueTask<ProtocolEvent?>(new CloseCodeEventResp(state, message));
             }
+        }
+        
+        if (code2dCmd == 0x13)
+        {
+            string message = reader.ReadString(Prefix.Int16 | Prefix.LengthOnly);
+            return new ValueTask<ProtocolEvent?>(new VerifyCodeEventResp(state, message, string.Empty, string.Empty, null));
         }
         else
         {
-            var misc110Data = reader.ReadBytes(Prefix.Int16 | Prefix.LengthOnly);
-            var tlvs = ProtocolHelper.TlvUnPack(ref reader);
-            string message = Encoding.UTF8.GetString(tlvs[0x01]);
-            
+            string message = reader.ReadString(Prefix.Int16 | Prefix.LengthOnly);
             return new ValueTask<ProtocolEvent?>(new CloseCodeEventResp(state, message));
         }
     }
