@@ -406,6 +406,15 @@ internal ref struct Tlv : IDisposable
         _writer.ExitLengthBarrier<short>(false);
     }
 
+    public void Tlv174(byte[] session)
+    {
+        WriteTlv(0x174);
+        
+        _writer.Write(session);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+
     public void Tlv177()
     {
         WriteTlv(0x177);
@@ -413,6 +422,24 @@ internal ref struct Tlv : IDisposable
         _writer.Write((byte)1);
         _writer.Write(0); // sdk build time
         _writer.Write(_appInfo.SdkInfo.SdkVersion, Prefix.Int16 | Prefix.LengthOnly);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+
+    public void Tlv17A()
+    {
+        WriteTlv(0x17A);
+        
+        _writer.Write(9);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+
+    public void Tlv17C(string code)
+    {
+        WriteTlv(0x17C);
+        
+        _writer.Write(code, Prefix.Int16 | Prefix.LengthOnly);
         
         _writer.ExitLengthBarrier<short>(false);
     }
@@ -453,9 +480,38 @@ internal ref struct Tlv : IDisposable
         _writer.ExitLengthBarrier<short>(false);
     }
     
+    public void Tlv197()
+    {
+        WriteTlv(0x197);
+        
+        _writer.Write<byte>(0);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+    
+    public void Tlv198()
+    {
+        WriteTlv(0x198);
+        
+        _writer.Write<byte>(0);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+    
     public void Tlv318()
     {
         WriteTlv(0x318);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+
+    public void Tlv401()
+    {
+        WriteTlv(0x401);
+
+        Span<byte> random = stackalloc byte[16];
+        Random.Shared.NextBytes(random);
+        _writer.Write(random);
         
         _writer.ExitLengthBarrier<short>(false);
     }

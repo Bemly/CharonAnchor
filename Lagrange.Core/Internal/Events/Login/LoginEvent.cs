@@ -5,7 +5,9 @@ internal class LoginEventReq(LoginEventReq.Command cmd, string password = "") : 
     public enum Command
     {
         Tgtgt = 0x09,
-        Captcha = 0x02
+        Captcha = 0x02,
+        FetchSMSCode = 0x08,
+        SubmitSMSCode = 0x07
     }
     
     public Command Cmd { get; } = cmd;
@@ -13,6 +15,8 @@ internal class LoginEventReq(LoginEventReq.Command cmd, string password = "") : 
     public string Password { get; } = password;
 
     public string Ticket { get; init; } = string.Empty;
+    
+    public string Code { get; init; } = string.Empty;
 }
 
 internal class LoginEventResp : ProtocolEvent

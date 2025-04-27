@@ -95,4 +95,6 @@ internal class State
     public byte[]? Tlv104 { get; set; }
     
     public byte[]? Tlv547 { get; set; }
+    
+    public byte[]? Tlv174 { get; set; }
 }

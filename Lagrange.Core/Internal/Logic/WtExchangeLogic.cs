@@ -1,8 +1,6 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Lagrange.Core.Common;
 using Lagrange.Core.Events.EventArgs;
-using Lagrange.Core.Internal.Context;
 using Lagrange.Core.Internal.Events.Login;
 using Lagrange.Core.Internal.Events.System;
 using Lagrange.Core.Utility;
@@ -33,7 +31,6 @@ internal class WtExchangeLogic : ILogic, IDisposable
 
     private TaskCompletionSource<string>? _smsSource;
 
-    [DynamicDependency(DynamicallyAccessedMemberTypes.PublicConstructors, typeof(EventContext))]
     public WtExchangeLogic(BotContext context)
     {
         _context = context;
@@ -155,9 +152,50 @@ internal class WtExchangeLogic : ILogic, IDisposable
                     
                     _token?.ThrowIfCancellationRequested();
                     result = await _context.EventContext.SendEvent<LoginEventResp>(new LoginEventReq(LoginEventReq.Command.Captcha) { Ticket = ticket });
+                    if (result == null) return false;
+                }
+
+                if (result.State == LoginEventResp.States.DeviceLockViaSmsNewArea)
+                {
+                    if (result.Tlvs.TryGetValue(0x104, out var tlv104))
+                    {
+                        _context.Keystore.State.Tlv104 = tlv104;
+                        _context.LogDebug(Tag, $"Tlv104 received, length: {tlv104.Length}");
+                    }
+                    
+                    if (result.Tlvs.TryGetValue(0x174, out var tlv174))
+                    {
+                        _context.Keystore.State.Tlv174 = tlv174;
+                        _context.LogDebug(Tag, $"Tlv174 received, length: {tlv174.Length}");
+                    }
+                    
+                    string? url = null;
+                    if (result.Tlvs.TryGetValue(0x204, out var tlv204)) url = Encoding.UTF8.GetString(tlv204);
+
+                    var tlv178 = new BinaryPacket(result.Tlvs[0x178].AsSpan());
+                    string countryCode = tlv178.ReadString(Prefix.Int16 | Prefix.LengthOnly);
+                    string phone = tlv178.ReadString(Prefix.Int16 | Prefix.LengthOnly);
+                    
+                    _token?.ThrowIfCancellationRequested();
+                    result = await _context.EventContext.SendEvent<LoginEventResp>(new LoginEventReq(LoginEventReq.Command.FetchSMSCode));
+                    if (result?.State == LoginEventResp.States.SmsRequired)
+                    {
+                        if (result.Tlvs.TryGetValue(0x104, out var tlv1048))
+                        {
+                            _context.Keystore.State.Tlv104 = tlv1048;
+                            _context.LogDebug(Tag, $"Tlv104 received, length: {tlv1048.Length}");
+                        }
+                        
+                        _context.LogInfo(Tag, $"SMS Verification required, Phone: {countryCode}-{phone} | URL: {url}");
+                        _context.EventInvoker.PostEvent(new BotSMSEvent(url, $"{countryCode}-{phone}"));
+                        
+                        _smsSource = new TaskCompletionSource<string>();
+                        string code = await _smsSource.Task;
+                        result = await _context.EventContext.SendEvent<LoginEventResp>(new LoginEventReq(LoginEventReq.Command.SubmitSMSCode) { Code = code });
+                    }
                 }
                 
-                if (result?.RetCode == 0)
+                if (result?.State == LoginEventResp.States.Success)
                 {
                     ReadWLoginSigs(result.Tlvs);
                     _context.EventInvoker.PostEvent(new BotLoginEvent(0, null));
@@ -179,9 +217,18 @@ internal class WtExchangeLogic : ILogic, IDisposable
     {
         if (_captchaSource == null) return false;
         
-        _captchaSource.TrySetResult((ticket, randStr));
+        bool success = _captchaSource.TrySetResult((ticket, randStr));
         _captchaSource = null;
-        return true;
+        return success;
+    }
+
+    public bool SubmitSMSCode(string code)
+    {
+        if (_smsSource == null) return false;
+
+        bool success = _smsSource.TrySetResult(code);
+        _smsSource = null;
+        return success;
     }
 
     private async Task<bool> Online()

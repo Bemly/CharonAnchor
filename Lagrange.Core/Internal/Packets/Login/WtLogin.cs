@@ -220,6 +220,46 @@ internal class WtLogin : StructBase
         
         return BuildPacket(0x810, tlvs.CreateReadOnlySpan(), EncryptMethod.EM_ECDH);
     }
+
+    public async Task<ReadOnlyMemory<byte>> BuildOicq07Android(string code)
+    {
+        var sign = (IAndroidBotSignProvider)_context.PacketContext.SignProvider;
+        var energy = await sign.GetEnergy(_context.BotUin, "810_7");
+        var attach = await sign.GetDebugXwid(_context.BotUin, "810_7");
+        
+        using var tlvs = new Tlv(0x07, _context);
+        tlvs.Tlv008();
+        if (Keystore.State.Tlv104 is { } tlv104) tlvs.Tlv104(tlv104);
+        tlvs.Tlv116();
+        if (Keystore.State.Tlv174 is { } tlv174) tlvs.Tlv174(tlv174);
+        tlvs.Tlv17C(code);
+        tlvs.Tlv401();
+        tlvs.Tlv198();
+        // 542 smsExtraData
+        tlvs.Tlv544(energy);
+        tlvs.Tlv553(attach);
+        
+        return BuildPacket(0x810, tlvs.CreateReadOnlySpan());
+    }
+    
+    public async Task<ReadOnlyMemory<byte>> BuildOicq08Android()
+    {
+        var sign = (IAndroidBotSignProvider)_context.PacketContext.SignProvider;
+        var attach = await sign.GetDebugXwid(_context.BotUin, "810_8");
+        
+        using var tlvs = new Tlv(0x08, _context);
+        tlvs.Tlv008();
+        if (Keystore.State.Tlv104 is { } tlv104) tlvs.Tlv104(tlv104);
+        tlvs.Tlv116();
+        if (Keystore.State.Tlv174 is { } tlv174) tlvs.Tlv174(tlv174);
+        tlvs.Tlv17A();
+        tlvs.Tlv197();
+        // 542 smsExtraData
+        tlvs.Tlv553(attach);
+
+        
+        return BuildPacket(0x810, tlvs.CreateReadOnlySpan());
+    }
     
     private ReadOnlyMemory<byte> BuildPacket(
         short command, 
@@ -393,7 +433,6 @@ internal class WtLogin : StructBase
     {
         EM_ST = 0x45,
         EM_ECDH = 0x07,
-        EM_ECDH_ST = 0x87, // same with EM_ECDH, but controlled with a flag, if flag is set to 1, the ST would be used
-        EM_NULL = 0xff
+        EM_ECDH_ST = 0x87 // same with EM_ECDH, but controlled with a flag, if flag is set to 1, the ST would be used
     }
 }

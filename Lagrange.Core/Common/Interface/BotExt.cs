@@ -15,4 +15,7 @@ public static class BotExt
 
     public static bool SubmitCaptcha(this BotContext context, string ticket, string randStr) =>
         context.EventContext.GetLogic<WtExchangeLogic>().SubmitCaptcha(ticket, randStr);
+
+    public static bool SubmitSMSCode(this BotContext context, string code) =>
+        context.EventContext.GetLogic<WtExchangeLogic>().SubmitSMSCode(code);
 }

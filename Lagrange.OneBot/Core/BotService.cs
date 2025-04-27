@@ -75,6 +75,22 @@ public partial class BotService(
             context.SubmitCaptcha(ticket, randstr);
         });
         
+        context.EventInvoker.RegisterEvent<BotSMSEvent>(async (_, _) =>
+        {
+            await Task.Run(() =>
+            {
+                Console.WriteLine("Please enter the SMS code:");
+                string? code = Console.ReadLine();
+                if (string.IsNullOrEmpty(code))
+                {
+                    logger.LogCritical("SMS code is empty, process would exit in 10 seconds");
+                    Environment.Exit(-1);
+                }
+                
+                context.SubmitSMSCode(code);
+            }, cancellationToken);
+        });
+        
         bool result = await context.Login(options.Value.Uin, options.Value.Password ?? string.Empty, cancellationToken);
         if (!result)
         {
