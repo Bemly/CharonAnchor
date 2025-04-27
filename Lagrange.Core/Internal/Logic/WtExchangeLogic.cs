@@ -1,5 +1,6 @@
 using System.Text;
 using Lagrange.Core.Common;
+using Lagrange.Core.Common.Response;
 using Lagrange.Core.Events.EventArgs;
 using Lagrange.Core.Internal.Events.Login;
 using Lagrange.Core.Internal.Events.System;
@@ -66,31 +67,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
 
         return await ManualLogin(uin, password);
     }
-
-    public async Task<long> ResolveUinByQid(string qid)
-    {
-        if (!_context.SocketContext.Connected)
-        {
-            await _context.SocketContext.Connect();
-            _heartBeatTimer.Change(0, 2000);
-        }
-        
-        var result = await _context.EventContext.SendEvent<UinResolveEventResp>(new UinResolveEventReq(qid));
-        if (result is { State: 0, Info: { } info })
-        {
-            _context.Keystore.Uin = info.Item1;
-            _context.Keystore.State.Tlv104 = result.Tlv104;
-            _context.LogInfo(Tag, $"Uin resolved: {info.Item1}, Qid: {info.Item2}");
-            return info.Item1;
-        }
-        else if (result is { Error: { } error })
-        {
-            _context.LogError(Tag, $"Failed to resolve uin: {error.Item1} | {error.Item2}");
-        }
-
-        return 0;
-    }
-
+    
     private async Task<bool> ManualLogin(long uin, string? password)
     {
         if (string.IsNullOrEmpty(password) && _context.Config.Protocol.IsAndroid())
@@ -211,6 +188,45 @@ internal class WtExchangeLogic : ILogic, IDisposable
         }
         
         return false;
+    }
+    
+    public async Task<long> ResolveUinByQid(string qid)
+    {
+        if (!_context.SocketContext.Connected)
+        {
+            await _context.SocketContext.Connect();
+            _heartBeatTimer.Change(0, 2000);
+        }
+        
+        var result = await _context.EventContext.SendEvent<UinResolveEventResp>(new UinResolveEventReq(qid));
+        if (result is { State: 0, Info: { } info })
+        {
+            _context.Keystore.Uin = info.Item1;
+            _context.Keystore.State.Tlv104 = result.Tlv104;
+            _context.LogInfo(Tag, $"Uin resolved: {info.Item1}, Qid: {info.Item2}");
+            return info.Item1;
+        }
+        else if (result is { Error: { } error })
+        {
+            _context.LogError(Tag, $"Failed to resolve uin: {error.Item1} | {error.Item2}");
+        }
+
+        return 0;
+    }
+
+    public async Task<BotQrCodeInfo?> FetchQrCodeInfo(byte[] k)
+    {
+        var result = await _context.EventContext.SendEvent<VerifyCodeEventResp>(new VerifyCodeEventReq(k));
+        if (result == null) return null;
+
+        return new BotQrCodeInfo(result.Message, result.Platform, result.Location, result.Device);
+    }
+
+    public async Task<(bool, string)> CloseQrCode(byte[] k, bool confirm)
+    {
+        var result = await _context.EventContext.SendEvent<CloseCodeEventResp>(new CloseCodeEventReq(k, confirm));
+        bool success = !confirm || result?.State == 0;
+        return (success, result?.Message ?? string.Empty);
     }
     
     public bool SubmitCaptcha(string ticket, string randStr)
