@@ -8,7 +8,18 @@ namespace Lagrange.Core.Common;
 
 public interface IAndroidBotSignProvider : IBotSignProvider
 {
-    protected static new readonly string[] WhiteListCommand =
+    public Task<byte[]> GetEnergy(long uin, string data);
+
+    public Task<byte[]> GetDebugXwid(long uin, string data);
+}
+
+internal class DefaultAndroidBotSignProvider(BotContext context) : IAndroidBotSignProvider, IDisposable
+{
+    private readonly HttpClient _client = new();
+
+    private readonly string _url = "http://127.0.0.1:8081";
+    
+    private static readonly string[] WhiteListCommand =
     [
         "OidbSvcTrpcTcp.0xf88_1", "OidbSvcTrpcTcp.0x1105_1", "oidb_0xf7e_1",
         "trpc.group.long_msg_interface.MsgService.SsoRecvLongMsg", "OidbSvcTrpcTcp.0x92eb_0", "qzoneh5.h5.wnshtml",
@@ -143,19 +154,8 @@ public interface IAndroidBotSignProvider : IBotSignProvider
         "FeedCloudSvr.trpc.feedcloud.commreader.ComReader.GetMainPageBasicData", "OidbSvc.0x5eb_common",
         "OidbSvcTrpcTcp.0xaf6_0", "IncreaseURLSvr.QQHeadUrlReq"
     ];
-
-    internal new bool IsWhiteListCommand(string cmd) => WhiteListCommand.Contains(cmd);
     
-    public Task<byte[]> GetEnergy(long uin, string data);
-
-    public Task<byte[]> GetDebugXwid(long uin, string data);
-}
-
-internal class DefaultAndroidBotSignProvider(BotContext context) : IAndroidBotSignProvider, IDisposable
-{
-    private readonly HttpClient _client = new();
-
-    private readonly string _url = "http://127.0.0.1";
+    public bool IsWhiteListCommand(string cmd) => WhiteListCommand.Contains(cmd);
     
     public async Task<SsoSecureInfo?> GetSecSign(long uin, string cmd, int seq, ReadOnlyMemory<byte> body)
     {

@@ -9,7 +9,14 @@ namespace Lagrange.Core.Common;
 
 public interface IBotSignProvider
 {
-    protected static readonly string[] WhiteListCommand =
+    internal bool IsWhiteListCommand(string cmd);
+
+    Task<SsoSecureInfo?> GetSecSign(long uin, string cmd, int seq, ReadOnlyMemory<byte> body);
+}
+
+internal class DefaultBotSignProvider(Protocols protocol, BotAppInfo appInfo) : IBotSignProvider, IDisposable
+{
+    private static readonly string[] WhiteListCommand =
     [
         "trpc.o3.ecdh_access.EcdhAccess.SsoEstablishShareKey",
         "trpc.o3.ecdh_access.EcdhAccess.SsoSecureAccess",
@@ -52,13 +59,6 @@ public interface IBotSignProvider
         "OidbSvcTrpcTcp.0x6d9_4"
     ];
     
-    internal bool IsWhiteListCommand(string cmd) => WhiteListCommand.Contains(cmd);
-
-    Task<SsoSecureInfo?> GetSecSign(long uin, string cmd, int seq, ReadOnlyMemory<byte> body);
-}
-
-internal class DefaultBotSignProvider(Protocols protocol, BotAppInfo appInfo) : IBotSignProvider, IDisposable
-{
     private readonly HttpClient _client = new();
     
     private readonly string _url = protocol switch
@@ -71,6 +71,8 @@ internal class DefaultBotSignProvider(Protocols protocol, BotAppInfo appInfo) : 
         _ => throw new ArgumentOutOfRangeException(nameof(protocol))
     };
     
+    public bool IsWhiteListCommand(string cmd) => WhiteListCommand.Contains(cmd);
+
     public async Task<SsoSecureInfo?> GetSecSign(long uin, string cmd, int seq, ReadOnlyMemory<byte> body)
     {
         try
