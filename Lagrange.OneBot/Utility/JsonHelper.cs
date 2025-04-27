@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Lagrange.OneBot.Entity;
 
 namespace Lagrange.OneBot.Utility;
@@ -7,6 +8,9 @@ public static class JsonHelper
 {
     public static T? Deserialize<T>(string json) where T : class => 
         JsonSerializer.Deserialize(json, typeof(T), OneBotSerializerContext.Default) as T;
+
+    public static T? Deserialize<T>(this JsonNode? node) where T : class =>
+        node.Deserialize(typeof(T), OneBotSerializerContext.Default) as T;
     
     public static string Serialize<T>(T value) =>
         JsonSerializer.Serialize(value, typeof(T), OneBotSerializerContext.Default);

@@ -1,8 +1,10 @@
 using System.Buffers;
 using System.Buffers.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Lagrange.Core.Common;
+using Lagrange.Core.Common.Response;
 using Lagrange.OneBot.Entity.Action;
 using Lagrange.OneBot.Entity.Meta;
 
@@ -15,7 +17,11 @@ namespace Lagrange.OneBot.Entity;
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     Converters = [typeof(BooleanConverter), typeof(HexConverter)])]
 
+[JsonSerializable(typeof(JsonNode))]
+[JsonSerializable(typeof(JsonObject))]
+
 [JsonSerializable(typeof(BotKeystore))]
+[JsonSerializable(typeof(BotQrCodeInfo))]
 
 [JsonSerializable(typeof(OneBotEntityBase))]
 [JsonSerializable(typeof(OneBotAction))]
@@ -24,6 +30,8 @@ namespace Lagrange.OneBot.Entity;
 [JsonSerializable(typeof(OneBotMeta))]
 [JsonSerializable(typeof(OneBotStatus))]
 [JsonSerializable(typeof(OneBotLifecycle))]
+
+[JsonSerializable(typeof(OneBotQrCodeRequest))]
 public partial class OneBotSerializerContext : JsonSerializerContext;
 
 public class BooleanConverter : JsonConverter<bool>

@@ -7,6 +7,7 @@ using Lagrange.OneBot.Database;
 using Lagrange.OneBot.Message;
 using Lagrange.OneBot.Network;
 using Lagrange.OneBot.Network.Service;
+using Lagrange.OneBot.Operation;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -68,7 +69,8 @@ public static class HostApplicationBuilderExtension
     {
         builder.Services
             .AddSingleton<MessageService>()
-            .AddSingleton<LagrangeWebSvcCollection>()
+            .AddSingleton<OperationService>()
+            .AddHostedService<LagrangeWebSvcCollection>()
 
             .AddScoped<ILagrangeWebServiceFactory<ForwardWSService>, ForwardWSServiceFactory>()
             .AddScoped<ForwardWSService>()
