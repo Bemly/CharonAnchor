@@ -175,7 +175,7 @@ internal class WtLogin : StructBase
         tlvs.Tlv100Android();
         tlvs.Tlv107Android();
         tlvs.Tlv142();
-        tlvs.Tlv144Report();
+        tlvs.Tlv144Report(false);
         tlvs.Tlv145();
         tlvs.Tlv147();
         tlvs.Tlv154();
@@ -280,6 +280,42 @@ internal class WtLogin : StructBase
         // 542 smsExtraData
         tlvs.Tlv553(attach);
 
+        
+        return BuildPacket(0x810, tlvs.CreateReadOnlySpan());
+    }
+    
+    public async Task<ReadOnlyMemory<byte>> BuildOicq15Android()
+    {
+        var sign = (IAndroidBotSignProvider)_context.PacketContext.SignProvider;
+        var energy = await sign.GetEnergy(_context.BotUin, "810_f");
+        var attach = await sign.GetDebugXwid(_context.BotUin, "810_f");
+        
+        using var tlvs = new Tlv(0x0f, _context);
+        tlvs.Tlv018Android();
+        tlvs.Tlv001();
+        tlvs.Tlv106EncryptedA1();
+        tlvs.Tlv116();
+        tlvs.Tlv100Android();
+        tlvs.Tlv107Android();
+        tlvs.Tlv144Report(true);
+        tlvs.Tlv142();
+        tlvs.Tlv145();
+        tlvs.Tlv16A();
+        tlvs.Tlv154();
+        tlvs.Tlv141Android();
+        tlvs.Tlv008();
+        tlvs.Tlv511();
+        tlvs.Tlv147();
+        tlvs.Tlv177();
+        tlvs.Tlv400();
+        tlvs.Tlv187();
+        tlvs.Tlv188();
+        tlvs.Tlv516();
+        tlvs.Tlv521Android();
+        tlvs.Tlv525();
+        tlvs.Tlv544(energy);
+        tlvs.Tlv553(attach);
+        tlvs.Tlv545();
         
         return BuildPacket(0x810, tlvs.CreateReadOnlySpan());
     }

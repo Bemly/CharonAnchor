@@ -328,7 +328,7 @@ internal ref struct Tlv : IDisposable
         _writer.ExitLengthBarrier<short>(false);
     }
 
-    public void Tlv144Report()
+    public void Tlv144Report(bool useA1Key)
     {
         var tlv = new Tlv(-1, _context);
         
@@ -340,7 +340,7 @@ internal ref struct Tlv : IDisposable
 
         var span = tlv.CreateReadOnlySpan();
         Span<byte> encrypted = stackalloc byte[TeaProvider.GetCipherLength(span.Length)];
-        TeaProvider.Encrypt(span, encrypted, _keystore.WLoginSigs.TgtgtKey);
+        TeaProvider.Encrypt(span, encrypted, useA1Key ? _keystore.WLoginSigs.A1Key : _keystore.WLoginSigs.TgtgtKey);
         tlv.Dispose();
         
         WriteTlv(0x144);
@@ -501,6 +501,32 @@ internal ref struct Tlv : IDisposable
     public void Tlv318()
     {
         WriteTlv(0x318);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+
+    public void Tlv400()
+    {
+        WriteTlv(0x400);
+        
+        var randomKey = new byte[16];
+        RandomNumberGenerator.Fill(randomKey);
+        var randSeed = new byte[8];
+        RandomNumberGenerator.Fill(randSeed);
+        
+        var writer = new BinaryPacket(stackalloc byte[100]);
+        writer.Write<short>(1);
+        writer.Write(_keystore.Uin);
+        writer.Write(_keystore.Guid);
+        writer.Write(randomKey);
+        writer.Write(16);
+        writer.Write(1);
+        writer.Write((uint)DateTimeOffset.Now.ToUnixTimeSeconds());
+        writer.Write(randSeed);
+        
+        var span = writer.CreateReadOnlySpan();
+        Span<byte> encrypted = stackalloc byte[TeaProvider.GetCipherLength(span.Length)];
+        TeaProvider.Encrypt(span, encrypted, _keystore.Guid);
         
         _writer.ExitLengthBarrier<short>(false);
     }
