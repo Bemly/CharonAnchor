@@ -11,7 +11,8 @@ internal class SsoPacker(BotContext context) : StructBase(context)
     private const string Hex = "0123456789abcdef";
 
     private readonly Lazy<string> _guid = new(() => Convert.ToHexString(context.Keystore.Guid).ToLowerInvariant());
-    
+    private readonly BotContext _context = context;
+
     public BinaryPacket BuildProtocol12(SsoPacket sso, SsoSecureInfo? secInfo)
     {
         var head = new BinaryPacket(stackalloc byte[0x200]);
@@ -102,7 +103,7 @@ internal class SsoPacker(BotContext context) : StructBase(context)
             SecInfo = secInfo
         };
 
-        if (context.Config.Protocol.IsAndroid())
+        if (_context.Config.Protocol.IsAndroid())
         {
             reserved.MsgType = 32;
             reserved.NtCoreVersion = 100;
