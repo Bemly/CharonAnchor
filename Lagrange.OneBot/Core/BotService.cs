@@ -60,13 +60,10 @@ public partial class BotService(
             Log.QrCodeState(logger, level, @event.State);
         });
         
-        context.EventInvoker.RegisterEvent<BotLoginEvent>(async (_, @event) =>
+        context.EventInvoker.RegisterEvent<BotRefreshKeystoreEvent>(async (_, @event) =>
         {
-            if (@event.State == 0)
-            {
-                var keystore = context.Keystore;
-                await File.WriteAllBytesAsync($"Lagrange-{keystore.Uin}.keystore", JsonHelper.SerializeToUtf8Bytes(keystore), cancellationToken);
-            }
+            var keystore = @event.Keystore;
+            await File.WriteAllBytesAsync($"Lagrange-{keystore.Uin}.keystore", JsonHelper.SerializeToUtf8Bytes(keystore), cancellationToken);
         });
         
         context.EventInvoker.RegisterEvent<BotCaptchaEvent>(async (_, @event) =>

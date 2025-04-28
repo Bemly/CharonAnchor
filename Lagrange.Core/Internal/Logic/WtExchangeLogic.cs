@@ -176,6 +176,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
                 {
                     ReadWLoginSigs(result.Tlvs);
                     _context.EventInvoker.PostEvent(new BotLoginEvent(0, null));
+                    _context.EventInvoker.PostEvent(new BotRefreshKeystoreEvent(_context.Keystore));
 
                     return await Online();
                 }
@@ -297,6 +298,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
                 if (result?.RetCode == 0)
                 {
                     ReadWLoginSigs(result.Tlvs);
+                    _context.EventInvoker.PostEvent(new BotRefreshKeystoreEvent(_context.Keystore));
                     _transEmpSource.TrySetResult(true);
                 }
                 else
