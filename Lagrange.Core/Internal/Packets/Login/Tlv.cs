@@ -568,6 +568,7 @@ internal ref struct Tlv : IDisposable
         _writer.Write<short>((short)domains.Length);
         foreach (string domain in domains)
         {
+            _writer.Write<byte>(1);
             _writer.Write(domain, Prefix.Int16 | Prefix.LengthOnly);
         }
         

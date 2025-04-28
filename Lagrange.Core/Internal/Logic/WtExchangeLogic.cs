@@ -378,8 +378,8 @@ internal class WtExchangeLogic : ILogic, IDisposable
                     byte gender = reader.Read<byte>();
                     string nickname = reader.ReadString(Prefix.Int8 | Prefix.LengthOnly);
                     _context.BotInfo = new BotInfo(age, gender, nickname);
-                }
                     break;
+                }
                 case 0x120:
                     _context.Keystore.WLoginSigs.SKey = value;
                     break;
@@ -403,12 +403,15 @@ internal class WtExchangeLogic : ILogic, IDisposable
                     break;
                 case 0x512:
                 {
+                    _context.Keystore.WLoginSigs.PsKey.Clear();
+                    
                     var reader = new BinaryPacket(value.AsSpan());
                     short domainCount = reader.Read<short>();
                     for (int i = 0; i < domainCount; i++)
                     {
                         string domain = reader.ReadString(Prefix.Int16 | Prefix.LengthOnly);
                         string key = reader.ReadString(Prefix.Int16 | Prefix.LengthOnly);
+                        string pt4Token = reader.ReadString(Prefix.Int16 | Prefix.LengthOnly);
                         _context.Keystore.WLoginSigs.PsKey[domain] = key;
                     }
                     break;
