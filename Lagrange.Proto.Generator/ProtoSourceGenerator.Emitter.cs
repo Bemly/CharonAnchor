@@ -10,6 +10,7 @@ public partial class ProtoSourceGenerator
     {
         private const string ProtoNumberHandlingTypeRef = "global::Lagrange.Proto.Serialization.ProtoNumberHandling";
         private const string IProtoSerializableTypeRef = "global::Lagrange.Proto.IProtoSerializable<{0}>";
+        private const string ShouldSerializeTypeRef = "ShouldSerialize";
 
         private readonly AssemblyName _assemblyName = typeof(ProtoSourceGenerator).Assembly.GetName();
 
@@ -80,25 +81,5 @@ public partial class ProtoSourceGenerator
         }
         
         private string GetFileName() => $"{parser.Namespace}.{parser.TypeDeclarations.Reverse<string>().Aggregate(string.Empty, (x, y) => $"{x}.{y.Split(' ').Last()}").TrimStart('.')}.g.cs";
-        
-        private static void EmitIfNotNullStatement(SourceWriter source, string variableName, Action<SourceWriter> emitAction)
-        {
-            source.WriteLine($"if ({variableName} != null)");
-            source.WriteLine("{");
-            source.Indentation++;
-            emitAction(source);
-            source.Indentation--;
-            source.WriteLine("}");
-        }
-        
-        private static void EmitIfNotDefaultStatement(SourceWriter source, string variableName, Action<SourceWriter> emitAction)
-        {
-            source.WriteLine($"if ({variableName} != default)");
-            source.WriteLine("{");
-            source.Indentation++;
-            emitAction(source);
-            source.Indentation--;
-            source.WriteLine("}");
-        }
     }
 }

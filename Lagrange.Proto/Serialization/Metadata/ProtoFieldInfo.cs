@@ -38,6 +38,8 @@ public abstract class ProtoFieldInfo(int field, WireType wireType, Type declared
     private protected abstract void SetGetter(Delegate? getter);
     private protected abstract void SetSetter(Delegate? setter);
 
+    public abstract bool ShouldSerialize(object target, bool ignoreDefaultValue);
+    
     public abstract void Read(ref ProtoReader reader, object target);
     
     public abstract void Write(ProtoWriter writer, object target);
@@ -128,7 +130,15 @@ public class ProtoFieldInfo<T> : ProtoFieldInfo
                 break;
         }
     }
-    
+
+    public override bool ShouldSerialize(object target, bool ignoreDefaultValue)
+    {
+        Debug.Assert(_typedGet != null);
+
+        T value = _typedGet.Invoke(target);
+        return EffectiveConverter.ShouldSerialize(value, ignoreDefaultValue);
+    }
+
     public override void Read(ref ProtoReader reader, object target)
     {
         T value = NumberHandling == ProtoNumberHandling.Default
@@ -247,7 +257,14 @@ public class ProtoMapFieldInfo<TMap, TKey, TValue>(int field, WireType keyWireTy
             return _typedValueConverter;
         }
     }
-    
+
+    public override bool ShouldSerialize(object target, bool ignoreDefaultValue)
+    {
+        Debug.Assert(_typedGet != null);
+
+        return _typedGet(target) is { Count: > 0 };
+    }
+
     public override void Read(ref ProtoReader reader, object target)
     {
         Debug.Assert(_typedSet != null);

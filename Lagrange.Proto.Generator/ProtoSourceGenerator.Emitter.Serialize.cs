@@ -47,7 +47,8 @@ public partial class ProtoSourceGenerator
 
         private void EmitMembers(SourceWriter source, int field, ProtoFieldInfo info)
         {
-            var tag = ProtoHelper.EncodeVarInt(field << 3 | (byte)info.WireType);
+            int tag = field << 3 | (byte)info.WireType;
+            var encodedTag = ProtoHelper.EncodeVarInt(tag);
             
             string memberName =  info.TypeSymbol.IsValueType && info.TypeSymbol.IsNullable() 
                 ? $"{ObjectVarName}.{info.Symbol.Name}.Value"
@@ -58,15 +59,15 @@ public partial class ProtoSourceGenerator
                 {
                     EmitIfNotDefaultStatement(source, $"{ObjectVarName}.{info.Symbol.Name}", writer =>
                     {
-                        EmitRawTags(writer, tag);
+                        EmitRawTags(writer, encodedTag);
                         EmitMember(writer, field, info, memberName);
                     });
                 }
                 else
                 {
-                    EmitIfNotNullStatement(source, memberName, writer =>
+                    EmitIfShouldSerializeStatement(source, tag, writer =>
                     {
-                        EmitRawTags(writer, tag);
+                        EmitRawTags(writer, encodedTag);
                         EmitMember(writer, field, info, memberName);
                     });
                 }
@@ -79,21 +80,21 @@ public partial class ProtoSourceGenerator
                     {
                         EmitIfNotNullStatement(source, $"{ObjectVarName}.{info.Symbol.Name}", writer =>
                         {
-                            EmitRawTags(writer, tag);
+                            EmitRawTags(writer, encodedTag);
                             EmitMember(writer, field, info, memberName);
                         });
                     }
                     else // write directly
                     {
-                        EmitRawTags(source, tag);
+                        EmitRawTags(source, encodedTag);
                         EmitMember(source, field, info, memberName);
                     }
                 }
                 else
                 {
-                    EmitIfNotNullStatement(source, memberName, writer =>
+                    EmitIfShouldSerializeStatement(source, tag, writer =>
                     {
-                        EmitRawTags(writer, tag);
+                        EmitRawTags(writer, encodedTag);
                         EmitMember(writer, field, info, memberName);
                     });
                 }
@@ -138,6 +139,36 @@ public partial class ProtoSourceGenerator
             source.WriteLine(info.IsSigned
                 ? $"{WriterVarName}.{EncodeResolvableMethodName}({field}, {WireTypeTypeRef}.{info.WireType}, {memberName}, {ProtoNumberHandlingTypeRef}.{(info.IsSigned ? "Signed" : "Default")});"
                 : $"{WriterVarName}.{EncodeResolvableMethodName}({field}, {WireTypeTypeRef}.{info.WireType}, {memberName});");
+        }
+        
+        private static void EmitIfNotNullStatement(SourceWriter source, string variableName, Action<SourceWriter> emitAction)
+        {
+            source.WriteLine($"if ({variableName} != null)");
+            source.WriteLine("{");
+            source.Indentation++;
+            emitAction(source);
+            source.Indentation--;
+            source.WriteLine("}");
+        }
+        
+        private static void EmitIfNotDefaultStatement(SourceWriter source, string variableName, Action<SourceWriter> emitAction)
+        {
+            source.WriteLine($"if ({variableName} != default)");
+            source.WriteLine("{");
+            source.Indentation++;
+            emitAction(source);
+            source.Indentation--;
+            source.WriteLine("}");
+        }
+        
+        private void EmitIfShouldSerializeStatement(SourceWriter source, int tag, Action<SourceWriter> emitAction)
+        {
+            source.WriteLine($"if ({_fullQualifiedName}.{TypeInfoPropertyName}.Fields[{tag}].{ShouldSerializeTypeRef}({ObjectVarName}, {parser.IgnoreDefaultFields.ToString().ToLower()}))");
+            source.WriteLine("{");
+            source.Indentation++;
+            emitAction(source);
+            source.Indentation--;
+            source.WriteLine("}");
         }
     }
 }

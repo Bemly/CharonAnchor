@@ -8,6 +8,8 @@ public abstract class ProtoConverter
 
 public abstract class ProtoConverter<T> : ProtoConverter
 {
+    public virtual bool ShouldSerialize(T value, bool ignoreDefaultValue) => value != null;
+    
     public abstract void Write(int field, WireType wireType, ProtoWriter writer, T value);
     
     public virtual void WriteWithNumberHandling(int field, WireType wireType, ProtoWriter writer, T value, ProtoNumberHandling numberHandling) => Write(field, wireType, writer, value);

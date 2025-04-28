@@ -7,7 +7,9 @@ namespace Lagrange.Proto.Serialization.Converter;
 public abstract class ProtoRepeatedConverter<TCollection, TElement> : ProtoConverter<TCollection> where TCollection : ICollection<TElement>
 {
     private readonly ProtoConverter<TElement> _converter = ProtoTypeResolver.GetConverter<TElement>();
-    
+
+    public override bool ShouldSerialize(TCollection value, bool ignoreDefaultValue) => value is { Count: > 0 };
+
     public override void Write(int field, WireType wireType, ProtoWriter writer, TCollection value)
     {
         int tag = (field << 3) | (byte)wireType;

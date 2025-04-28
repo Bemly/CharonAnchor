@@ -121,13 +121,17 @@ public static partial class ProtoSerializer
             ProtoTypeResolver.Register(converter = new ProtoObjectConverter<T>());
         }
         
+        var objectInfo = converter.ObjectInfo;
         object? boxed = obj; // avoid multiple times of boxing
         if (boxed is null) return;
         
-        foreach (var (tag, info) in converter.ObjectInfo.Fields)
+        foreach (var (tag, info) in objectInfo.Fields)
         {
-            writer.EncodeVarInt(tag);
-            info.Write(writer, boxed);
+            if (info.ShouldSerialize(boxed, objectInfo.IgnoreDefaultFields))
+            {
+                writer.EncodeVarInt(tag);
+                info.Write(writer, boxed);
+            }
         }
         writer.Flush();
     }

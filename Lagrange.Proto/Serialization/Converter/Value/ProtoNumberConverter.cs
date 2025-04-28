@@ -6,18 +6,23 @@ namespace Lagrange.Proto.Serialization.Converter;
 
 internal class ProtoNumberConverter<T> : ProtoConverter<T> where T : unmanaged, INumber<T>
 {
+    public override bool ShouldSerialize(T value, bool ignoreDefaultValue)
+    {
+        return !ignoreDefaultValue && value != default;
+    }
+    
     public override void Write(int field, WireType wireType, ProtoWriter writer, T value)
     {
         switch (wireType)
         {
             case WireType.Fixed32:
-                writer.EncodeFixed32<T>(value);
+                writer.EncodeFixed32(value);
                 break;
             case WireType.Fixed64:
-                writer.EncodeFixed64<T>(value);
+                writer.EncodeFixed64(value);
                 break;
             case WireType.VarInt:
-                writer.EncodeVarInt<T>(value);
+                writer.EncodeVarInt(value);
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(wireType), wireType, null);

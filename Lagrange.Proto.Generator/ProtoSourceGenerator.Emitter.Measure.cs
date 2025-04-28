@@ -69,7 +69,8 @@ public partial class ProtoSourceGenerator
 
         private void EmitLengthStatement(SourceWriter source, int field, ProtoFieldInfo info)
         {
-            var tag = ProtoHelper.EncodeVarInt(field << 3 | (byte)info.WireType);
+            int tag = field << 3 | (byte)info.WireType;
+            var encodedTag = ProtoHelper.EncodeVarInt(tag);
 
             string memberName;
             if (info.TypeSymbol.IsValueType && info.TypeSymbol.IsNullable())
@@ -91,20 +92,20 @@ public partial class ProtoSourceGenerator
             if (parser.IgnoreDefaultFields)
             {
                 expression = info.TypeSymbol.IsValueType
-                    ? GenerateIfNotDefaultExpression($"{ObjectVarName}.{info.Symbol.Name}", $"{tag.Length} + {lengthMember}", "0")
-                    : GenerateIfNotNullExpression($"{ObjectVarName}.{info.Symbol.Name}", $"{tag.Length} + {lengthMember}", "0"); // check with default
+                    ? GenerateIfNotDefaultExpression($"{ObjectVarName}.{info.Symbol.Name}", $"{encodedTag.Length} + {lengthMember}", "0")
+                    : GenerateShouldSerializeExpression(tag, $"{encodedTag.Length} + {lengthMember}", "0"); // check with default
             }
             else
             {
                 if (info.TypeSymbol.IsValueType)
                 {
                     expression = info.TypeSymbol.IsNullable()
-                        ? GenerateIfNotNullExpression($"{ObjectVarName}.{info.Symbol.Name}", $"{tag.Length} + {lengthMember}", "0")
+                        ? GenerateIfNotNullExpression($"{ObjectVarName}.{info.Symbol.Name}", $"{encodedTag.Length} + {lengthMember}", "0")
                         : lengthMember;
                 }
                 else
                 {
-                    expression = GenerateIfNotNullExpression($"{ObjectVarName}.{info.Symbol.Name}", $"{tag.Length} + {lengthMember}", "0");
+                    expression = GenerateShouldSerializeExpression(tag, $"{encodedTag.Length} + {lengthMember}", "0");
                 }
             }
 
@@ -124,9 +125,12 @@ public partial class ProtoSourceGenerator
                 _ => $"{MeasureMethodRef}({field}, {WireTypeTypeRef}.{info.WireType}, {memberName})"
             };
         }
-    }
-
-    private static string GenerateIfNotNullExpression(string variableName, string left, string right) => $"({variableName} != null ? {left} : {right})";
         
-    private static string GenerateIfNotDefaultExpression(string variableName, string left, string right) => $"({variableName} != default ? {left} : {right})";
+        private static string GenerateIfNotNullExpression(string variableName, string left, string right) => $"({variableName} != null ? {left} : {right})";
+        
+        private static string GenerateIfNotDefaultExpression(string variableName, string left, string right) => $"({variableName} != default ? {left} : {right})";
+        
+        private string GenerateShouldSerializeExpression(int tag, string left, string right) =>
+            $"({_fullQualifiedName}.{TypeInfoPropertyName}.Fields[{tag}].{ShouldSerializeTypeRef}({ObjectVarName}, {parser.IgnoreDefaultFields.ToString().ToLower()}) ? {left} : {right})";
+    }
 }
