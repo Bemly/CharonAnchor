@@ -24,6 +24,8 @@ internal class WtExchangeLogic : ILogic, IDisposable
 
     private readonly Timer _queryStateTimer;
 
+    private readonly Timer _exchangeEmpTimer;
+
     private CancellationToken? _token;
 
     private TaskCompletionSource<bool>? _transEmpSource;
@@ -38,6 +40,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
         _heartBeatTimer = new Timer(OnHeartBeat);
         _ssoHeartBeatTimer = new Timer(OnSsoHeartBeat);
         _queryStateTimer = new Timer(OnQueryState);
+        _exchangeEmpTimer = new Timer(OnExchangeEmp);
     }
 
     public async Task<bool> Login(long uin, string? password, CancellationToken token)
@@ -62,7 +65,11 @@ internal class WtExchangeLogic : ILogic, IDisposable
             _context.LogInfo(Tag, "Valid session detected, doing online task");
 
             bool online = await Online();
-            if (online) return true;
+            if (online)
+            {
+                if (_context.Config.Protocol.IsAndroid()) _exchangeEmpTimer.Change(TimeSpan.Zero, TimeSpan.FromDays(1));
+                return true;
+            }
         }
 
         return await ManualLogin(uin, password);
@@ -175,6 +182,8 @@ internal class WtExchangeLogic : ILogic, IDisposable
                 if (result?.State == LoginEventResp.States.Success)
                 {
                     ReadWLoginSigs(result.Tlvs);
+                    
+                    _exchangeEmpTimer.Change(TimeSpan.Zero, TimeSpan.FromDays(1));
                     _context.EventInvoker.PostEvent(new BotLoginEvent(0, null));
                     _context.EventInvoker.PostEvent(new BotRefreshKeystoreEvent(_context.Keystore));
 
@@ -317,6 +326,19 @@ internal class WtExchangeLogic : ILogic, IDisposable
                 break;
         }
     });
+    
+    private void OnExchangeEmp(object? state) => Task.Run(async () =>
+    {
+        var result = await _context.EventContext.SendEvent<ExchangeEmpEventResp>(new ExchangeEmpEventReq(ExchangeEmpEventReq.Command.RefreshByA1));
+        if (result == null) return;
+
+        if (result.RetCode == 0)
+        {
+            ReadWLoginSigs(result.Tlvs);
+            await Online();
+            _context.EventInvoker.PostEvent(new BotRefreshKeystoreEvent(_context.Keystore));
+        }
+    });
 
     private void ReadWLoginSigs(Dictionary<ushort, byte[]> tlvs)
     {
@@ -411,5 +433,6 @@ internal class WtExchangeLogic : ILogic, IDisposable
         _heartBeatTimer.Dispose();
         _ssoHeartBeatTimer.Dispose();
         _queryStateTimer.Dispose();
+        _exchangeEmpTimer.Dispose();
     }
 }

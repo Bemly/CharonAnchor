@@ -98,12 +98,12 @@ internal ref struct Tlv : IDisposable
         _writer.Write(_appInfo.AppId);
         _writer.Write(_appInfo.SubAppId);
         _writer.Write<int>(_appInfo.AppClientVersion); // app client ver
-        _writer.Write(_appInfo.SdkInfo.MainSigMap);
+        _writer.Write((uint)_appInfo.SdkInfo.MainSigMap);
         
         _writer.ExitLengthBarrier<short>(false);
     }
 
-    public void Tlv100Android()
+    public void Tlv100Android(uint mainSigMap)
     {
         WriteTlv(0x100);
 
@@ -112,7 +112,7 @@ internal ref struct Tlv : IDisposable
         _writer.Write(_appInfo.AppId);
         _writer.Write(_appInfo.SubAppId);
         _writer.Write<int>(_appInfo.AppClientVersion); // app client ver
-        _writer.Write(_appInfo.SdkInfo.MainSigMap);
+        _writer.Write(mainSigMap);
         
         _writer.ExitLengthBarrier<short>(false);
     }

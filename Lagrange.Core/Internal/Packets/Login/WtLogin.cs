@@ -172,7 +172,7 @@ internal class WtLogin : StructBase
         tlvs.Tlv001();
         tlvs.Tlv106Pwd(password);
         tlvs.Tlv116();
-        tlvs.Tlv100Android();
+        tlvs.Tlv100Android((uint)AppInfo.SdkInfo.MainSigMap);
         tlvs.Tlv107Android();
         tlvs.Tlv142();
         tlvs.Tlv144Report(false);
@@ -295,7 +295,7 @@ internal class WtLogin : StructBase
         tlvs.Tlv001();
         tlvs.Tlv106EncryptedA1();
         tlvs.Tlv116();
-        tlvs.Tlv100Android();
+        tlvs.Tlv100Android(34607328);
         tlvs.Tlv107Android();
         tlvs.Tlv144Report(true);
         tlvs.Tlv142();

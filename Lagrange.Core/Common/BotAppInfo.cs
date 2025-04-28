@@ -48,7 +48,7 @@ public class BotAppInfo
             SdkVersion = "nt.wtlogin.0.0.1",
             MiscBitMap = 12058620,
             SubSigMap = 0,
-            MainSigMap = 169742560
+            MainSigMap = (SigType)169742560
         },
         AppId = 1600001615,
         SubAppId = 537258424,
@@ -74,7 +74,7 @@ public class BotAppInfo
             SdkVersion = "nt.wtlogin.0.0.1",
             MiscBitMap = 12058620,
             SubSigMap = 0,
-            MainSigMap = 169742560
+            MainSigMap = (SigType)169742560
         },
         AppId = 1600001602,
         SubAppId = 537200848,
@@ -100,7 +100,7 @@ public class BotAppInfo
             SdkVersion = "nt.wtlogin.0.0.1",
             MiscBitMap = 12058620,
             SubSigMap = 0,
-            MainSigMap = 169742560,
+            MainSigMap = (SigType)169742560,
         },
         AppId = 1600001604,
         SubAppId = 537138217,
@@ -126,7 +126,7 @@ public class BotAppInfo
             SdkVersion = "6.0.0.2568",
             MiscBitMap = 150470524,
             SubSigMap = 66560,
-            MainSigMap = 16724722
+            MainSigMap = (SigType)16724722
         },
         AppClientVersion = 0
     };
@@ -147,7 +147,7 @@ public class BotAppInfo
             SdkVersion = "6.0.0.2568",
             MiscBitMap = 150470524,
             SubSigMap = 66560,
-            MainSigMap = 16724722,
+            MainSigMap = (SigType)16724722,
         },
         AppClientVersion = 0
     };
@@ -172,5 +172,31 @@ public class WtLoginSdkInfo
     
     public uint SubSigMap { get; set; }
     
-    public uint MainSigMap { get; set; }
+    public SigType MainSigMap { get; set; }
+}
+
+[Flags]
+public enum SigType
+{
+    WLOGIN_A5 = 1 << 1,
+    WLOGIN_RESERVED = 1 << 4,
+    WLOGIN_STWEB = 1 << 5,
+    WLOGIN_A2 = 1 << 6,
+    WLOGIN_ST = 1 << 7,
+    WLOGIN_LSKEY = 1 << 9,
+    WLOGIN_SKEY = 1 << 12,
+    WLOGIN_SIG64 = 1 << 13,
+    WLOGIN_OPENKEY = 1 << 14,
+    WLOGIN_TOKEN = 1 << 15,
+    WLOGIN_VKEY = 1 << 17,
+    WLOGIN_D2 = 1 << 18,
+    WLOGIN_SID = 1 << 19,
+    WLOGIN_PSKEY = 1 << 20,
+    WLOGIN_AQSIG = 1 << 21,
+    WLOGIN_LHSIG = 1 << 22,
+    WLOGIN_PAYTOKEN = 1 << 23,
+    WLOGIN_PF = 1 << 24,
+    WLOGIN_DA2 = 1 << 25,
+    WLOGIN_QRPUSH = 1 << 26,
+    WLOGIN_PT4Token = 1 << 27
 }
