@@ -7,6 +7,7 @@ using Lagrange.OneBot.Utility;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics.CodeAnalysis;
+using Lagrange.OneBot.Message;
 
 namespace Lagrange.OneBot.Operation;
 
@@ -19,7 +20,7 @@ public sealed class OperationService
 
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "All the types are preserved in the csproj by using the TrimmerRootAssembly attribute")]
     [UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "All the types are preserved in the csproj by using the TrimmerRootAssembly attribute")]
-    public OperationService(BotContext bot, ILogger<OperationService> logger, StorageService storage)
+    public OperationService(BotContext bot, ILogger<OperationService> logger, StorageService storage, MessageService message)
     {
         _bot = bot;
         _logger = logger;
@@ -35,6 +36,7 @@ public sealed class OperationService
         service.AddSingleton(bot);
         service.AddSingleton(logger);
         service.AddSingleton(storage);
+        service.AddSingleton(message);
         service.AddLogging();
 
         foreach (var (_, type) in _operations) service.AddScoped(type);

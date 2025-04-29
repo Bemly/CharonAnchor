@@ -21,8 +21,8 @@ public class RecordEntity : RichMediaEntityBase
         throw new NotImplementedException();
     }
 
-    internal override IMessageEntity? Parse(Elem[] elements, Elem target)
+    internal override IMessageEntity? Parse(List<Elem> elements, Elem target)
     {
-        throw new NotImplementedException();
+        return null;
     }
 }

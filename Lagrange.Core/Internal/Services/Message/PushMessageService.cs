@@ -14,6 +14,6 @@ internal class PushMessageService : BaseService<PushMessageEvent, PushMessageEve
     {
         var msg = ProtoHelper.Deserialize<MsgPush>(input.Span);
         
-        return new ValueTask<PushMessageEvent?>(new PushMessageEvent(input));
+        return new ValueTask<PushMessageEvent?>(new PushMessageEvent(msg, input));
     }
 }

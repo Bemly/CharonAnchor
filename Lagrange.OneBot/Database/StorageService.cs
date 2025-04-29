@@ -1,8 +1,11 @@
 using System.Data.Common;
 using Dapper;
 using Lagrange.Core;
+using Lagrange.Core.Common.Entity;
+using Lagrange.Core.Events.EventArgs;
 using Lagrange.Core.Message;
 using Microsoft.Extensions.Logging;
+using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace Lagrange.OneBot.Database;
 
@@ -25,21 +28,22 @@ public partial class StorageService
         _database.Execute(FileRecord.CreateStatement);
     }
 
-    public async Task SaveMessage(BotMessage message)
+    public async Task SaveMessage(BotMessageEvent @event)
     {
+        var message = @event.Message;
         var record = new MessageRecord
         {
             SelfUin = _context.BotUin,
             MessageId = CalcMessageHash(message.MessageId, message.Sequence),
             Sequence = message.Sequence,
             ClientSequence = message.ClientSequence,
+            ContactUin = 0,
+            GroupUin = (message.Contact as BotGroupMember)?.Group.GroupUin ?? 0,
             Random = message.Random,
-            ContactUin = message.Contact.Uin,
-            GroupUin = message.Group?.GroupUin ?? 0,
-            Data = []
+            Data = @event.RawMessage.ToArray()
         };
         
-        const string sql = "INSERT INTO MessageRecord VALUES (@SelfUin, @MessageId, @Sequence, @ClientSequence, @ContactUin, @GroupUin, @Random, @Data)";
+        const string sql = "INSERT INTO MessageRecord VALUES (@SelfUin, @MessageId, @ContactUin, @GroupUin, @Sequence, @ClientSequence, @Random, @Data)";
         await _database.ExecuteAsync(sql, record);
         Logger.StorageServiceInfo(_logger, record.MessageId, record.ContactUin, record.GroupUin);
     }
@@ -50,7 +54,7 @@ public partial class StorageService
         var record = await _database.QuerySingleOrDefaultAsync<MessageRecord>(sql, new { SelfUin = _context.BotUin, MessageId = CalcMessageHash(messageId, seq) });
         if (record == null) return null;
 
-        return _context.MessagePacker.Parse(record.Data);
+        return await _context.MessagePacker.Parse(record.Data);
     }
     
     public async Task<BotMessage?> GetMessageBySequence(long groupUin, int seq)
@@ -59,7 +63,7 @@ public partial class StorageService
         var record = await _database.QuerySingleOrDefaultAsync<MessageRecord>(sql, new { SelfUin = _context.BotUin, GroupUin = groupUin, Sequence = seq });
         if (record == null) return null;
 
-        return _context.MessagePacker.Parse(record.Data);
+        return await _context.MessagePacker.Parse(record.Data);
     }
     
     public async Task<bool> ClearMessage()

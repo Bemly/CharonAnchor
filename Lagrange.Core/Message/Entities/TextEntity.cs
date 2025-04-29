@@ -17,8 +17,10 @@ public class TextEntity(string text) : IMessageEntity
         throw new NotImplementedException();
     }
     
-    IMessageEntity? IMessageEntity.Parse(Elem[] elements, Elem target)
+    IMessageEntity? IMessageEntity.Parse(List<Elem> elements, Elem target)
     {
-        throw new NotImplementedException();
+        return target.Text is { Attr6Buf: null } or { Attr6Buf.Length: 0 }
+            ? new TextEntity(target.Text.TextMsg) 
+            : null;
     }
 }

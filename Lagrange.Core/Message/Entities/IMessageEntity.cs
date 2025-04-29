@@ -10,5 +10,5 @@ public interface IMessageEntity
 
     internal Elem[] Build();
 
-    internal IMessageEntity? Parse(Elem[] elements, Elem target);
+    internal IMessageEntity? Parse(List<Elem> elements, Elem target);
 }

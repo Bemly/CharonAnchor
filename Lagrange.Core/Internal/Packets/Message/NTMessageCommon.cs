@@ -15,15 +15,15 @@ internal partial class CommonMessage
 [ProtoPackable]
 internal partial class ContentHead
 {
-    [ProtoMember(1)] public long Type { get; set; }
+    [ProtoMember(1)] public int Type { get; set; }
     
-    [ProtoMember(2)] public long SubType { get; set; }
+    [ProtoMember(2)] public int SubType { get; set; }
     
     [ProtoMember(3)] public int C2CCommand { get; set; }
     
-    [ProtoMember(4)] public long Random { get; set; }
+    [ProtoMember(4)] public int Random { get; set; }
     
-    [ProtoMember(5)] public long MsgSeq { get; set; }
+    [ProtoMember(5)] public int Sequence { get; set; }
     
     [ProtoMember(6)] public long Time { get; set; }
     
@@ -35,7 +35,7 @@ internal partial class ContentHead
     
     [ProtoMember(10)] public int AutoReply { get; set; }
     
-    [ProtoMember(11)] public long NtMsgSeq { get; set; }
+    [ProtoMember(11)] public int ClientSequence { get; set; }
     
     [ProtoMember(12)] public ulong MsgUid { get; set; }
 }
@@ -94,6 +94,16 @@ internal partial class MessageBody
 internal partial class RichText
 {
     [ProtoMember(1)] public Attr Attr { get; set; } = new();
+    
+    [ProtoMember(2)] public List<Elem> Elems { get; set; } = [];
+    
+    [ProtoMember(3)] public NotOnlineFile NotOnlineFile { get; set; } = new();
+    
+    [ProtoMember(4)] public Ptt Ptt { get; set; } = new();
+    
+    [ProtoMember(5)] public TmpPtt TmpPtt { get; set; } = new();
+    
+    [ProtoMember(6)] public Trans211TmpMsg Trans211TmpMsg { get; set; } = new();
 }
 
 [ProtoPackable]
@@ -118,4 +128,136 @@ internal partial class Attr
     [ProtoMember(9)] public string FontName { get; set; } = "Times New Roman";
 
     [ProtoMember(10)] public byte[] ReserveData { get; set; } = [];
+}
+
+[ProtoPackable]
+internal partial class NotOnlineFile
+{
+    [ProtoMember(1)] public uint FileType { get; set; }
+    
+    [ProtoMember(2)] public byte[] Sig { get; set; } = [];
+    
+    [ProtoMember(3)] public byte[] FileUuid { get; set; } = [];
+    
+    [ProtoMember(4)] public byte[] FileMd5 { get; set; } = [];
+    
+    [ProtoMember(5)] public byte[] FileName { get; set; } = [];
+    
+    [ProtoMember(6)] public ulong FileSize { get; set; }
+    
+    [ProtoMember(7)] public byte[] Note { get; set; } = [];
+    
+    [ProtoMember(8)] public uint Reserved { get; set; }
+    
+    [ProtoMember(9)] public uint SubCmd { get; set; }
+    
+    [ProtoMember(10)] public uint MicroCloud { get; set; }
+    
+    [ProtoMember(11)] public List<byte[]> FileUrls { get; set; } = [];
+    
+    [ProtoMember(12)] public uint DownloadFlag { get; set; }
+    
+    [ProtoMember(50)] public uint DangerLevel { get; set; }
+    
+    [ProtoMember(51)] public uint LifeTime { get; set; }
+    
+    [ProtoMember(52)] public uint UploadTime { get; set; }
+    
+    [ProtoMember(53)] public uint AbsFileType { get; set; }
+    
+    [ProtoMember(54)] public uint ClientType { get; set; }
+    
+    [ProtoMember(55)] public uint ExpireTime { get; set; }
+    
+    [ProtoMember(56)] public byte[] PbReserve { get; set; } = [];
+    
+    [ProtoMember(57)] public string FileIdCrcMedia { get; set; } = string.Empty;
+}
+
+[ProtoPackable]
+internal partial class Ptt
+{
+    [ProtoMember(1)] public uint FileType { get; set; }
+
+    [ProtoMember(2)] public ulong SrcUin { get; set; }
+
+    [ProtoMember(3)] public byte[] FileUuid { get; set; } = [];
+
+    [ProtoMember(4)] public byte[] FileMd5 { get; set; } = [];
+
+    [ProtoMember(5)] public byte[] FileName { get; set; } = [];
+
+    [ProtoMember(6)] public uint FileSize { get; set; }
+
+    [ProtoMember(7)] public byte[] Reserve { get; set; } = [];
+
+    [ProtoMember(8)] public uint FileId { get; set; }
+
+    [ProtoMember(9)] public uint ServerIp { get; set; }
+
+    [ProtoMember(10)] public uint ServerPort { get; set; }
+
+    [ProtoMember(11)] public bool Valid { get; set; }
+
+    [ProtoMember(12)] public byte[] Signature { get; set; } = [];
+
+    [ProtoMember(13)] public byte[] Shortcut { get; set; } = [];
+
+    [ProtoMember(14)] public byte[] FileKey { get; set; } = [];
+
+    [ProtoMember(15)] public uint MagicPttIndex { get; set; }
+
+    [ProtoMember(16)] public uint VoiceSwitch { get; set; }
+
+    [ProtoMember(17)] public byte[] PttUrl { get; set; } = [];
+
+    [ProtoMember(18)] public byte[] GroupFileKey { get; set; } = [];
+
+    [ProtoMember(19)] public uint Time { get; set; }
+
+    [ProtoMember(20)] public byte[] DownPara { get; set; } = [];
+
+    [ProtoMember(29)] public uint Format { get; set; }
+
+    [ProtoMember(30)] public byte[] PbReserve { get; set; } = [];
+
+    [ProtoMember(31)] public List<byte[]> PttUrls { get; set; } = [];
+
+    [ProtoMember(32)] public uint DownloadFlag { get; set; }
+}
+
+[ProtoPackable]
+internal partial class TmpPtt
+{
+    [ProtoMember(1)] public uint FileType { get; set; }
+
+    [ProtoMember(2)] public byte[] FileUuid { get; set; } = [];
+
+    [ProtoMember(3)] public byte[] FileMd5 { get; set; } = [];
+
+    [ProtoMember(4)] public byte[] FileName { get; set; } = [];
+
+    [ProtoMember(5)] public uint FileSize { get; set; }
+
+    [ProtoMember(6)] public uint PttTimes { get; set; }
+
+    [ProtoMember(7)] public uint UserType { get; set; }
+
+    [ProtoMember(8)] public uint PttTransFlag { get; set; }
+
+    [ProtoMember(9)] public uint BusiType { get; set; }
+
+    [ProtoMember(10)] public ulong MsgId { get; set; }
+
+    [ProtoMember(30)] public byte[] PbReserve { get; set; } = [];
+
+    [ProtoMember(31)] public byte[] PttEncodeData { get; set; } = [];
+}
+
+[ProtoPackable]
+internal partial class Trans211TmpMsg
+{
+    [ProtoMember(1)] public byte[] MsgBody { get; set; } = [];
+
+    [ProtoMember(2)] public uint C2CCmd { get; set; }
 }

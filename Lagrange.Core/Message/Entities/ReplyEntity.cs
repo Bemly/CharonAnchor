@@ -25,8 +25,8 @@ public class ReplyEntity : IMessageEntity
         throw new NotImplementedException();
     }
 
-    IMessageEntity? IMessageEntity.Parse(Elem[] elements, Elem target)
+    IMessageEntity? IMessageEntity.Parse(List<Elem> elements, Elem target)
     {
-        throw new NotImplementedException();
+        return null;
     }
 }

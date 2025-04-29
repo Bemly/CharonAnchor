@@ -75,7 +75,7 @@ internal class NTV2RichMedia
                 RequestId = 1,
                 Command = cmd
             },
-            Scene = BuildSceneInfo(@struct.Contact, @struct.Group, request, business),
+            Scene = BuildSceneInfo(@struct.Contact, request, business),
             Client = new ClientMeta
             {
                 AgentType = 2
@@ -83,7 +83,7 @@ internal class NTV2RichMedia
         };
     }
     
-    private static SceneInfo BuildSceneInfo(BotContact contact, BotGroup? group, uint requestType, uint businessType)
+    private static SceneInfo BuildSceneInfo(BotContact contact, uint requestType, uint businessType)
     {
         var sceneInfo = new SceneInfo
         {
@@ -91,11 +91,11 @@ internal class NTV2RichMedia
             BusinessType = businessType,
         };
         
-        if (group != null)
+        if (contact is BotGroupMember member)
         {
             sceneInfo.Group = new GroupInfo
             {
-                GroupUin = group.GroupUin,
+                GroupUin = member.Group.GroupUin,
             };
         }
         else

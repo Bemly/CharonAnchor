@@ -1,8 +1,10 @@
+using Lagrange.Core.Internal.Packets.Message;
+
 namespace Lagrange.Core.Internal.Events.Message;
 
-internal class PushMessageEvent(ReadOnlyMemory<byte> raw) : ProtocolEvent
+internal class PushMessageEvent(MsgPush msg, ReadOnlyMemory<byte> raw) : ProtocolEvent
 {
-    public PushMessageEvent() : this(ReadOnlyMemory<byte>.Empty) { }
+    public MsgPush MsgPush { get; } = msg;
 
     internal ReadOnlyMemory<byte> Raw { get; } = raw;
 }

@@ -10,10 +10,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="Internal\Packets\Message\Elements\" />
-    </ItemGroup>
-
-    <ItemGroup>
       <ProjectReference Include="..\Lagrange.Proto.Generator\Lagrange.Proto.Generator.csproj" PrivateAssets="all" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
       <ProjectReference Include="..\Lagrange.Proto\Lagrange.Proto.csproj" />
     </ItemGroup>
