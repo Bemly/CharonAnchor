@@ -8,8 +8,6 @@ public partial class BotMessage
 {
     public BotContact Contact { get; }
     
-    public BotGroup? Group { get; }
-
     public MessageType Type => Contact switch
     {
         BotGroupMember _ => MessageType.Group,
@@ -30,9 +28,8 @@ public partial class BotMessage
     
     internal int ClientSequence { get; set; } = new Random().Next(100000, 999999);
     
-    internal BotMessage(BotContact contact, BotGroup? group)
+    internal BotMessage(BotContact contact)
     {
         Contact = contact;
-        Group = group;
     }
 }

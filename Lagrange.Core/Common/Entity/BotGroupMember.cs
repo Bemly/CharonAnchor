@@ -1,6 +1,7 @@
 namespace Lagrange.Core.Common.Entity;
 
 public class BotGroupMember(
+    BotGroup group,
     long uin,
     string uid,
     string nickname,
@@ -12,6 +13,8 @@ public class BotGroupMember(
     DateTime lastMsgTime,
     DateTime shutUpTimestamp) : BotContact
 {
+    public BotGroup Group { get; } = group;
+    
     public override long Uin { get; } = uin;
 
     public override string Uid { get; } = uid;
