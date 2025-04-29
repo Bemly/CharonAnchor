@@ -34,7 +34,7 @@ public partial class OnlineCaptchaResolver(ILogger<OnlineCaptchaResolver> logger
 
     public async Task<(string, string)> ResolveCaptchaAsync(string url, CancellationToken token)
     {
-        string solveUrl = string.Format(Url, url.Split('?')[1]);
+        string solveUrl = string.Format(Url, url.Split('?')[1].Replace("uin=0", $"uin={context.BotUin}"));
         QrCodeHelper.Output(solveUrl, false);
         Log.Captcha(logger, solveUrl);
         
