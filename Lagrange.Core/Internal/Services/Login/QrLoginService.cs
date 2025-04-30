@@ -65,16 +65,21 @@ internal class QrLoginService : BaseService<ProtocolEvent, ProtocolEvent>
             if (code2dCmd == 0x13)
             {
                 var tlvs = ProtocolHelper.TlvUnPack(ref reader);
-                string message = Encoding.UTF8.GetString(tlvs[0x03]);
-                string location = Encoding.UTF8.GetString(tlvs[0x05]);
-                
+
+                string message;
                 if (tlvs.TryGetValue(0xD0, out var qrloginTlv))
                 {
                     var qrlogin = ProtoHelper.Deserialize<QrLogin>(qrloginTlv);
                     state = (byte)qrlogin.ScanResult;
 
-                    if (qrlogin.RejectInfo?.Tips is { } tips) message = tips;
+                    message = qrlogin.RejectInfo?.Tips ?? Encoding.UTF8.GetString(tlvs[0x03]);
                 }
+                else
+                {
+                    message = string.Empty;
+                }
+                
+                string location = Encoding.UTF8.GetString(tlvs[0x05]);
                 
                 string? device = null;
                 if (tlvs.TryGetValue(0xD1, out var deviceTlv))
