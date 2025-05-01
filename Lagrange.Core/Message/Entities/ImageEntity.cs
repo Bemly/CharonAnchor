@@ -1,6 +1,9 @@
+using System.Numerics;
+using Lagrange.Core.Internal.Events.Message;
 using Lagrange.Core.Internal.Packets.Message;
 using Lagrange.Core.Internal.Packets.Service;
 using Lagrange.Core.Utility;
+using Lagrange.Core.Utility.Extension;
 
 namespace Lagrange.Core.Message.Entities;
 
@@ -8,14 +11,22 @@ public class ImageEntity : RichMediaEntityBase
 {
     internal override Lazy<Stream>? Stream { get; }
     
+    public Vector2 ImageSize { get; set; }
+    
     public override Task Preprocess(BotContext context, BotMessage message)
     {
         throw new NotImplementedException();
     }
 
-    public override Task Postprocess(BotContext context, BotMessage message)
+    public override async Task Postprocess(BotContext context, BotMessage message)
     {
-        throw new NotImplementedException();
+        NTV2RichMediaDownloadEventResp? result = message.IsGroup()
+            ? await context.EventContext.SendEvent<ImageGroupDownloadEventResp>(new ImageGroupDownloadEventReq(message, this))
+            : await context.EventContext.SendEvent<ImageDownloadEventResp>(new ImageDownloadEventReq(message, this));
+
+        if (result == null) return;
+
+        FileUrl = result.Url;
     }
 
     internal override Elem[] Build()
@@ -27,7 +38,14 @@ public class ImageEntity : RichMediaEntityBase
     {
         if (target.CommonElem is { BusinessType: 10 or 20 } commonElem)
         {
-            MsgInfo = ProtoHelper.Deserialize<MsgInfo>(commonElem.PbElem);
+            var msgInfo = ProtoHelper.Deserialize<MsgInfo>(commonElem.PbElem);
+            var info = msgInfo.MsgInfoBody[0].Index.Info;
+            
+            return new ImageEntity
+            {
+                MsgInfo = msgInfo,
+                ImageSize = new Vector2(info.Width, info.Height)
+            };
         }
         
         return null;

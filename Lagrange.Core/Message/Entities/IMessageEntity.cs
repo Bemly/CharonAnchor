@@ -4,9 +4,9 @@ namespace Lagrange.Core.Message.Entities;
 
 public interface IMessageEntity
 {
-    internal Task Preprocess(BotContext context, BotMessage message);
+    internal Task Preprocess(BotContext context, BotMessage message) => Task.CompletedTask;
     
-    internal Task Postprocess(BotContext context, BotMessage message);
+    internal Task Postprocess(BotContext context, BotMessage message) => Task.CompletedTask;
 
     internal Elem[] Build();
 

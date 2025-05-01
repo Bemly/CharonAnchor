@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Lagrange.Core.Internal.Packets.Message;
 using Lagrange.Core.Internal.Packets.Service;
 
@@ -5,11 +6,32 @@ namespace Lagrange.Core.Message.Entities;
 
 public abstract class RichMediaEntityBase : IMessageEntity
 {
-    internal MsgInfo? MsgInfo { get; private protected set; }
+    private MsgInfo? _msgInfo;
+    
+    internal MsgInfo? MsgInfo
+    {
+        get => _msgInfo;
+        private protected set
+        {
+            Debug.Assert(value != null);
+            
+            var fileInfo = value.MsgInfoBody[0].Index.Info;
+            FileMd5 = fileInfo.FileHash;
+            FileSha1 = fileInfo.FileSha1;
+            FileSize = fileInfo.FileSize;
+            _msgInfo = value;
+        } 
+    }
     
     internal abstract Lazy<Stream>? Stream { get; }
     
-    public string Url { get; protected set; } = string.Empty;
+    public string FileUrl { get; internal set; } = string.Empty;
+    
+    public string FileSha1 { get; internal set; } = string.Empty;
+    
+    public uint FileSize { get; internal set; }
+
+    public string FileMd5 { get; internal set; } = string.Empty;
     
     public abstract Task Preprocess(BotContext context, BotMessage message);
 

@@ -93,6 +93,7 @@ internal class NTV2RichMedia
         
         if (contact is BotGroupMember member)
         {
+            sceneInfo.SceneType = 2;
             sceneInfo.Group = new GroupInfo
             {
                 GroupUin = member.Group.GroupUin,
@@ -100,6 +101,7 @@ internal class NTV2RichMedia
         }
         else
         {
+            sceneInfo.SceneType = 1;
             sceneInfo.C2C = new C2CUserInfo
             {
                 TargetUid = contact.Uid,

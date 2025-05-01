@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using Lagrange.Core.Common.Entity;
 using Lagrange.Core.Internal.Packets.Message;
 using Lagrange.Core.Message.Entities;
 using Lagrange.Core.Utility;
@@ -38,9 +39,11 @@ internal class MessagePacker
     public async Task<BotMessage> Parse(MsgPush msgPush)
     {
         var contentHead = msgPush.CommonMessage.ContentHead;
+        var routingHead = msgPush.CommonMessage.RoutingHead;
         var elems = msgPush.CommonMessage.MessageBody.RichText.Elems;
-        
-        var message = new BotMessage(null)
+
+        var contact = await ResolveContact(contentHead.Type, routingHead);
+        var message = new BotMessage(contact)
         {
             MessageId = contentHead.MsgUid, // MsgUid & 0xFFFFFFFF are the same to random
             Time = DateTimeOffset.FromUnixTimeSeconds(contentHead.Time).DateTime,
@@ -66,6 +69,29 @@ internal class MessagePacker
         }
 
         return message;
+    }
+
+    private async Task<BotContact> ResolveContact(int type, RoutingHead routingHead)
+    {
+        switch (type)
+        {
+            case 166:
+                var friend = await _context.CacheContext.ResolveFriend(routingHead.FromUin);
+                if (friend == null)
+                {
+                    ArgumentNullException.ThrowIfNull(friend); // TODO: Log
+                }
+
+                return friend;
+            case 141:
+                return new BotStranger(routingHead.FromUin, "", routingHead.FromUid)
+                {
+                    Source = routingHead.CommonC2C.FromTinyId
+                };
+            case 82:
+            default:
+                throw new NotImplementedException();
+        }
     }
 
     public Task<ReadOnlyMemory<byte>> Build(BotMessage message)

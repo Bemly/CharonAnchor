@@ -55,7 +55,23 @@ internal partial class RoutingHead
 
     [ProtoMember(6)] public string ToUid { get; set; } = string.Empty;
     
+    [ProtoMember(7)] public CommonC2C CommonC2C { get; set; } = new();
+    
     [ProtoMember(8)] public CommonGroup Group { get; set; } = new();
+}
+
+[ProtoPackable]
+internal partial class CommonC2C
+{
+    [ProtoMember(1)] public int C2CType { get; set; } // 2 for group, which is the only type that NTQQ Supports
+    
+    [ProtoMember(2)] public int ServiceType { get; set; }
+
+    [ProtoMember(3)] public byte[] Sig { get; set; } = [];
+    
+    [ProtoMember(4)] public long FromTinyId { get; set; }
+    
+    [ProtoMember(5)] public long ToTinyId { get; set; }
 }
 
 [ProtoPackable]

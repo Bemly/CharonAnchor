@@ -8,10 +8,6 @@ public class TextEntity(string text) : IMessageEntity
 
     public TextEntity() : this(string.Empty) { }
     
-    Task IMessageEntity.Preprocess(BotContext context, BotMessage message) => Task.CompletedTask;
-
-    Task IMessageEntity.Postprocess(BotContext context, BotMessage message) => Task.CompletedTask;
-    
     Elem[] IMessageEntity.Build()
     {
         throw new NotImplementedException();
