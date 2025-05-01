@@ -1,4 +1,7 @@
 using Lagrange.Core.Internal.Events;
+using Lagrange.Core.Internal.Packets.Service;
+using Lagrange.Core.Utility;
+using Lagrange.Proto;
 
 namespace Lagrange.Core.Internal.Services;
 
@@ -8,18 +11,35 @@ namespace Lagrange.Core.Internal.Services;
 internal abstract class OidbService<TEventReq, TEventResp, TRequest, TResponse> : BaseService<TEventReq, TEventResp> 
     where TEventReq : ProtocolEvent 
     where TEventResp : ProtocolEvent
+    where TRequest : IProtoSerializable<TRequest>
+    where TResponse : IProtoSerializable<TResponse>
 {
-    protected abstract Task<ProtocolEvent?> ProcessRequest(TRequest request, BotContext context);
+    private protected abstract uint Command { get; }
     
-    protected abstract Task<TResponse> ProcessResponse(TResponse response, BotContext context);
+    private protected abstract uint Service { get; }
+
+    private string Tag => $"OidbSvcTrpcTcp.0x{Command:X}_{Service}";
     
-    protected override ValueTask<TEventResp?> Parse(ReadOnlyMemory<byte> input, BotContext context)
+    private protected abstract Task<TRequest> ProcessRequest(TEventReq request, BotContext context);
+    
+    private protected abstract Task<TEventResp> ProcessResponse(TResponse response, BotContext context);
+    
+    protected override async ValueTask<TEventResp?> Parse(ReadOnlyMemory<byte> input, BotContext context)
     {
-        throw new NotImplementedException();
+        var oidb = ProtoHelper.Deserialize<Oidb>(input.Span);
+        if (oidb.Result != 0)
+        {
+            context.LogWarning(Tag, $"Error: {oidb.Result}, Message: {oidb.Message}");
+            return null;
+        }
+        
+        return await ProcessResponse(ProtoHelper.Deserialize<TResponse>(oidb.Body.Span), context);
     }
 
-    protected override ValueTask<ReadOnlyMemory<byte>> Build(TEventReq input, BotContext context)
+    protected override async ValueTask<ReadOnlyMemory<byte>> Build(TEventReq input, BotContext context)
     {
-        throw new NotImplementedException();
+        var request = await ProcessRequest(input, context);
+        var proto = ProtoHelper.Serialize(request);
+        return ProtoHelper.Serialize(new Oidb { Command = Command, Service = Service, Body = proto });
     }
 }
