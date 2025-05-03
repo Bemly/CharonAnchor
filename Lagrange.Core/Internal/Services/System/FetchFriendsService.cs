@@ -25,7 +25,7 @@ internal class FetchFriendsService : OidbService<FetchFriendsEventReq, FetchFrie
             ProxySeq = int.MaxValue,
             RequestBiz =
             [
-                new IncPullRequestBiz { BizType = 1, BizData = new IncPullRequestBizBusi { ExtBusi = [103, 102, 20002, 27394] } },
+                new IncPullRequestBiz { BizType = 1, BizData = new IncPullRequestBizBusi { ExtBusi = [103, 102, 20002, 27394, 20009, 20037] } },
                 new IncPullRequestBiz { BizType = 4, BizData = new IncPullRequestBizBusi { ExtBusi = [100, 101, 102] } }
             ],
             ExtSnsFlagKey = [13578, 13579, 13573, 13572, 13568],
@@ -45,8 +45,12 @@ internal class FetchFriendsService : OidbService<FetchFriendsEventReq, FetchFrie
             string personalSign = f.SubBiz[1].Data[102];
             string remark = f.SubBiz[1].Data[103];
             string qid = f.SubBiz[1].Data[27394];
-
-            var friend = new BotFriend(f.Uin, nickname, f.Uid, remark, personalSign, qid, categoryMap[f.CategoryId]);
+            
+            var friend = new BotFriend(f.Uin, nickname, f.Uid, remark, personalSign, qid, categoryMap[f.CategoryId])
+            {
+                Age = f.SubBiz[1].NumData[20037], 
+                Gender = (BotGender)f.SubBiz[1].NumData[20009]
+            };
             friends.Add(friend);
         }
         

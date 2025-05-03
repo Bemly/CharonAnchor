@@ -75,6 +75,8 @@ internal partial class IncPullResponseFriend
 [ProtoPackable]
 internal partial class IncPullResponseSubBiz
 {
+    [ProtoMember(1)] public Dictionary<int, int> NumData { get; set; }
+    
     [ProtoMember(2)] public Dictionary<int, string> Data { get; set; }
 }
 

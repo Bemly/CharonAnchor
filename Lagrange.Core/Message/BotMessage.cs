@@ -8,6 +8,8 @@ public partial class BotMessage
 {
     public BotContact Contact { get; }
     
+    public BotGroup? Group { get; }
+    
     public MessageType Type => Contact switch
     {
         BotGroupMember _ => MessageType.Group,
@@ -22,14 +24,15 @@ public partial class BotMessage
     
     internal ulong MessageId { get; set; } = 0;
     
-    internal int Random { get; set; } = System.Random.Shared.Next();
+    internal uint Random { get; set; } = (uint)System.Random.Shared.Next();
     
-    internal int Sequence { get; set; } = 0;
+    internal int Sequence { get; set; }
     
     internal int ClientSequence { get; set; } = new Random().Next(100000, 999999);
     
-    internal BotMessage(BotContact contact)
+    internal BotMessage(BotContact contact, BotGroup? group = null)
     {
         Contact = contact;
+        Group = group;
     }
 }

@@ -11,8 +11,15 @@ public class MessageBuilder
         foreach (var entity in Entities)
         {
             await entity.Preprocess(context, message);
-            // TODO: Elem
         }
+        
+        message.Entities.AddRange(Entities);
+    }
+
+    public MessageBuilder Text(string text)
+    {
+        Entities.Add(new TextEntity(text));
+        return this;
     }
     
     public static MessageBuilder operator +(MessageBuilder builder, IMessageEntity entity)

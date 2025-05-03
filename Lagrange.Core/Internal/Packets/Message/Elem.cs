@@ -6,11 +6,11 @@ namespace Lagrange.Core.Internal.Packets.Message;
 [ProtoPackable]
 internal partial class Elem
 {
-    [ProtoMember(1)] public Text Text { get; set; } 
+    [ProtoMember(1)] public Text? Text { get; set; } 
     
-    [ProtoMember(4)] public NotOnlineImage NotOnlineImage { get; set; }
+    [ProtoMember(4)] public NotOnlineImage? NotOnlineImage { get; set; }
     
-    [ProtoMember(53)] public CommonElem CommonElem { get; set; }
+    [ProtoMember(53)] public CommonElem? CommonElem { get; set; }
 }
 
 [ProtoPackable]

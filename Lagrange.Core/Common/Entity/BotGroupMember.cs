@@ -20,6 +20,10 @@ public class BotGroupMember(
     public override string Uid { get; } = uid;
 
     public override string Nickname { get; } = nickname;
+    
+    public int Age { get; init; }
+    
+    public BotGender Gender { get; init; }
 
     public GroupMemberPermission Permission { get; } = permission;
 

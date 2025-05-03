@@ -13,6 +13,8 @@ internal class MessagePacker
     private readonly BotContext _context;
     
     private readonly List<IMessageEntity> _factory;
+
+    private int _clientSequence;
     
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "All the types are preserved in the csproj by using the TrimmerRootAssembly attribute")]
     [UnconditionalSuppressMessage("Trimming", "IL2062", Justification = "All the types are preserved in the csproj by using the TrimmerRootAssembly attribute")]
@@ -43,7 +45,7 @@ internal class MessagePacker
         var elems = msgPush.CommonMessage.MessageBody.RichText.Elems;
 
         var contact = await ResolveContact(contentHead.Type, routingHead);
-        var message = new BotMessage(contact)
+        var message = new BotMessage(contact, (contact as BotGroupMember)?.Group)
         {
             MessageId = contentHead.MsgUid, // MsgUid & 0xFFFFFFFF are the same to random
             Time = DateTimeOffset.FromUnixTimeSeconds(contentHead.Time).DateTime,
@@ -89,13 +91,51 @@ internal class MessagePacker
                     Source = routingHead.CommonC2C.FromTinyId
                 };
             case 82:
+                return null!;
             default:
                 throw new NotImplementedException();
         }
     }
 
-    public Task<ReadOnlyMemory<byte>> Build(BotMessage message)
+    public ReadOnlyMemory<byte> Build(BotMessage message)
     {
-        throw new NotImplementedException();
+        var routingHead = new SendRoutingHead();
+
+        switch (message.Contact)
+        {
+            case BotFriend friend:
+                routingHead.C2C = new C2C { PeerUin = friend.Uin, PeerUid = friend.Uid };
+                break;
+            case BotStranger:
+                throw new InvalidOperationException();
+        }
+        
+        if (message.Group != null)
+        {
+            routingHead.Group = new Grp { GroupUin = message.Group.GroupUin };
+        }
+
+        var messageBody = new MessageBody();
+        foreach (var entity in message.Entities)
+        {
+            if (entity.Build() is not { } elem) continue;
+            messageBody.RichText.Elems.AddRange(elem);
+        }
+
+        var proto = new PbSendMsgReq
+        {
+            RoutingHead = routingHead,
+            ContentHead = new SendContentHead
+            {
+                PkgNum = 1,
+                PkgIndex = 0,
+                DivSeq = 0,
+                AutoReply = 0
+            },
+            MessageBody = messageBody,
+            ClientSequence = message.ClientSequence,
+            Random = message.Random,
+        };
+        return ProtoHelper.Serialize(proto);
     }
 }

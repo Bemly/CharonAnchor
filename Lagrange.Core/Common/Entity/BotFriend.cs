@@ -7,6 +7,10 @@ public class BotFriend(long uin, string nickname, string uid, string remarks, st
     public override string Nickname { get; } = nickname;
 
     public override string Uid { get; } = uid;
+    
+    public int Age { get; init; }
+    
+    public BotGender Gender { get; init; }
 
     public string Remarks { get; } = remarks;
 

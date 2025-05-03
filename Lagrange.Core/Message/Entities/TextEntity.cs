@@ -10,13 +10,16 @@ public class TextEntity(string text) : IMessageEntity
     
     Elem[] IMessageEntity.Build()
     {
-        throw new NotImplementedException();
+        return
+        [
+            new Elem { Text = new Text { TextMsg = Text } }
+        ];
     }
     
     IMessageEntity? IMessageEntity.Parse(List<Elem> elements, Elem target)
     {
-        return target.Text is { Attr6Buf: null } or { Attr6Buf.Length: 0 }
-            ? new TextEntity(target.Text.TextMsg) 
+        return target.Text is ({ Attr6Buf: null } or { Attr6Buf.Length: 0 }) and ({ PbReserve: null } or { PbReserve.Length: 0 })
+            ? new TextEntity(target.Text.TextMsg)
             : null;
     }
 }
