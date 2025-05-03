@@ -37,7 +37,7 @@ public partial class StorageService
             MessageId = CalcMessageHash(message.MessageId, message.Sequence),
             Sequence = message.Sequence,
             ClientSequence = message.ClientSequence,
-            ContactUin = 0,
+            ContactUin = message.Contact.Uin,
             GroupUin = (message.Contact as BotGroupMember)?.Group.GroupUin ?? 0,
             Random = message.Random,
             Data = @event.RawMessage.ToArray()
@@ -45,7 +45,8 @@ public partial class StorageService
         
         const string sql = "INSERT INTO MessageRecord VALUES (@SelfUin, @MessageId, @ContactUin, @GroupUin, @Sequence, @ClientSequence, @Random, @Data)";
         await _database.ExecuteAsync(sql, record);
-        Logger.StorageServiceInfo(_logger, record.MessageId, record.ContactUin, record.GroupUin);
+        if (record.GroupUin == 0) Logger.StorageServiceInfo(_logger, record.MessageId, record.ContactUin);
+        else Logger.StorageServiceInfoGroup(_logger, record.MessageId, record.ContactUin, record.GroupUin);
     }
     
     public async Task<BotMessage?> GetMessage(ulong messageId, int seq)
@@ -104,7 +105,10 @@ public partial class StorageService
     
     private static partial class Logger 
     {
-        [LoggerMessage(0, LogLevel.Debug, "Message {MessageId} from {ContactUin} to {GroupUin} saved", EventName = "MessageSaved")]
-        public static partial void StorageServiceInfo(ILogger logger, int messageId, long contactUin, long groupUin);
+        [LoggerMessage(0, LogLevel.Debug, "Message {MessageId} from {ContactUin} to {GroupUin} saved", EventName = "GroupMessageSaved")]
+        public static partial void StorageServiceInfoGroup(ILogger logger, int messageId, long contactUin, long groupUin);
+        
+        [LoggerMessage(1, LogLevel.Debug, "Message {MessageId} from {ContactUin}", EventName = "MessageSaved")]
+        public static partial void StorageServiceInfo(ILogger logger, int messageId, long contactUin);
     }
 }

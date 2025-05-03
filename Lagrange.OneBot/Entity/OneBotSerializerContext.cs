@@ -6,7 +6,9 @@ using System.Text.Json.Serialization;
 using Lagrange.Core.Common;
 using Lagrange.Core.Common.Response;
 using Lagrange.OneBot.Entity.Action;
+using Lagrange.OneBot.Entity.Message;
 using Lagrange.OneBot.Entity.Meta;
+using Lagrange.OneBot.Message.Entity;
 
 namespace Lagrange.OneBot.Entity;
 
@@ -22,6 +24,14 @@ namespace Lagrange.OneBot.Entity;
 
 [JsonSerializable(typeof(BotKeystore))]
 [JsonSerializable(typeof(BotQrCodeInfo))]
+
+[JsonSerializable(typeof(OneBotMessage))]
+[JsonSerializable(typeof(OneBotPrivateMessage))]
+[JsonSerializable(typeof(OneBotGroupMessage))]
+[JsonSerializable(typeof(OneBotSender))]
+[JsonSerializable(typeof(OneBotGroupSender))]
+[JsonSerializable(typeof(OneBotSegment))]
+[JsonSerializable(typeof(TextSegment))]
 
 [JsonSerializable(typeof(OneBotEntityBase))]
 [JsonSerializable(typeof(OneBotAction))]

@@ -15,7 +15,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace Lagrange.OneBot.Utility.Extension;
 
-public static class HostApplicationBuilderExtension
+public static class HostApplicationBuilderExt
 {
     public static HostApplicationBuilder ConfigureCore(this HostApplicationBuilder builder)
     { 
@@ -70,6 +70,7 @@ public static class HostApplicationBuilderExtension
         builder.Services
             .AddSingleton<MessageService>()
             .AddSingleton<OperationService>()
+            .AddScoped<LagrangeWebSvcProxy>()
             .AddHostedService<LagrangeWebSvcCollection>()
 
             .AddScoped<ILagrangeWebServiceFactory<ForwardWSService>, ForwardWSServiceFactory>()

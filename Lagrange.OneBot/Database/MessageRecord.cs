@@ -35,7 +35,7 @@ public class MessageRecord
     
     public int ClientSequence { get; set; }
     
-    public int Random { get; set; }
+    public uint Random { get; set; }
     
     public byte[] Data { get; set; } = [];
 }

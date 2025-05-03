@@ -9,37 +9,47 @@ using Microsoft.Extensions.Logging;
 
 namespace Lagrange.OneBot.Network;
 
-public sealed partial class LagrangeWebSvcCollection(IServiceProvider services, IConfiguration config, ILogger<LagrangeWebSvcCollection> logger)
-    : IHostedService
+public sealed partial class LagrangeWebSvcCollection : IHostedService
 {
     private const string Tag = nameof(LagrangeWebSvcCollection);
 
     private readonly List<(IServiceScope, ILagrangeWebService)> _webServices = [];
+    private readonly IServiceProvider _services;
+    private readonly IConfiguration _config;
+    private readonly ILogger<LagrangeWebSvcCollection> _logger;
+
+    public LagrangeWebSvcCollection(IServiceProvider services, IConfiguration config, ILogger<LagrangeWebSvcCollection> logger, LagrangeWebSvcProxy proxy)
+    {
+        _services = services;
+        _config = config;
+        _logger = logger;
+        proxy.RegisterWebSvc(this);
+    }
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        var implsSection = config.GetSection("Implementations");
+        var implsSection = _config.GetSection("Implementations");
         if (implsSection.Exists())
         {
-            Log.LogMultiConnection(logger, Tag);
+            Log.LogMultiConnection(_logger, Tag);
         }
         else
         {
-            implsSection = config.GetSection("Implementation");
+            implsSection = _config.GetSection("Implementation");
             if (!implsSection.Exists())
             {
-                Log.LogNoConnection(logger, Tag);
+                Log.LogNoConnection(_logger, Tag);
                 return;
             }
 
-            Log.LogSingleConnection(logger, Tag);
+            Log.LogSingleConnection(_logger, Tag);
         }
 
-        var operationSvc = services.GetRequiredService<OperationService>();
+        var operationSvc = _services.GetRequiredService<OperationService>();
         foreach (var section in implsSection.GetChildren())
         {
             if (!section.GetValue<bool>("Enabled")) continue;
-            var scope = services.CreateScope();
+            var scope = _services.CreateScope();
             var serviceProvider = scope.ServiceProvider;
 
             var factory = serviceProvider.GetRequiredService<ILagrangeWebServiceFactory>();
@@ -64,7 +74,7 @@ public sealed partial class LagrangeWebSvcCollection(IServiceProvider services, 
                     }
                     catch (Exception e)
                     {
-                        Log.LogWebServiceSendFailed(logger, e, Tag);
+                        Log.LogWebServiceSendFailed(_logger, e, Tag);
                     }
                 }
             };
@@ -76,7 +86,7 @@ public sealed partial class LagrangeWebSvcCollection(IServiceProvider services, 
             }
             catch (Exception e)
             {
-                Log.LogWebServiceStartFailed(logger, e, Tag);
+                Log.LogWebServiceStartFailed(_logger, e, Tag);
                 scope.Dispose();
             }
         }
@@ -92,7 +102,7 @@ public sealed partial class LagrangeWebSvcCollection(IServiceProvider services, 
             }
             catch (Exception e)
             {
-                Log.LogWebServiceStopFailed(logger, e, Tag);
+                Log.LogWebServiceStopFailed(_logger, e, Tag);
             }
             finally
             {
@@ -124,7 +134,7 @@ public sealed partial class LagrangeWebSvcCollection(IServiceProvider services, 
             }
             catch (Exception e)
             {
-                Log.LogWebServiceSendFailed(logger, e, Tag);
+                Log.LogWebServiceSendFailed(_logger, e, Tag);
             }
         }
     }
