@@ -2,6 +2,8 @@ using Lagrange.Proto;
 
 namespace Lagrange.Core.Internal.Packets.Login;
 
+#pragma warning disable CS8618 // Non-nullable field is uninitialized.
+
 [ProtoPackable]
 internal partial class NTLoginAccount
 {
@@ -29,7 +31,7 @@ internal partial class NTLoginErrorInfo
 [ProtoPackable]
 internal partial class NTLoginVersion
 {
-    [ProtoMember(1)] public Version? A { get; set; }
+    [ProtoMember(1)] public string? Version { get; set; }
     
     [ProtoMember(2)] public int AppId { get; set; }
     
@@ -42,6 +44,18 @@ internal partial class NTLoginVersion
 internal partial class NTLoginCookie
 {
     [ProtoMember(1)] public string? Cookie { get; set; }
+}
+
+[ProtoPackable]
+internal partial class SsoNTLoginCredentials
+{
+    [ProtoMember(3)] public byte[] A1 { get; set; }
+    
+    [ProtoMember(4)] public byte[] A2 { get; set; }
+
+    [ProtoMember(5)] public byte[] D2 { get; set; }
+    
+    [ProtoMember(6)] public byte[] D2Key { get; set; }
 }
 
 [ProtoPackable]

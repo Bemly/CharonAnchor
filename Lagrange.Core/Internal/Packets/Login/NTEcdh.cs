@@ -2,6 +2,8 @@ using Lagrange.Proto;
 
 namespace Lagrange.Core.Internal.Packets.Login;
 
+#pragma warning disable CS8618 // Non-nullable field is uninitialized.
+
 /// <summary>
 /// Request for trpc.login.ecdh.EcdhService.SsoKeyExchange
 /// </summary>
@@ -20,9 +22,29 @@ internal partial class KeyExchangeRequest
 }
 
 [ProtoPackable]
+internal partial class KeyExchangeResponse
+{
+    [ProtoMember(1)] public byte[] Secret { get; set; }
+    
+    [ProtoMember(2)] public byte[] Field2 { get; set; }
+    
+    [ProtoMember(3)] public byte[] PublicKey { get; set; }
+}
+
+[ProtoPackable]
 internal partial class KeyExchangeRequestBuf // pb_buf
 {
     [ProtoMember(1)] public string? Uin { get; set; }
     
     [ProtoMember(2)] public byte[]? Guid { get; set; }
+}
+
+[ProtoPackable]
+internal partial class KeyExchangeResponseSecret
+{
+    [ProtoMember(1)] public byte[] SessionKey { get; set; }
+    
+    [ProtoMember(2)] public byte[] SessionTicket { get; set; }
+    
+    [ProtoMember(3)] public uint Expiration { get; set; }
 }

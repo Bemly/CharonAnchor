@@ -79,8 +79,15 @@ internal class WtExchangeLogic : ILogic, IDisposable
     {
         if (string.IsNullOrEmpty(password) && _context.Config.Protocol.IsAndroid())
         {
-            _context.LogCritical(Tag, "Android Platform can not use QRLogin, Please fill in password");
+            _context.LogError(Tag, "Android Platform can not use QRLogin, Please fill in password");
             return false;
+        }
+
+        if (_context.Config.Protocol.IsPC() && _context.Keystore.WLoginSigs is { A1.Length: not 0 })
+        {
+            if (!await KeyExchange()) return false;
+            
+            // TODO: EasyLogin
         }
         
         if (string.IsNullOrEmpty(password))
@@ -195,6 +202,12 @@ internal class WtExchangeLogic : ILogic, IDisposable
                     _context.EventInvoker.PostEvent(new BotLoginEvent(result?.RetCode ?? byte.MaxValue, result?.Error));
                 }
             }
+            else
+            {
+                if (_context.Keystore.State.KeyExchangeSession is null && !await KeyExchange()) return false;
+                
+                // TODO: PasswordLogin
+            }
         }
         
         return false;
@@ -272,6 +285,19 @@ internal class WtExchangeLogic : ILogic, IDisposable
         }
 
         return false;
+    }
+
+    private async Task<bool> KeyExchange()
+    {
+        var keyExchangeResult = await _context.EventContext.SendEvent<KeyExchangeEventResp>(new KeyExchangeEventReq());
+        if (keyExchangeResult == null)
+        {
+            _context.LogError(Tag, "Key exchange failed");
+            return false;
+        }
+
+        _context.Keystore.State.KeyExchangeSession = (keyExchangeResult.SessionTicket, keyExchangeResult.SessionKey);
+        return true;
     }
 
     private void OnHeartBeat(object? state) => Task.Run(async () =>
