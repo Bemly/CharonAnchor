@@ -1,11 +1,22 @@
-using Lagrange.Core.Common;
 using Lagrange.Core.Common.Entity;
-using Lagrange.Core.Message.Entities;
 
 namespace Lagrange.Core.Message;
 
 public partial class BotMessage
 {
+    internal BotMessage(BotContact contact, BotGroup? group = null)
+    {
+        Contact = contact;
+        Group = group;
+    }
+    
+    internal BotMessage(MessageChain chain, BotContact contact, BotGroup? group = null)
+    {
+        Entities = chain;
+        Contact = contact;
+        Group = group;
+    }
+    
     public BotContact Contact { get; }
     
     public BotGroup? Group { get; }
@@ -20,19 +31,13 @@ public partial class BotMessage
     
     public DateTime Time { get; set; } = DateTime.Now;
 
-    public List<IMessageEntity> Entities { get; } = [];
+    public MessageChain Entities { get; } = [];
     
-    internal ulong MessageId { get; set; } = 0;
+    internal ulong MessageId { get; set; }
     
-    internal uint Random { get; set; } = (uint)System.Random.Shared.Next();
+    internal uint Random { get; init; }
     
     internal int Sequence { get; set; }
     
-    internal int ClientSequence { get; set; } = new Random().Next(100000, 999999);
-    
-    internal BotMessage(BotContact contact, BotGroup? group = null)
-    {
-        Contact = contact;
-        Group = group;
-    }
+    internal int ClientSequence { get; init; } = new Random().Next(10000, 99999);
 }

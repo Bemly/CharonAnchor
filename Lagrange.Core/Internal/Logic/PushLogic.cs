@@ -17,7 +17,7 @@ internal class PushLogic(BotContext context) : ILogic
             case Type.GroupMessage:
             case Type.PrivateMessage:
             case Type.TempMessage:
-                var message = await context.MessagePacker.Parse(messageEvent.MsgPush);
+                var message = await context.EventContext.GetLogic<MessagingLogic>().Parse(messageEvent.MsgPush);
                 context.EventInvoker.PostEvent(new BotMessageEvent(message, messageEvent.Raw));
                 break;
         }

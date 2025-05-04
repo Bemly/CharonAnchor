@@ -21,7 +21,7 @@ internal partial class PbSendMsgReq
 [ProtoPackable]
 internal partial class PbSendMsgResp
 {
-    [ProtoMember(1)] public uint Result { get; set; }
+    [ProtoMember(1)] public int Result { get; set; }
 	
     [ProtoMember(2)] public string? ErrMsg { get; set; }
 	

@@ -13,8 +13,6 @@ internal class MessagePacker
     private readonly BotContext _context;
     
     private readonly List<IMessageEntity> _factory;
-
-    private int _clientSequence;
     
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "All the types are preserved in the csproj by using the TrimmerRootAssembly attribute")]
     [UnconditionalSuppressMessage("Trimming", "IL2062", Justification = "All the types are preserved in the csproj by using the TrimmerRootAssembly attribute")]

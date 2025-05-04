@@ -4,33 +4,25 @@ namespace Lagrange.Core.Message;
 
 public class MessageBuilder
 {
-    public List<IMessageEntity> Entities { get; } = [];
-    
-    internal async Task Build(BotContext context, BotMessage message)
-    {
-        foreach (var entity in Entities)
-        {
-            await entity.Preprocess(context, message);
-        }
-        
-        message.Entities.AddRange(Entities);
-    }
+    private readonly List<IMessageEntity> _entities = [];
+
+    public MessageChain Build() => [.._entities];
 
     public MessageBuilder Text(string text)
     {
-        Entities.Add(new TextEntity(text));
+        _entities.Add(new TextEntity(text));
         return this;
     }
     
     public static MessageBuilder operator +(MessageBuilder builder, IMessageEntity entity)
     {
-        builder.Entities.Add(entity);
+        builder._entities.Add(entity);
         return builder;
     }
     
     public static MessageBuilder operator +(MessageBuilder self, MessageBuilder other)
     {
-        self.Entities.AddRange(other.Entities);
+        self._entities.AddRange(other._entities);
         return self;
     }
 }
