@@ -6,6 +6,8 @@ namespace Lagrange.OneBot.Message.Factory;
 
 public class AtSegmentFactory : ISegmentFactory<AtSegment, MentionEntity>
 {
+    public Type SegmentType => typeof(AtSegment);
+    
     public virtual void Build(MessageBuilder builder, AtSegment segment)
     {
         throw new NotImplementedException();

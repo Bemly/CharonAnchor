@@ -25,7 +25,6 @@ namespace Lagrange.OneBot.Entity;
 [JsonSerializable(typeof(BotKeystore))]
 [JsonSerializable(typeof(BotQrCodeInfo))]
 
-[JsonSerializable(typeof(OneBotMessage))]
 [JsonSerializable(typeof(OneBotPrivateMessage))]
 [JsonSerializable(typeof(OneBotGroupMessage))]
 [JsonSerializable(typeof(OneBotSender))]
@@ -41,6 +40,8 @@ namespace Lagrange.OneBot.Entity;
 [JsonSerializable(typeof(OneBotStatus))]
 [JsonSerializable(typeof(OneBotLifecycle))]
 
+[JsonSerializable(typeof(OneBotMessage))]
+[JsonSerializable(typeof(OneBotMessageResponse))]
 [JsonSerializable(typeof(OneBotQrCodeRequest))]
 public partial class OneBotSerializerContext : JsonSerializerContext;
 

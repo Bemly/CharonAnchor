@@ -4,9 +4,9 @@ using Lagrange.OneBot.Message;
 
 namespace Lagrange.OneBot.Entity.Message;
 
-public class OneBotSegment(string type, object segment)
+public class OneBotSegment(string type, object data)
 {
     [JsonPropertyName("type")] public string Type { get; set; } = type;
 
-    [JsonPropertyName("data")] public object Data { get; set; } = segment;
+    [JsonPropertyName("data")] public object Data { get; set; } = data;
 }

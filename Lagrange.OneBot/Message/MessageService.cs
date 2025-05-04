@@ -1,25 +1,34 @@
+using System.Collections.Frozen;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Text.Json;
 using Lagrange.Core;
 using Lagrange.Core.Common.Entity;
 using Lagrange.Core.Events.EventArgs;
 using Lagrange.Core.Internal.Packets.Message;
 using Lagrange.Core.Message;
+using Lagrange.Core.Utility;
 using Lagrange.Core.Utility.Extension;
 using Lagrange.OneBot.Database;
+using Lagrange.OneBot.Entity.Action;
 using Lagrange.OneBot.Entity.Message;
 using Lagrange.OneBot.Network;
 using Lagrange.OneBot.Utility.Extension;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using JsonHelper = Lagrange.OneBot.Utility.JsonHelper;
 
 namespace Lagrange.OneBot.Message;
 
-public class MessageService
+public partial class MessageService
 {
+    private readonly ILogger<MessageService> _logger;
     private readonly MessageOption _option = new();
 
-    private readonly Dictionary<Type, List<(string SendType, Type Factory)>> _entityToFactory = new();
+    private readonly FrozenDictionary<Type, List<(string Type, string SendType, Type Factory)>> _entityToFactory;
+    private readonly FrozenDictionary<string, (Type Factory, Type Entity)> _segmentToFactory;
 
     private readonly ServiceProvider _service;
 
@@ -27,8 +36,9 @@ public class MessageService
     
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "All the types are preserved in the csproj by using the TrimmerRootAssembly attribute")]
     [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "All the types are preserved in the csproj by using the TrimmerRootAssembly attribute")]
-    public MessageService(IConfiguration config, BotContext context, StorageService storage, LagrangeWebSvcProxy proxy)
+    public MessageService(ILogger<MessageService> logger, IConfiguration config, BotContext context, StorageService storage, LagrangeWebSvcProxy proxy)
     {
+        _logger = logger;
         config.GetSection("Message").Bind(_option);
         
         _context = context;
@@ -36,31 +46,36 @@ public class MessageService
         {
             object oneBotMsg = ConvertToOneBotMessage(@event.Message);
             _ = proxy.SendJsonAsync(oneBotMsg);
-            await storage.SaveMessage(@event);
+            await storage.SaveMessage(@event.Message, @event.RawMessage.ToArray());
         });
         
         var service = new ServiceCollection();
 
+        var entityToFactory = new Dictionary<Type, List<(string Type, string SendType, Type Factory)>>();
+        var segmentToFactory = new Dictionary<string, (Type, Type)>();
         foreach (var type in typeof(MessageService).Assembly.GetTypes())
         {
             if (!type.HasImplemented<ISegmentFactory>()) continue;
-            
             service.AddSingleton(type);
             
             var attributes = type.GetCustomAttributes<SegmentSubscriberAttribute>();
             foreach (var attribute in attributes)
             {
-                if (!_entityToFactory.TryGetValue(attribute.Entity, out var factories))
+                if (!entityToFactory.TryGetValue(attribute.Entity, out var factories))
                 {
-                    factories = [(attribute.SendType, type)];
-                    _entityToFactory[attribute.Entity] = factories;
+                    factories = [(attribute.SendType, attribute.SendType, type)];
+                    entityToFactory[attribute.Entity] = factories;
                 }
                 else
                 {
-                    factories.Add((attribute.SendType, type));
+                    factories.Add((attribute.Type, attribute.SendType, type));
                 }
+                
+                segmentToFactory[attribute.SendType] = (type, attribute.Entity);
             }
         }
+        _entityToFactory = entityToFactory.ToFrozenDictionary();
+        _segmentToFactory = segmentToFactory.ToFrozenDictionary();
 
         service.AddSingleton(storage);
         service.AddLogging();
@@ -112,6 +127,30 @@ public class MessageService
             }
         }
     }
+
+    public MessageChain ConvertToChain(OneBotMessage message)
+    {
+        var builder = new MessageBuilder();
+        
+        foreach (var segment in message.Messages)
+        {
+            if (_segmentToFactory.TryGetValue(segment.Type, out var instance))
+            {
+                var factory = (ISegmentFactory)_service.GetRequiredService(instance.Factory);
+
+                if (JsonHelper.Deserialize((JsonElement)segment.Data, factory.SegmentType) is ISegment data)
+                {
+                    factory.Build(builder, data);
+                }
+                else
+                {
+                    Log.LogCQFailed(_logger, segment.Type);
+                }
+            }
+        }
+
+        return builder.Build();
+    }
     
     private List<OneBotSegment> ConvertSegments(BotMessage chain)
     {
@@ -120,7 +159,7 @@ public class MessageService
         foreach (var entity in chain.Entities)
         {
             var factories = _entityToFactory[entity.GetType()];
-            foreach (var (sendType, factory) in factories)
+            foreach (var (_, sendType, factory) in factories)
             {
                 var instance = (ISegmentFactory)_service.GetRequiredService(factory);
                 if (instance.Parse(chain, entity) is { } segment)
@@ -136,9 +175,18 @@ public class MessageService
     /// <summary>
     /// Only for the use of C2C send Message
     /// </summary>
-    private MsgPush ConvertSendMsgToPush(PbSendMsgReq send) // TODO: Response
+    public ReadOnlyMemory<byte> ConvertSendMsgToPush(BotMessage message)
     {
-        return new MsgPush
+        Debug.Assert(message.Contact is BotFriend or BotStranger);
+        
+        var messageBody = new MessageBody();
+        foreach (var entity in message.Entities)
+        {
+            if (entity.Build() is not { } elem) continue;
+            messageBody.RichText.Elems.AddRange(elem);
+        }
+        
+        var push = new MsgPush
         {
             CommonMessage = new CommonMessage
             {
@@ -146,17 +194,26 @@ public class MessageService
                 {
                     FromUin = _context.BotUin,
                     FromUid = _context.Keystore.Uid,
-                    ToUin = send.RoutingHead.C2C.PeerUin,
-                    ToUid = send.RoutingHead.C2C.PeerUid
+                    ToUin = message.Contact.Uin,
+                    ToUid = message.Contact.Uid,
                 },
                 ContentHead = new ContentHead
                 {
-                    Random = send.Random,
-                    ClientSequence = send.ClientSequence,
-                    MsgUid = 0x10000000ul << 32 | send.Random,
+                    Random = message.Random,
+                    Sequence = message.Sequence,
+                    ClientSequence = message.ClientSequence,
+                    MsgUid = 0x10000000ul << 32 | message.Random,
                 },
-                MessageBody = send.MessageBody
+                MessageBody = messageBody
             }
         };
+
+        return ProtoHelper.Serialize(push);
+    }
+    
+    private static partial class Log
+    {
+        [LoggerMessage(EventId = 1, Level = Microsoft.Extensions.Logging.LogLevel.Warning, Message = "Segment {type} Deserialization failed")]
+        public static partial void LogCQFailed(ILogger logger, string type);
     }
 }

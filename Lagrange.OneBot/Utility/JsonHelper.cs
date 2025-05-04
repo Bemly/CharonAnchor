@@ -12,6 +12,12 @@ public static class JsonHelper
     public static T? Deserialize<T>(this JsonNode? node) where T : class =>
         node.Deserialize(typeof(T), OneBotSerializerContext.Default) as T;
     
+    public static T? Deserialize<T>(this JsonElement element) where T : class =>
+        element.Deserialize(typeof(T), OneBotSerializerContext.Default) as T;
+
+    public static object? Deserialize(this JsonElement? element, Type type) =>
+        element?.Deserialize(type, OneBotSerializerContext.Default);
+    
     public static string Serialize<T>(T value) =>
         JsonSerializer.Serialize(value, typeof(T), OneBotSerializerContext.Default);
     

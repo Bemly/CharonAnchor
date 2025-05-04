@@ -5,6 +5,8 @@ namespace Lagrange.OneBot.Message;
 
 public interface ISegmentFactory
 {
+    Type SegmentType { get; }
+    
     void Build(MessageBuilder builder, ISegment segment);
     
     ISegment Parse(BotMessage message, IMessageEntity entity);

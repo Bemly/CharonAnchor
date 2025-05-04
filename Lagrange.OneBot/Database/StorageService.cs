@@ -2,7 +2,7 @@ using System.Data.Common;
 using Dapper;
 using Lagrange.Core;
 using Lagrange.Core.Common.Entity;
-using Lagrange.Core.Events.EventArgs;
+using Lagrange.Core.Internal.Logic;
 using Lagrange.Core.Message;
 using Microsoft.Extensions.Logging;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
@@ -28,9 +28,8 @@ public partial class StorageService
         _database.Execute(FileRecord.CreateStatement);
     }
 
-    public async Task SaveMessage(BotMessageEvent @event)
+    public async Task SaveMessage(BotMessage message, byte[] rawMessage)
     {
-        var message = @event.Message;
         var record = new MessageRecord
         {
             SelfUin = _context.BotUin,
@@ -40,7 +39,7 @@ public partial class StorageService
             ContactUin = message.Contact.Uin,
             GroupUin = (message.Contact as BotGroupMember)?.Group.GroupUin ?? 0,
             Random = message.Random,
-            Data = @event.RawMessage.ToArray()
+            Data = rawMessage
         };
         
         const string sql = "INSERT INTO MessageRecord VALUES (@SelfUin, @MessageId, @ContactUin, @GroupUin, @Sequence, @ClientSequence, @Random, @Data)";
@@ -55,7 +54,7 @@ public partial class StorageService
         var record = await _database.QuerySingleOrDefaultAsync<MessageRecord>(sql, new { SelfUin = _context.BotUin, MessageId = CalcMessageHash(messageId, seq) });
         if (record == null) return null;
 
-        return await _context.MessagePacker.Parse(record.Data);
+        return await _context.EventContext.GetLogic<MessagingLogic>().Parse(record.Data);
     }
     
     public async Task<BotMessage?> GetMessageBySequence(long groupUin, int seq)
@@ -64,7 +63,7 @@ public partial class StorageService
         var record = await _database.QuerySingleOrDefaultAsync<MessageRecord>(sql, new { SelfUin = _context.BotUin, GroupUin = groupUin, Sequence = seq });
         if (record == null) return null;
 
-        return await _context.MessagePacker.Parse(record.Data);
+        return await _context.EventContext.GetLogic<MessagingLogic>().Parse(record.Data);
     }
     
     public async Task<bool> ClearMessage()

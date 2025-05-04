@@ -7,6 +7,8 @@ namespace Lagrange.OneBot.Message.Factory;
 [SegmentSubscriber<TextEntity>("text")]
 public class TextSegmentFactory : ISegmentFactory<TextSegment, TextEntity>
 {
+    public Type SegmentType => typeof(TextSegment);
+
     public virtual void Build(MessageBuilder builder, TextSegment segment)
     {
         builder.Text(segment.Text);
