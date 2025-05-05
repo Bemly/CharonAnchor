@@ -69,14 +69,12 @@ public ref struct ProtoParser(List<ProtoToken> tokens)
 
         while (!Match("}"))
         {
-            // Parse optional/required/repeated label
             string label = string.Empty;
             if (Match("optional", "required", "repeated"))
             {
                 label = Unsafe.Add(ref _first, _current - 1).Value;
             }
 
-            // Handle map<K,V> syntax
             string type;
             if (Match("map"))
             {
@@ -92,7 +90,6 @@ public ref struct ProtoParser(List<ProtoToken> tokens)
                 type = Expect(TokenType.Identifier).Value;
             }
 
-            // Field name and number
             string name = Expect(TokenType.Identifier).Value;
             Expect(TokenType.Symbol, "=");
             int number = int.Parse(Expect(TokenType.IntegerLiteral).Value);
