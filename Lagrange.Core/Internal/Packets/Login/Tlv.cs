@@ -128,40 +128,44 @@ internal ref struct Tlv : IDisposable
 
     public void Tlv106Pwd(string password)
     {
-        var md5 = MD5.HashData(Encoding.UTF8.GetBytes(password));
+        WriteTlv(0x106);
         
-        var plainWriter = new BinaryPacket(stackalloc byte[100]);
-        plainWriter.Write<short>(4); // TGTGT Version
-        plainWriter.Write(Random.Shared.Next());
-        plainWriter.Write(_appInfo.SsoVersion);
-        plainWriter.Write(_appInfo.AppId);
-        plainWriter.Write<int>(_appInfo.AppClientVersion);
-        plainWriter.Write(_keystore.Uin);
-        plainWriter.Write((int)DateTimeOffset.Now.ToUnixTimeSeconds());
-        plainWriter.Write(0); // dummy IP Address
-        plainWriter.Write<byte>(1);
-        plainWriter.Write(md5);
-        plainWriter.Write(_keystore.WLoginSigs.TgtgtKey);
-        plainWriter.Write(0);  // unknown
-        plainWriter.Write<byte>(1); // guidAvailable
-        plainWriter.Write(_keystore.Guid);
-        plainWriter.Write(_appInfo.SubAppId);
-        plainWriter.Write(1); // flag
-        plainWriter.Write(_keystore.Uin.ToString(), Prefix.Int16 | Prefix.LengthOnly);
-        plainWriter.Write<short>(0);
+        _writer.Write(GenerateClientA1(_keystore, _appInfo, password));
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
+
+    public static byte[] GenerateClientA1(BotKeystore keystore, BotAppInfo appInfo, string password)
+    {
+        var md5 = MD5.HashData(Encoding.UTF8.GetBytes(password));
         
         var keyWriter = new BinaryPacket(stackalloc byte[16 + 4 + 4]);
         keyWriter.Write(md5);
         keyWriter.Write(0); // empty 4 bytes
-        keyWriter.Write((uint)_keystore.Uin);
+        keyWriter.Write((uint)keystore.Uin);
         var key = MD5.HashData(keyWriter.CreateReadOnlySpan());
-
-        WriteTlv(0x106);
         
-        var encrypted = TeaProvider.Encrypt(plainWriter.CreateReadOnlySpan(), key);
-        _writer.Write(encrypted);
+        var plainWriter = new BinaryPacket(stackalloc byte[100]);
+        plainWriter.Write<short>(4); // TGTGT Version
+        plainWriter.Write(Random.Shared.Next());
+        plainWriter.Write(appInfo.SsoVersion);
+        plainWriter.Write(appInfo.AppId);
+        plainWriter.Write<int>(appInfo.AppClientVersion);
+        plainWriter.Write(keystore.Uin);
+        plainWriter.Write((int)DateTimeOffset.Now.ToUnixTimeSeconds());
+        plainWriter.Write(0); // dummy IP Address
+        plainWriter.Write<byte>(1);
+        plainWriter.Write(md5);
+        plainWriter.Write(keystore.WLoginSigs.TgtgtKey);
+        plainWriter.Write(0);  // unknown
+        plainWriter.Write<byte>(1); // guidAvailable
+        plainWriter.Write(keystore.Guid);
+        plainWriter.Write(appInfo.SubAppId);
+        plainWriter.Write(1); // flag
+        plainWriter.Write(keystore.Uin.ToString(), Prefix.Int16 | Prefix.LengthOnly);
+        plainWriter.Write<short>(0);
         
-        _writer.ExitLengthBarrier<short>(false);
+        return TeaProvider.Encrypt(plainWriter.CreateReadOnlySpan(), key);
     }
 
     public void Tlv106EncryptedA1()

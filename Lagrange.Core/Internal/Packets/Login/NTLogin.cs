@@ -15,6 +15,18 @@ internal partial class NTLoginAccount
 }
 
 [ProtoPackable]
+internal partial class NTLoginSystem
+{
+    [ProtoMember(1)] public string? DevType { get; set; }
+    
+    [ProtoMember(2)] public string? DevName { get; set; }
+
+    [ProtoMember(3)] public int RegisterVendorType { get; set; }
+    
+    [ProtoMember(4)] public byte[]? Guid { get; set; }
+}
+
+[ProtoPackable]
 internal partial class NTLoginErrorInfo
 {
     [ProtoMember(1)] public uint ErrorCode { get; set; }
@@ -47,7 +59,7 @@ internal partial class NTLoginCookie
 }
 
 [ProtoPackable]
-internal partial class SsoNTLoginCredentials
+internal partial class NTLoginCredentials
 {
     [ProtoMember(3)] public byte[] A1 { get; set; }
     
@@ -56,6 +68,46 @@ internal partial class SsoNTLoginCredentials
     [ProtoMember(5)] public byte[] D2 { get; set; }
     
     [ProtoMember(6)] public byte[] D2Key { get; set; }
+}
+
+[ProtoPackable]
+internal partial class NTLoginCaptcha
+{
+    [ProtoMember(1)] public string? ProofWaterSig { get; set; }
+    
+    [ProtoMember(2)] public string? ProofWaterRand { get; set; }
+    
+    [ProtoMember(3)] public string? ProofWaterSid { get; set; }
+}
+
+[ProtoPackable]
+internal partial class NTLoginHead
+{
+    [ProtoMember(1)] public NTLoginAccount Account { get; set; }
+    
+    [ProtoMember(2)] public NTLoginSystem System { get; set; }
+
+    [ProtoMember(3)] public NTLoginVersion Version { get; set; }
+    
+    [ProtoMember(4)] public NTLoginErrorInfo? ErrorInfo { get; set; }
+    
+    [ProtoMember(5)] public NTLoginCookie? Cookie { get; set; }
+}
+
+[ProtoPackable]
+internal partial class NTLoginRequest
+{
+    [ProtoMember(1)] public byte[] Sig { get; set; } // sig can be A1, ClientA1
+    
+    [ProtoMember(2)] public NTLoginCaptcha? Captcha { get; set; }
+}
+
+[ProtoPackable]
+internal partial class NTLogin
+{
+    [ProtoMember(1)] public NTLoginHead Head { get; set; }
+    
+    [ProtoMember(2)] public ReadOnlyMemory<byte> Body { get; set; }
 }
 
 [ProtoPackable]
