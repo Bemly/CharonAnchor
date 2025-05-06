@@ -62,6 +62,35 @@ internal static class NTLoginCommon
         return ProtoHelper.Serialize(forward);
     }
 
+    public static State Decode(BotContext context, ReadOnlyMemory<byte> payload, out NTLoginErrorInfo info, out NTLoginResponse resp)
+    {
+        if (context.Keystore.State.KeyExchangeSession is not { } session)
+        {
+            context.LogError(Tag, "Key exchange session is not initialized.");
+            throw new InvalidOperationException("Key exchange session is not initialized.");
+        }
+        
+        var forward = ProtoHelper.Deserialize<NTLoginForwardRequest>(payload.Span);
+        var buffer = AesGcmProvider.Decrypt(forward.Buffer, session.SessionKey);
+
+        var login = ProtoHelper.Deserialize<NTLogin>(buffer);
+        var state = (State)(info = login.Head.ErrorInfo).ErrorCode;
+        resp = ProtoHelper.Deserialize<NTLoginResponse>(login.Body.Span);
+        
+        if (state == State.LOGIN_ERROR_SUCCESS)
+        {
+            var credential = resp.Credentials;
+            var wloginSigs = context.Keystore.WLoginSigs;
+            
+            wloginSigs.A1 = credential.A1;
+            wloginSigs.A2 = credential.A2;
+            wloginSigs.D2 = credential.D2;
+            wloginSigs.D2Key = credential.D2Key;
+        }
+        
+        return state;
+    }
+
     public enum State
     {
         LOGIN_ERROR_ACCOUNT_NOT_UIN = 140022018,
@@ -86,7 +115,7 @@ internal static class NTLoginCommon
         LOGIN_ERROR_REFUSE_PASSOWRD_LOGIN = 140022009,
         LOGIN_ERROR_REMIND_CANAEL_LATED_STATUS = 150022028,
         LOGIN_ERROR_SCAN = 1,
-        LOGIN_ERROR_SCCESS = 0,
+        LOGIN_ERROR_SUCCESS = 0,
         LOGIN_ERROR_SECBEAT = 140022017,
         LOGIN_ERROR_SMS_INVALID = 150022026,
         LOGIN_ERROR_STRICK = 140022007,

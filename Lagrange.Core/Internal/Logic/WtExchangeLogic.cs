@@ -4,6 +4,7 @@ using Lagrange.Core.Common.Response;
 using Lagrange.Core.Events.EventArgs;
 using Lagrange.Core.Internal.Events.Login;
 using Lagrange.Core.Internal.Events.System;
+using Lagrange.Core.Internal.Services.Login;
 using Lagrange.Core.Utility;
 using Lagrange.Core.Utility.Binary;
 using Lagrange.Core.Utility.Cryptography;
@@ -205,8 +206,35 @@ internal class WtExchangeLogic : ILogic, IDisposable
             else
             {
                 if (_context.Keystore.State.KeyExchangeSession is null && !await KeyExchange()) return false;
-                
-                // TODO: PasswordLogin
+
+                var result = await _context.EventContext.SendEvent<PasswordLoginEventResp>(new PasswordLoginEventReq(password, null));
+                while (true)
+                {
+                    if (result == null)
+                    {
+                        _context.LogError(Tag, "Unexpected null result for trpc.login.*");
+                        return false;
+                    }
+                    
+                    switch (result.State)
+                    {
+                        case NTLoginCommon.State.LOGIN_ERROR_SUCCESS:
+                            return true;
+                        case NTLoginCommon.State.LOGIN_ERROR_PROOFWATER:
+                            _context.LogInfo(Tag, $"Captcha required, URL: {result.JumpingUrl}");
+                            _context.EventInvoker.PostEvent(new BotCaptchaEvent(result.JumpingUrl));
+                            _captchaSource = new TaskCompletionSource<(string, string)>();
+
+                            string sid = result.JumpingUrl.Split("&sid=")[1].Split("&")[0];
+                            var (ticket, randStr) = await _captchaSource.Task;
+                            result = await _context.EventContext.SendEvent<PasswordLoginEventResp>(new PasswordLoginEventReq(password, (ticket, randStr, sid)));
+                            break;
+                        default:
+                            _context.LogError(Tag, $"Login failed: {result.State} | Message: {result.Tips}");
+                            _context.EventInvoker.PostEvent(new BotLoginEvent((int)result.State, result.Tips));
+                            break;
+                    }
+                }
             }
         }
         

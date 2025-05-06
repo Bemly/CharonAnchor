@@ -15,7 +15,7 @@ internal class MessagingLogic(BotContext context) : ILogic
     
     public ReadOnlyMemory<byte> Build(BotMessage message) => _packer.Build(message);
 
-    public Task<BotMessage> SendGroupMessage(MessageChain builder, long groupUin)
+    public Task<BotMessage> SendGroupMessage(MessageChain chain, long groupUin)
     { 
         throw new NotImplementedException();
     }

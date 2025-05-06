@@ -81,6 +81,12 @@ internal partial class NTLoginCaptcha
 }
 
 [ProtoPackable]
+internal partial class NTLoginCaptchaResponse
+{
+    [ProtoMember(3)] public string Url { get; set; }
+}
+
+[ProtoPackable]
 internal partial class NTLoginHead
 {
     [ProtoMember(1)] public NTLoginAccount Account { get; set; }
@@ -89,7 +95,7 @@ internal partial class NTLoginHead
 
     [ProtoMember(3)] public NTLoginVersion Version { get; set; }
     
-    [ProtoMember(4)] public NTLoginErrorInfo? ErrorInfo { get; set; }
+    [ProtoMember(4)] public NTLoginErrorInfo ErrorInfo { get; set; }
     
     [ProtoMember(5)] public NTLoginCookie? Cookie { get; set; }
 }
@@ -100,6 +106,14 @@ internal partial class NTLoginRequest
     [ProtoMember(1)] public byte[] Sig { get; set; } // sig can be A1, ClientA1
     
     [ProtoMember(2)] public NTLoginCaptcha? Captcha { get; set; }
+}
+
+[ProtoPackable]
+internal partial class NTLoginResponse
+{
+    [ProtoMember(1)] public NTLoginCredentials Credentials { get; set; }
+    
+    [ProtoMember(2)] public NTLoginCaptchaResponse Captcha { get; set; }
 }
 
 [ProtoPackable]
