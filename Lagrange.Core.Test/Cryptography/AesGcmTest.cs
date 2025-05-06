@@ -9,10 +9,13 @@ public class AesGcmTests
     private static readonly RandomNumberGenerator Rng = RandomNumberGenerator.Create();
     private static readonly int[] PlaintextSizes = [0, 1, 15, 16, 33, 64];
 
-    [TestCase(128)]
-    [TestCase(192)]
-    [TestCase(256)]
-    public void Encrypt_Decrypt_Matches_SystemAesGcm(int keyBits)
+    [TestCase(128, false)]
+    [TestCase(192, false)]
+    [TestCase(256, false)]
+    [TestCase(128, true)]
+    [TestCase(192, true)]
+    [TestCase(256, true)]
+    public void Encrypt_Decrypt_Matches_SystemAesGcm(int keyBits, bool useHwAes)
     {
         int keySize = keyBits / 8;
         byte[] key = new byte[keySize];
@@ -37,7 +40,7 @@ public class AesGcmTests
 
             byte[] actualCiphertext = new byte[ptSize];
             byte[] actualTag = new byte[AesGcmImpl.TagSize];
-            var impl = new AesGcmImpl(key);
+            var impl = new AesGcmImpl(key, useHwAes);
             impl.Encrypt(nonce, plaintext, associatedData, actualCiphertext, actualTag);
 
             Assert.That(actualCiphertext, Is.EqualTo(expectedCiphertext), $"Ciphertext mismatch for {keyBits}-bit key, plaintext length {ptSize}");
@@ -49,10 +52,13 @@ public class AesGcmTests
         }
     }
 
-    [TestCase(128)]
-    [TestCase(192)]
-    [TestCase(256)]
-    public void CrossDecrypt_CustomDecryptsSystemCipher(int keySizeBits)
+    [TestCase(128, false)]
+    [TestCase(192, false)]
+    [TestCase(256, false)]
+    [TestCase(128, true)]
+    [TestCase(192, true)]
+    [TestCase(256, true)]
+    public void CrossDecrypt_CustomDecryptsSystemCipher(int keySizeBits, bool useHwAes)
     {
         byte[] key = new byte[keySizeBits / 8];
         byte[] nonce = new byte[12];
@@ -74,7 +80,7 @@ public class AesGcmTests
                 sysAes.Encrypt(nonce, plaintext, ciphertext, tag, aad);
             }
 
-            var impl = new AesGcmImpl(key);
+            var impl = new AesGcmImpl(key, useHwAes);
             byte[] decrypted = new byte[ptLen];
             impl.Decrypt(nonce, ciphertext, aad, tag, decrypted);
 
@@ -82,10 +88,13 @@ public class AesGcmTests
         }
     }
 
-    [TestCase(128)]
-    [TestCase(192)]
-    [TestCase(256)]
-    public void CrossDecrypt_SystemDecryptsCustomCipher(int keySizeBits)
+    [TestCase(128, false)]
+    [TestCase(192, false)]
+    [TestCase(256, false)]
+    [TestCase(128, true)]
+    [TestCase(192, true)]
+    [TestCase(256, true)]
+    public void CrossDecrypt_SystemDecryptsCustomCipher(int keySizeBits, bool useHwAes)
     {
         byte[] key = new byte[keySizeBits / 8];
         byte[] nonce = new byte[12];
@@ -102,7 +111,7 @@ public class AesGcmTests
             byte[] ciphertext = new byte[ptLen];
             byte[] tag = new byte[16];
 
-            var impl = new AesGcmImpl(key);
+            var impl = new AesGcmImpl(key, useHwAes);
             impl.Encrypt(nonce, plaintext, aad, ciphertext, tag);
 
             byte[] decrypted = new byte[ptLen];
@@ -114,7 +123,31 @@ public class AesGcmTests
             Assert.That(decrypted, Is.EqualTo(plaintext), $"Custom→System cross-decrypt failed for keySize={keySizeBits}, ptLen={ptLen}");
         }
     }
-        
+    
+    [TestCase(12), TestCase(13), TestCase(14), TestCase(15), TestCase(16)]
+    public void Encrypt_Decrypt_Multiple_Nonce(int nonceSize)
+    {
+        byte[] key = new byte[16];
+        byte[] nonce = new byte[nonceSize]; // 128-bit nonce
+        byte[] plaintext = new byte[32];
+        byte[] associatedData = new byte[16];
+
+        Rng.GetBytes(key);
+        Rng.GetBytes(nonce);
+        Rng.GetBytes(plaintext);
+        Rng.GetBytes(associatedData);
+
+        var impl = new AesGcmImpl(key, false);
+        var ciphertext = new byte[plaintext.Length];
+        var tag = new byte[AesGcmImpl.TagSize];
+
+        impl.Encrypt(nonce, plaintext, associatedData, ciphertext, tag);
+
+        var decrypted = new byte[plaintext.Length];
+        impl.Decrypt(nonce, ciphertext, associatedData, tag, decrypted);
+
+        Assert.That(decrypted, Is.EqualTo(plaintext), "Decrypted plaintext mismatch for 128-bit nonce");
+    }
         
     [OneTimeTearDown]
     public void Cleanup()

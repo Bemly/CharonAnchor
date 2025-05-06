@@ -96,7 +96,7 @@ internal readonly ref struct AesGcmImpl
     public const int BlockSize = 16;
     public const int TagSize = 16;
 
-    public AesGcmImpl(ReadOnlySpan<byte> key)
+    public AesGcmImpl(ReadOnlySpan<byte> key, bool useHwAes = true)
     {
         if (key.Length is not 16 and not 24 and not 32) throw new ArgumentException("Key length must be 128, 192, or 256 bits.");
 
@@ -110,7 +110,7 @@ internal readonly ref struct AesGcmImpl
         KeyExpansion(w);
         _roundKey = w;
 
-        _useHwAes = System.Runtime.Intrinsics.X86.Aes.IsSupported || System.Runtime.Intrinsics.Arm.Aes.IsSupported;
+        _useHwAes = (System.Runtime.Intrinsics.X86.Aes.IsSupported || System.Runtime.Intrinsics.Arm.Aes.IsSupported) && useHwAes;
     }
     
     private void TransformBlock(ReadOnlySpan<byte> input, Span<byte> output)
