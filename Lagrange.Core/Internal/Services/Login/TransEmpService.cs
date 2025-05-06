@@ -21,7 +21,7 @@ internal class TransEmpService : BaseService<ProtocolEvent, ProtocolEvent>
         
         return new ValueTask<ReadOnlyMemory<byte>>(input switch
         {
-            TransEmp31EventReq => _packet.Value.BuildTransEmp31(),
+            TransEmp31EventReq r => _packet.Value.BuildTransEmp31(r.UnusualSig),
             TransEmp12EventReq => _packet.Value.BuildTransEmp12(),
             _ => throw new NotSupportedException()
         });

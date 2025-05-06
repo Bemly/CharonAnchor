@@ -11,6 +11,8 @@ internal interface INTLoginEventResp
 
 internal class EasyLoginEventReq : ProtocolEvent;
 
+internal class UnusualEasyLoginEventReq : ProtocolEvent;
+
 internal class PasswordLoginEventReq(string password, (string, string, string)? captcha) : ProtocolEvent
 {
     public string Password { get; } = password;
@@ -27,7 +29,16 @@ internal class PasswordLoginEventResp(NTLoginCommon.State state, (string, string
     public string JumpingUrl { get; } = jumpingUrl ?? string.Empty;
 }
 
-internal class EasyLoginEventResp(NTLoginCommon.State state, (string, string)? tips) : ProtocolEvent, INTLoginEventResp
+internal class EasyLoginEventResp(NTLoginCommon.State state, (string, string)? tips, byte[]? unusualSigs) : ProtocolEvent, INTLoginEventResp
+{
+    public NTLoginCommon.State State { get; } = state;
+
+    public (string, string) Tips { get; } = tips ?? (string.Empty, string.Empty);
+    
+    public byte[]? UnusualSigs { get; } = unusualSigs;
+}
+
+internal class UnusualEasyLoginEventResp(NTLoginCommon.State state, (string, string)? tips) : ProtocolEvent
 {
     public NTLoginCommon.State State { get; } = state;
 

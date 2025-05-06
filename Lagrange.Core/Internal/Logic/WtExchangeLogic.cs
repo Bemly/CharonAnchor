@@ -19,12 +19,12 @@ internal class WtExchangeLogic : ILogic, IDisposable
     
     private readonly BotContext _context;
     
+    private Timer _queryStateTimer;
+
     private readonly Timer _heartBeatTimer;
 
     private readonly Timer _ssoHeartBeatTimer;
-
-    private readonly Timer _queryStateTimer;
-
+    
     private readonly Timer _exchangeEmpTimer;
 
     private CancellationToken? _token;
@@ -61,7 +61,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
             _heartBeatTimer.Change(0, 2000);
         }
 
-        if (_context.Keystore.WLoginSigs is { D2.Length: not 0, A2.Length: not 0 })
+        if (false && _context.Keystore.WLoginSigs is { D2.Length: not 0, A2.Length: not 0 })
         {
             _context.LogInfo(Tag, "Valid session detected, doing online task");
 
@@ -104,8 +104,16 @@ internal class WtExchangeLogic : ILogic, IDisposable
                         _context.EventInvoker.PostEvent(new BotLoginEvent(0, null));
                         _context.EventInvoker.PostEvent(new BotRefreshKeystoreEvent(_context.Keystore));
                         return await Online();
-                    case NTLoginCommon.State.LOGIN_ERROR_UNUSUAL_DEVICE:
-                        // TODO: Handle unusual device
+                    case NTLoginCommon.State.LOGIN_ERROR_UNUSUAL_DEVICE when result.UnusualSigs is { } sig:
+                        var transEmp31 = await _context.EventContext.SendEvent<TransEmp31EventResp>(new TransEmp31EventReq(sig));
+                        if (transEmp31 == null) return false; // TODO: Log error
+                        
+                        _context.Keystore.State.QrSig = transEmp31.QrSig;
+                        _transEmpSource = new TaskCompletionSource<bool>();
+                        await _queryStateTimer.DisposeAsync();
+                        _queryStateTimer = new Timer(OnQueryState, true, 0, 2000); // no need to change
+                        if (await _transEmpSource.Task) return await Online();
+                        break;
                     default:
                         _context.LogError(Tag, $"Login failed: {result.State} | Message: {result.Tips}");
                         _context.EventInvoker.PostEvent(new BotLoginEvent((int)result.State, result.Tips));
@@ -118,17 +126,16 @@ internal class WtExchangeLogic : ILogic, IDisposable
         {
             _context.LogInfo(Tag, "Password is empty or null, use QRCode Login");
             
-            var transEmp31 = await _context.EventContext.SendEvent<TransEmp31EventResp>(new TransEmp31EventReq());
+            var transEmp31 = await _context.EventContext.SendEvent<TransEmp31EventResp>(new TransEmp31EventReq(null));
             if (transEmp31 == null) return false; // TODO: Log error
 
             _transEmpSource = new TaskCompletionSource<bool>();
             _context.EventInvoker.PostEvent(new BotQrCodeEvent(transEmp31.Url, transEmp31.Image));
             
-            _context.Keystore.WLoginSigs.QrSig = transEmp31.QrSig;
+            _context.Keystore.State.QrSig = transEmp31.QrSig;
             _queryStateTimer.Change(0, 2000);
-            bool isLoginSuccess = await _transEmpSource.Task;
 
-            if (isLoginSuccess) return await Online();
+            if (await _transEmpSource.Task) return await Online();
         }
         else
         {
@@ -367,6 +374,8 @@ internal class WtExchangeLogic : ILogic, IDisposable
     private void OnQueryState(object? state) => Task.Run(async () =>
     {
         if (_transEmpSource == null) return;
+
+        bool isUnusual = (bool?)state ?? false;
         var transEmp12 = await _context.EventContext.SendEvent<TransEmp12EventResp>(new TransEmp12EventReq());
         if (transEmp12 == null) return;
         
@@ -382,21 +391,41 @@ internal class WtExchangeLogic : ILogic, IDisposable
 
                 _queryStateTimer.Change(Timeout.Infinite, Timeout.Infinite);
 
-                var result = await _context.EventContext.SendEvent<LoginEventResp>(new LoginEventReq(LoginEventReq.Command.Tgtgt));
-
-                if (result?.RetCode == 0)
+                if (isUnusual)
                 {
-                    ReadWLoginSigs(result.Tlvs);
-                    _context.EventInvoker.PostEvent(new BotRefreshKeystoreEvent(_context.Keystore));
-                    _transEmpSource.TrySetResult(true);
+                    var result = await _context.EventContext.SendEvent<UnusualEasyLoginEventResp>(new UnusualEasyLoginEventReq());
+
+                    if (result?.State == NTLoginCommon.State.LOGIN_ERROR_SUCCESS)
+                    {
+                        _context.EventInvoker.PostEvent(new BotRefreshKeystoreEvent(_context.Keystore));
+                        _transEmpSource.TrySetResult(true);
+                    }
+                    else
+                    {
+                        _context.LogError(Tag, $"Login failed: {result?.State} | Message: {result?.Tips}");
+                        _transEmpSource.TrySetResult(false);
+                    }
+                    
+                    _context.EventInvoker.PostEvent(new BotLoginEvent((int?)result?.State ?? int.MaxValue, result?.Tips));
                 }
                 else
                 {
-                    _context.LogError(Tag, $"Login failed: {result?.RetCode} | Message: {result?.Error}");
-                    _transEmpSource.TrySetResult(false);
-                }
-                
-                _context.EventInvoker.PostEvent(new BotLoginEvent(result?.RetCode ?? byte.MaxValue, result?.Error));
+                    var result = await _context.EventContext.SendEvent<LoginEventResp>(new LoginEventReq(LoginEventReq.Command.Tgtgt));
+
+                    if (result?.RetCode == 0)
+                    {
+                        ReadWLoginSigs(result.Tlvs);
+                        _context.EventInvoker.PostEvent(new BotRefreshKeystoreEvent(_context.Keystore));
+                        _transEmpSource.TrySetResult(true);
+                    }
+                    else
+                    {
+                        _context.LogError(Tag, $"Login failed: {result?.RetCode} | Message: {result?.Error}");
+                        _transEmpSource.TrySetResult(false);
+                    }
+
+                    _context.EventInvoker.PostEvent(new BotLoginEvent(result?.RetCode ?? byte.MaxValue, result?.Error));
+                } 
                 break;
             case { State: TransEmp12EventResp.TransEmpState.Canceled or TransEmp12EventResp.TransEmpState.Invalid or TransEmp12EventResp.TransEmpState.CodeExpired }:
                 _context.LogCritical(Tag, $"QR Code State: {transEmp12.State}");

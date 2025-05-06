@@ -57,8 +57,6 @@ public class WLoginSigs
 
     public byte[] NoPicSig { get; set; } = [];// Tlv16A
     
-    internal byte[]? QrSig { get; set; }
-    
     public byte[] TgtgtKey { get; set; } = [];
     
     public byte[] Ksid { get; set; } = [];
@@ -87,7 +85,6 @@ public class WLoginSigs
         D2 = [];
         D2Key = new byte[16];
         A1 = [];
-        QrSig = null;
         TgtgtKey = [];
         RandomKey = new byte[16];
         RandomNumberGenerator.Fill(RandomKey);
@@ -103,4 +100,8 @@ internal class State
     public byte[]? Tlv174 { get; set; }
     
     public (byte[] SessionTicket, byte[] SessionKey)? KeyExchangeSession { get; set; }
+    
+    public string? Cookie { get; set; }
+    
+    public byte[]? QrSig { get; set; }
 }

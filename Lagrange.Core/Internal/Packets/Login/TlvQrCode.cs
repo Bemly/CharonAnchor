@@ -52,6 +52,15 @@ internal ref struct TlvQrCode : IDisposable
         
         _writer.ExitLengthBarrier<short>(false);
     }
+    
+    public void Tlv11(byte[] unusualSig)
+    {
+        WriteTlv(0x11);
+        
+        _writer.Write(unusualSig);
+        
+        _writer.ExitLengthBarrier<short>(false);
+    }
 
     public void Tlv15()
     {

@@ -22,7 +22,7 @@ internal class WtLogin : StructBase
         _shareKey = Keystore.Secp192K1.KeyExchange(ServerPublicKey, true);
     }
     
-    public ReadOnlyMemory<byte> BuildTransEmp31()
+    public ReadOnlyMemory<byte> BuildTransEmp31(byte[]? unusualSig)
     {
         using var writer = new BinaryPacket(stackalloc byte[300]);
         writer.Write<ushort>(0);
@@ -33,6 +33,7 @@ internal class WtLogin : StructBase
         writer.Write(ReadOnlySpan<byte>.Empty, Prefix.Int16 | Prefix.LengthOnly);
         
         using var tlvs = new TlvQrCode(_context);
+        if (unusualSig != null) tlvs.Tlv11(unusualSig);
         tlvs.Tlv16();
         tlvs.Tlv1B();
         tlvs.Tlv1D();
@@ -51,7 +52,7 @@ internal class WtLogin : StructBase
         using var writer = new BinaryPacket(stackalloc byte[100]);
         writer.Write<ushort>(0);
         writer.Write(AppInfo.AppId);
-        writer.Write(Keystore.WLoginSigs.QrSig, Prefix.Int16 | Prefix.LengthOnly);
+        writer.Write(Keystore.State.QrSig, Prefix.Int16 | Prefix.LengthOnly);
         writer.Write<ulong>(0); // uin
         writer.Write(ReadOnlySpan<byte>.Empty); // TGT
         writer.Write<byte>(0);
