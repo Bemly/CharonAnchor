@@ -87,6 +87,12 @@ internal partial class NTLoginCaptchaResponse
 }
 
 [ProtoPackable]
+internal partial class NTLoginUnusualResponse
+{
+    [ProtoMember(2)] public byte[] Sig { get; set; }
+}
+
+[ProtoPackable]
 internal partial class NTLoginHead
 {
     [ProtoMember(1)] public NTLoginAccount Account { get; set; }
@@ -114,6 +120,8 @@ internal partial class NTLoginResponse
     [ProtoMember(1)] public NTLoginCredentials Credentials { get; set; }
     
     [ProtoMember(2)] public NTLoginCaptchaResponse Captcha { get; set; }
+    
+    [ProtoMember(3)] public NTLoginUnusualResponse Unusual { get; set; }
 }
 
 [ProtoPackable]

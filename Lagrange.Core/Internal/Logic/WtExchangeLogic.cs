@@ -88,7 +88,30 @@ internal class WtExchangeLogic : ILogic, IDisposable
         {
             if (!await KeyExchange()) return false;
             
-            // TODO: EasyLogin
+            var result = await _context.EventContext.SendEvent<EasyLoginEventResp>(new EasyLoginEventReq());
+            while (true)
+            {
+                if (result == null)
+                {
+                    _context.LogError(Tag, "Unexpected null result for trpc.login.*");
+                    return false;
+                }
+                _token?.ThrowIfCancellationRequested();
+                
+                switch (result.State)
+                {
+                    case NTLoginCommon.State.LOGIN_ERROR_SUCCESS:
+                        _context.EventInvoker.PostEvent(new BotLoginEvent(0, null));
+                        _context.EventInvoker.PostEvent(new BotRefreshKeystoreEvent(_context.Keystore));
+                        return await Online();
+                    case NTLoginCommon.State.LOGIN_ERROR_UNUSUAL_DEVICE:
+                        // TODO: Handle unusual device
+                    default:
+                        _context.LogError(Tag, $"Login failed: {result.State} | Message: {result.Tips}");
+                        _context.EventInvoker.PostEvent(new BotLoginEvent((int)result.State, result.Tips));
+                        break;
+                }
+            }
         }
         
         if (string.IsNullOrEmpty(password))

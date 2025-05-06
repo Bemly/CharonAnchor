@@ -47,7 +47,11 @@ internal static class NTLoginCommon
                     Version = context.AppInfo.Kernel,
                     AppId = context.AppInfo.AppId,
                     AppName = context.AppInfo.PackageName
-                }
+                },
+                Cookie = context.Keystore.State.Cookie is { } cookie ? new NTLoginCookie
+                {
+                    Cookie = cookie
+                } : null
             }, 
             Body = ProtoHelper.Serialize(request)
         };
@@ -87,6 +91,8 @@ internal static class NTLoginCommon
             wloginSigs.D2 = credential.D2;
             wloginSigs.D2Key = credential.D2Key;
         }
+
+        if (login.Head.Cookie?.Cookie is { } cookie) context.Keystore.State.Cookie = cookie;
         
         return state;
     }
