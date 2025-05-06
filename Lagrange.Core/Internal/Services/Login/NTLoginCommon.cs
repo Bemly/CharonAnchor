@@ -62,7 +62,7 @@ internal static class NTLoginCommon
         return ProtoHelper.Serialize(forward);
     }
 
-    public static State Decode(BotContext context, ReadOnlyMemory<byte> payload, out NTLoginErrorInfo info, out NTLoginResponse resp)
+    public static State Decode(BotContext context, ReadOnlyMemory<byte> payload, out NTLoginErrorInfo? info, out NTLoginResponse resp)
     {
         if (context.Keystore.State.KeyExchangeSession is not { } session)
         {
@@ -74,7 +74,7 @@ internal static class NTLoginCommon
         var buffer = AesGcmProvider.Decrypt(forward.Buffer, session.SessionKey);
 
         var login = ProtoHelper.Deserialize<NTLogin>(buffer);
-        var state = (State)(info = login.Head.ErrorInfo).ErrorCode;
+        var state = (State)((info = login.Head.ErrorInfo)?.ErrorCode ?? 0);
         resp = ProtoHelper.Deserialize<NTLoginResponse>(login.Body.Span);
         
         if (state == State.LOGIN_ERROR_SUCCESS)

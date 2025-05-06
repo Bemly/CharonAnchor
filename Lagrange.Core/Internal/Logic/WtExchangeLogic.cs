@@ -215,11 +215,14 @@ internal class WtExchangeLogic : ILogic, IDisposable
                         _context.LogError(Tag, "Unexpected null result for trpc.login.*");
                         return false;
                     }
+                    _token?.ThrowIfCancellationRequested();
                     
                     switch (result.State)
                     {
                         case NTLoginCommon.State.LOGIN_ERROR_SUCCESS:
-                            return true;
+                            _context.EventInvoker.PostEvent(new BotLoginEvent(0, null));
+                            _context.EventInvoker.PostEvent(new BotRefreshKeystoreEvent(_context.Keystore));
+                            return await Online();
                         case NTLoginCommon.State.LOGIN_ERROR_PROOFWATER:
                             _context.LogInfo(Tag, $"Captcha required, URL: {result.JumpingUrl}");
                             _context.EventInvoker.PostEvent(new BotCaptchaEvent(result.JumpingUrl));

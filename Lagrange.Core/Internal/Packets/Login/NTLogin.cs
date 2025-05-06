@@ -95,7 +95,7 @@ internal partial class NTLoginHead
 
     [ProtoMember(3)] public NTLoginVersion Version { get; set; }
     
-    [ProtoMember(4)] public NTLoginErrorInfo ErrorInfo { get; set; }
+    [ProtoMember(4)] public NTLoginErrorInfo? ErrorInfo { get; set; }
     
     [ProtoMember(5)] public NTLoginCookie? Cookie { get; set; }
 }

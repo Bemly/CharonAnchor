@@ -22,8 +22,9 @@ internal class PasswordLoginService : BaseService<PasswordLoginEventReq, Passwor
         return new ValueTask<PasswordLoginEventResp?>(state switch
         {
             NTLoginCommon.State.LOGIN_ERROR_SUCCESS => new PasswordLoginEventResp(state, null, null),
-            NTLoginCommon.State.LOGIN_ERROR_PROOFWATER => new PasswordLoginEventResp(state, (info.TipsTitle, info.TipsContent), resp.Captcha.Url),
-            _ => new PasswordLoginEventResp(state, (info.TipsTitle, info.TipsContent), info.JumpUrl)
+            NTLoginCommon.State.LOGIN_ERROR_PROOFWATER => new PasswordLoginEventResp(state, null, resp.Captcha.Url),
+            _ when info is not null => new PasswordLoginEventResp(state, (info.TipsTitle, info.TipsContent), info.JumpUrl),
+            _ => new PasswordLoginEventResp(state, null, null)
         });
     }
 }
