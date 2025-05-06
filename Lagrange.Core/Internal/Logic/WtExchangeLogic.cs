@@ -61,7 +61,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
             _heartBeatTimer.Change(0, 2000);
         }
 
-        if (false && _context.Keystore.WLoginSigs is { D2.Length: not 0, A2.Length: not 0 })
+        if (_context.Keystore.WLoginSigs is { D2.Length: not 0, A2.Length: not 0 })
         {
             _context.LogInfo(Tag, "Valid session detected, doing online task");
 
