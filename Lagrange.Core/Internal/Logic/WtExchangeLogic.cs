@@ -40,7 +40,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
         _context = context;
         _heartBeatTimer = new Timer(OnHeartBeat);
         _ssoHeartBeatTimer = new Timer(OnSsoHeartBeat);
-        _queryStateTimer = new Timer(OnQueryState);
+        _queryStateTimer = new Timer(OnQueryState, null, Timeout.Infinite, 2000);
         _exchangeEmpTimer = new Timer(OnExchangeEmp);
     }
 
