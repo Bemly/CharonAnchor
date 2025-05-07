@@ -14,4 +14,10 @@ public static class OperationExt
 
     public static Task<List<BotFriend>> FetchFriends(this BotContext context, bool refresh = false) =>
         context.CacheContext.GetFriendList(refresh);
+
+    public static Task<List<BotGroup>> FetchGroups(this BotContext context, bool refresh = false) =>
+        context.CacheContext.GetGroupList(refresh);
+
+    public static Task<List<BotGroupMember>> FetchMembers(this BotContext context, long groupUin, bool refresh = false) =>
+        context.CacheContext.GetMemberList(groupUin, refresh);
 }

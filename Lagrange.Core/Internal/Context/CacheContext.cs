@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Lagrange.Core.Common.Entity;
 using Lagrange.Core.Internal.Events.System;
 
@@ -6,6 +7,10 @@ namespace Lagrange.Core.Internal.Context;
 internal class CacheContext(BotContext context)
 {
     private List<BotFriend>? _friends;
+    
+    private List<BotGroup>? _groups;
+
+    private readonly ConcurrentDictionary<long, List<BotGroupMember>> _members = new();
 
     private readonly Dictionary<int, BotFriendCategory> _categories = new();
     
@@ -14,6 +19,23 @@ internal class CacheContext(BotContext context)
         if (refresh || _friends == null) Interlocked.Exchange(ref _friends, await FetchFriends());
         
         return _friends;
+    }
+
+    public async Task<List<BotGroup>> GetGroupList(bool refresh = false)
+    {
+        if (refresh || _groups == null) Interlocked.Exchange(ref _groups, await FetchGroups());
+
+        return _groups;
+    }
+
+    public async Task<List<BotGroupMember>> GetMemberList(long groupUin, bool refresh = false)
+    {
+        if (refresh || !_members.TryGetValue(groupUin, out var members))
+        {
+            members = _members[groupUin] = await FetchGroupMembers(groupUin);
+        }
+
+        return members;
     }
 
     public async Task<List<BotFriendCategory>> GetCategories(bool refresh = false)
@@ -35,6 +57,33 @@ internal class CacheContext(BotContext context)
         }
         
         return friend;
+    }
+
+    public async Task<(BotGroup, BotGroupMember)?> ResolveMember(long memberUin, long groupUin)
+    {
+        if (_groups == null) Interlocked.Exchange(ref _groups, await FetchGroups());
+        var group = _groups.First(g => g.GroupUin == groupUin);
+
+        if (!_members.TryGetValue(groupUin, out var members))
+        {
+            members = _members[groupUin] = await FetchGroupMembers(groupUin);
+        }
+        var member = members.FirstOrDefault(m => m.Uin == memberUin);
+        return member == null ? null : (group, member);
+    }
+
+    public async Task<BotGroup?> ResolveGroup(long groupUin)
+    {
+        if (_groups == null) Interlocked.Exchange(ref _groups, await FetchGroups());
+        var group = _groups?.FirstOrDefault(f => f.GroupUin == groupUin);
+        
+        if (group == null)
+        {
+            _groups = Interlocked.Exchange(ref _groups, await FetchGroups());
+            group = _groups?.FirstOrDefault(f => f.GroupUin == groupUin);
+        }
+        
+        return group;
     }
     
     /// <summary>
@@ -61,5 +110,15 @@ internal class CacheContext(BotContext context)
         } while (cookie != null);
         
         return friends;
+    }
+
+    private Task<List<BotGroup>> FetchGroups()
+    {
+        throw new NotImplementedException();
+    }
+    
+    private Task<List<BotGroupMember>> FetchGroupMembers(long groupUin)
+    {
+        throw new NotImplementedException();
     }
 }

@@ -15,9 +15,19 @@ internal class MessagingLogic(BotContext context) : ILogic
     
     public ReadOnlyMemory<byte> Build(BotMessage message) => _packer.Build(message);
 
-    public Task<BotMessage> SendGroupMessage(MessageChain chain, long groupUin)
-    { 
-        throw new NotImplementedException();
+    public async Task<BotMessage> SendGroupMessage(MessageChain chain, long groupUin)
+    {
+        var (group, member) = await context.CacheContext.ResolveMember(groupUin, context.BotUin) ?? throw new InvalidOperationException("Can not find group");
+        var message = await BuildMessage(chain, member, group);
+        var result = await context.EventContext.SendEvent<SendMessageEventResp>(new SendMessageEventReq(message));
+        
+        if (result == null) throw new InvalidOperationException();
+        if (result.Result != 0) throw new InvalidOperationException($"Send message failed: {result.Result}");
+        
+        message.Sequence = result.Sequence;
+        message.Time = DateTimeOffset.FromUnixTimeSeconds(result.SendTime).DateTime;
+        
+        return message;
     }
     
     public async Task<BotMessage> SendFriendMessage(MessageChain chain, long friendUin)

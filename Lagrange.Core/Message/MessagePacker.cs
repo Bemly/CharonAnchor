@@ -89,7 +89,13 @@ internal class MessagePacker
                     Source = routingHead.CommonC2C.FromTinyId
                 };
             case 82:
-                return null!;
+                var items = await _context.CacheContext.ResolveMember(routingHead.Group.GroupCode, routingHead.FromUin);
+                if (items == null)
+                {
+                    ArgumentNullException.ThrowIfNull(items); // TODO: Log
+                }
+
+                return items.Value.Item2;
             default:
                 throw new NotImplementedException();
         }
