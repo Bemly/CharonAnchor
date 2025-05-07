@@ -16,7 +16,7 @@ public interface IBotSignProvider
 
 internal class DefaultBotSignProvider(Protocols protocol, BotAppInfo appInfo) : IBotSignProvider, IDisposable
 {
-    private static readonly string[] WhiteListCommand =
+    private static readonly HashSet<string> WhiteListCommand =
     [
         "trpc.o3.ecdh_access.EcdhAccess.SsoEstablishShareKey",
         "trpc.o3.ecdh_access.EcdhAccess.SsoSecureAccess",

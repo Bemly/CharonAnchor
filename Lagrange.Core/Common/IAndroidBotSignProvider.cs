@@ -19,7 +19,7 @@ internal class DefaultAndroidBotSignProvider(BotContext context) : IAndroidBotSi
 
     private readonly string _url = "http://127.0.0.1:8081";
     
-    private static readonly string[] WhiteListCommand =
+    private static readonly HashSet<string> WhiteListCommand =
     [
         "OidbSvcTrpcTcp.0xf88_1", "OidbSvcTrpcTcp.0x1105_1", "oidb_0xf7e_1",
         "trpc.group.long_msg_interface.MsgService.SsoRecvLongMsg", "OidbSvcTrpcTcp.0x92eb_0", "qzoneh5.h5.wnshtml",
