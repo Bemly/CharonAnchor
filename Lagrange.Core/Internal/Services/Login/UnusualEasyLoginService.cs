@@ -1,11 +1,12 @@
 ﻿using Lagrange.Core.Common;
 using Lagrange.Core.Internal.Events;
 using Lagrange.Core.Internal.Events.Login;
+using Lagrange.Core.Internal.Packets.Struct;
 
 namespace Lagrange.Core.Internal.Services.Login;
 
 [EventSubscribe<UnusualEasyLoginEventReq>(Protocols.PC)]
-[Service("trpc.login.ecdh.EcdhService.SsoNTLoginEasyLoginUnusualDevice")]
+[Service("trpc.login.ecdh.EcdhService.SsoNTLoginEasyLoginUnusualDevice", RequestType.D2Auth, EncryptType.EncryptEmpty)]
 internal class UnusualEasyLoginService : BaseService<UnusualEasyLoginEventReq, UnusualEasyLoginEventResp>
 {
     protected override ValueTask<ReadOnlyMemory<byte>> Build(UnusualEasyLoginEventReq input, BotContext context)

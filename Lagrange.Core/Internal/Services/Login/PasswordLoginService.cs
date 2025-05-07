@@ -2,11 +2,12 @@
 using Lagrange.Core.Internal.Events;
 using Lagrange.Core.Internal.Events.Login;
 using Lagrange.Core.Internal.Packets.Login;
+using Lagrange.Core.Internal.Packets.Struct;
 
 namespace Lagrange.Core.Internal.Services.Login;
 
 [EventSubscribe<PasswordLoginEventReq>(Protocols.PC)]
-[Service("trpc.login.ecdh.EcdhService.SsoNTLoginPasswordLogin")]
+[Service("trpc.login.ecdh.EcdhService.SsoNTLoginPasswordLogin", RequestType.D2Auth, EncryptType.EncryptEmpty)]
 internal class PasswordLoginService : BaseService<PasswordLoginEventReq, PasswordLoginEventResp>
 {
     protected override ValueTask<ReadOnlyMemory<byte>> Build(PasswordLoginEventReq input, BotContext context)

@@ -1,15 +1,17 @@
 using System.Text;
+using System.Web;
 using Lagrange.Core.Common;
 using Lagrange.Core.Common.Response;
 using Lagrange.Core.Events.EventArgs;
 using Lagrange.Core.Internal.Events.Login;
 using Lagrange.Core.Internal.Events.System;
+using Lagrange.Core.Internal.Packets.Login;
+using Lagrange.Core.Internal.Packets.System;
 using Lagrange.Core.Internal.Services.Login;
 using Lagrange.Core.Utility;
 using Lagrange.Core.Utility.Binary;
 using Lagrange.Core.Utility.Cryptography;
 using Lagrange.Core.Utility.Extension;
-using ThirdPartyLoginResponse = Lagrange.Core.Internal.Packets.System.ThirdPartyLoginResponse;
 
 namespace Lagrange.Core.Internal.Logic;
 
@@ -20,7 +22,9 @@ internal class WtExchangeLogic : ILogic, IDisposable
     private readonly BotContext _context;
     
     private Timer _queryStateTimer;
-
+    
+    private Timer? _newDeviceTimer;
+    
     private readonly Timer _heartBeatTimer;
 
     private readonly Timer _ssoHeartBeatTimer;
@@ -34,6 +38,8 @@ internal class WtExchangeLogic : ILogic, IDisposable
     private TaskCompletionSource<(string, string)>? _captchaSource;
 
     private TaskCompletionSource<string>? _smsSource;
+
+    private HttpClient? _client;
 
     public WtExchangeLogic(BotContext context)
     {
@@ -105,6 +111,8 @@ internal class WtExchangeLogic : ILogic, IDisposable
                         _context.EventInvoker.PostEvent(new BotRefreshKeystoreEvent(_context.Keystore));
                         return await Online();
                     case NTLoginCommon.State.LOGIN_ERROR_UNUSUAL_DEVICE when result.UnusualSigs is { } sig:
+                        _context.LogInfo(Tag, "Unusual device detected, waiting for confirmation");
+
                         var transEmp31 = await _context.EventContext.SendEvent<TransEmp31EventResp>(new TransEmp31EventReq(sig));
                         if (transEmp31 == null) return false; // TODO: Log error
                         
@@ -235,6 +243,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
             }
             else
             {
+                _context.Keystore.Uin = uin;
                 if (_context.Keystore.State.KeyExchangeSession is null && !await KeyExchange()) return false;
 
                 var result = await _context.EventContext.SendEvent<PasswordLoginEventResp>(new PasswordLoginEventReq(password, null));
@@ -255,6 +264,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
                             return await Online();
                         case NTLoginCommon.State.LOGIN_ERROR_PROOFWATER:
                             _context.LogInfo(Tag, $"Captcha required, URL: {result.JumpingUrl}");
+                            
                             _context.EventInvoker.PostEvent(new BotCaptchaEvent(result.JumpingUrl));
                             _captchaSource = new TaskCompletionSource<(string, string)>();
 
@@ -262,10 +272,35 @@ internal class WtExchangeLogic : ILogic, IDisposable
                             var (ticket, randStr) = await _captchaSource.Task;
                             result = await _context.EventContext.SendEvent<PasswordLoginEventResp>(new PasswordLoginEventReq(password, (ticket, randStr, sid)));
                             break;
+                        case NTLoginCommon.State.LOGIN_ERROR_NEW_DEVICE:
+                            _context.LogInfo(Tag, $"New device login required");
+                            
+                            var parsed = HttpUtility.ParseQueryString(result.JumpingUrl);
+                            string interfaceUrl = $"https://oidb.tim.qq.com/v3/oidbinterface/oidb_0xc9e_8?uid={uin}&getqrcode=1&sdkappid=39998&actype=2";
+                            string request = JsonHelper.Serialize(new NTNewDeviceQrCodeRequest
+                            {
+                                Uint32Flag = 1,
+                                Uint32UrlType = 0,
+                                StrDevAuthToken = parsed["sig"] ?? "",
+                                StrUinToken = parsed["uin-token"] ?? "",
+                                StrDevType = _context.AppInfo.Os,
+                                StrDevName = _context.Keystore.DeviceName
+                            });
+                            var response = await (_client ??= new HttpClient()).PostAsync(interfaceUrl, new StringContent(request, Encoding.UTF8, "application/json"));
+                            var json = JsonHelper.Deserialize<NTNewDeviceQrCodeResponse>(await response.Content.ReadAsStringAsync()) ?? throw new InvalidOperationException();
+                            _context.EventInvoker.PostEvent(new BotNewDeviceVerifyEvent(json.StrUrl));
+                            
+                            string url = HttpUtility.ParseQueryString(json.StrUrl.Split("?")[1])["str_url"] ?? throw new InvalidOperationException();
+                            request = JsonHelper.Serialize(new NTNewDeviceQrCodeQuery { Uint32Flag = 0, Token = Convert.ToBase64String(Encoding.UTF8.GetBytes(url.Replace('*', '+').Replace('-', '/').Replace("==", ""))) });
+                            
+                            _newDeviceTimer = new Timer(OnNewDevice, (interfaceUrl, request), 0, 2000);
+                            _transEmpSource = new TaskCompletionSource<bool>();
+                            if (await _transEmpSource.Task) return await Online();
+                            break;
                         default:
                             _context.LogError(Tag, $"Login failed: {result.State} | Message: {result.Tips}");
                             _context.EventInvoker.PostEvent(new BotLoginEvent((int)result.State, result.Tips));
-                            break;
+                            return false;
                     }
                 }
             }
@@ -449,6 +484,43 @@ internal class WtExchangeLogic : ILogic, IDisposable
         }
     });
 
+    private void OnNewDevice(object? state) => Task.Run(async () =>
+    {
+        if (_client == null || _newDeviceTimer == null || _transEmpSource == null) throw new InvalidOperationException("Can not find client");
+        
+        var (url, payload) = (ValueTuple<string, string>)(state ?? throw new InvalidOperationException());
+        var response = await _client.PostAsync(url, new StringContent(payload, Encoding.UTF8, "application/json"));
+        var json = JsonHelper.Deserialize<NTNewDeviceQrCodeResponse>(await response.Content.ReadAsStringAsync());
+        if (json == null) return;
+
+        if (json.ActionStatus == "OK" && string.IsNullOrEmpty(json.StrNtSuccToken))
+        {
+            _newDeviceTimer.Change(Timeout.Infinite, Timeout.Infinite);
+            
+            var sig = Encoding.UTF8.GetBytes(json.StrNtSuccToken);
+            var result = await _context.EventContext.SendEvent<NewDeviceLoginEventResp>(new NewDeviceLoginEventReq(sig));
+
+            _context.EventInvoker.PostEvent(new BotLoginEvent((int?)result?.State ?? int.MaxValue, result?.Tips));
+
+            if (result == null)
+            {
+                _transEmpSource.TrySetResult(false);
+                return;
+            }
+            
+            if (result.State == NTLoginCommon.State.LOGIN_ERROR_SUCCESS)
+            {
+                _context.EventInvoker.PostEvent(new BotRefreshKeystoreEvent(_context.Keystore));
+                _transEmpSource.TrySetResult(true);
+            }
+            else
+            {
+                _context.LogError(Tag, $"Login failed: {result.State} | Message: {result.Tips}");
+                _transEmpSource.TrySetResult(false);
+            }
+        }
+    });
+
     private void ReadWLoginSigs(Dictionary<ushort, byte[]> tlvs)
     {
         foreach (var (tag, value) in tlvs)
@@ -546,5 +618,8 @@ internal class WtExchangeLogic : ILogic, IDisposable
         _ssoHeartBeatTimer.Dispose();
         _queryStateTimer.Dispose();
         _exchangeEmpTimer.Dispose();
+        _newDeviceTimer?.Dispose();
+        
+        _client?.Dispose();
     }
 }

@@ -36,7 +36,7 @@ public class NTNewDeviceQrCodeResponse
 
     [JsonPropertyName("ActionStatus")] public string ActionStatus { get; set; }
     
-    [JsonPropertyName("str_nt_succ_token")] public string? StrNtSuccToken { get; set; }
+    [JsonPropertyName("str_nt_succ_token")] public string StrNtSuccToken { get; set; }
     
     [JsonPropertyName("ErrorCode")] public long ErrorCode { get; set; }
 

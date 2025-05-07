@@ -13,6 +13,11 @@ internal class EasyLoginEventReq : ProtocolEvent;
 
 internal class UnusualEasyLoginEventReq : ProtocolEvent;
 
+internal class NewDeviceLoginEventReq(byte[] sig) : ProtocolEvent
+{
+    public byte[] Sig { get; } = sig;
+};
+
 internal class PasswordLoginEventReq(string password, (string, string, string)? captcha) : ProtocolEvent
 {
     public string Password { get; } = password;
@@ -39,6 +44,13 @@ internal class EasyLoginEventResp(NTLoginCommon.State state, (string, string)? t
 }
 
 internal class UnusualEasyLoginEventResp(NTLoginCommon.State state, (string, string)? tips) : ProtocolEvent
+{
+    public NTLoginCommon.State State { get; } = state;
+
+    public (string, string) Tips { get; } = tips ?? (string.Empty, string.Empty);
+}
+
+internal class NewDeviceLoginEventResp(NTLoginCommon.State state, (string, string)? tips) : ProtocolEvent
 {
     public NTLoginCommon.State State { get; } = state;
 

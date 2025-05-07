@@ -88,6 +88,13 @@ public partial class BotService(
             }, cancellationToken);
         });
         
+        context.EventInvoker.RegisterEvent<BotNewDeviceVerifyEvent>((_, @event) =>
+        {
+            Log.NewDeviceVerify(logger, context.BotUin);
+            bool compatibilityMode = config.GetValue<bool>("QrCode:ConsoleCompatibilityMode");
+            QrCodeHelper.Output(@event.Url, compatibilityMode);
+        });
+        
         bool result = await context.Login(options.Value.Uin, options.Value.Password ?? string.Empty, cancellationToken);
         if (!result)
         {
@@ -112,5 +119,8 @@ public partial class BotService(
         
         [LoggerMessage(EventId = 1, Message = "QrCode State: {state}")]
         public static partial void QrCodeState(ILogger logger, LogLevel level, BotQrCodeQueryEvent.TransEmpState state);
+        
+        [LoggerMessage(Level = LogLevel.Information, EventId = 3, Message = "NewDevice verify required, please scan the QrCode with the device that has already logged in with uin {uin}")]
+        public static partial void NewDeviceVerify(ILogger logger, long uin);
     }
 }
