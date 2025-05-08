@@ -25,7 +25,7 @@ internal abstract class OidbService<TEventReq, TEventResp, TRequest, TResponse> 
     
     private protected abstract Task<TEventResp> ProcessResponse(TResponse response, BotContext context);
     
-    protected override async ValueTask<TEventResp?> Parse(ReadOnlyMemory<byte> input, BotContext context)
+    protected override async ValueTask<TEventResp> Parse(ReadOnlyMemory<byte> input, BotContext context)
     {
         var oidb = ProtoHelper.Deserialize<Oidb>(input.Span);
         if (oidb.Result != 0)

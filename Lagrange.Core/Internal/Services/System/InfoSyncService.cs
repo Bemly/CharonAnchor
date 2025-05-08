@@ -116,10 +116,10 @@ internal class InfoSyncServiceAndroid : BaseService<InfoSyncEventReq, InfoSyncEv
         return new ValueTask<ReadOnlyMemory<byte>>(ProtoHelper.Serialize(packet));
     }
 
-    protected override ValueTask<InfoSyncEventResp?> Parse(ReadOnlyMemory<byte> input, BotContext context)
+    protected override ValueTask<InfoSyncEventResp> Parse(ReadOnlyMemory<byte> input, BotContext context)
     {
         var packet = ProtoHelper.Deserialize<SsoSyncInfoResponse>(input.Span);
 
-        return new ValueTask<InfoSyncEventResp?>(new InfoSyncEventResp(packet.RegisterResponse?.Msg ?? "failed"));
+        return new ValueTask<InfoSyncEventResp>(new InfoSyncEventResp(packet.RegisterResponse?.Msg ?? "failed"));
     }
 }

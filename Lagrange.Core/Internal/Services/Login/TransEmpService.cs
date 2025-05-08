@@ -27,7 +27,7 @@ internal class TransEmpService : BaseService<ProtocolEvent, ProtocolEvent>
         });
     }
 
-    protected override ValueTask<ProtocolEvent?> Parse(ReadOnlyMemory<byte> input, BotContext context)
+    protected override ValueTask<ProtocolEvent> Parse(ReadOnlyMemory<byte> input, BotContext context)
     {
         if (!_packet.IsValueCreated) _packet = new Lazy<WtLogin>(() => new WtLogin(context));
 
@@ -47,7 +47,7 @@ internal class TransEmpService : BaseService<ProtocolEvent, ProtocolEvent>
                 var tlvs = ProtocolHelper.TlvUnPack(ref reader);
                 var tlvD1 = ProtoHelper.Deserialize<QrExtInfo>(tlvs[0xD1]);
                 
-                return new ValueTask<ProtocolEvent?>(new TransEmp31EventResp(tlvD1.QrUrl, tlvs[0x17], sig.ToArray()));
+                return new ValueTask<ProtocolEvent>(new TransEmp31EventResp(tlvD1.QrUrl, tlvs[0x17], sig.ToArray()));
             }
             case 0x12:
             {
@@ -57,10 +57,10 @@ internal class TransEmpService : BaseService<ProtocolEvent, ProtocolEvent>
                     int retry = reader.Read<int>();
                     var tlvs = ProtocolHelper.TlvUnPack(ref reader);
 
-                    return new ValueTask<ProtocolEvent?>(new TransEmp12EventResp(retCode, uin, (tlvs[0x1e], tlvs[0x19], tlvs[0x18])));
+                    return new ValueTask<ProtocolEvent>(new TransEmp12EventResp(retCode, uin, (tlvs[0x1e], tlvs[0x19], tlvs[0x18])));
                 }
 
-                return new ValueTask<ProtocolEvent?>(new TransEmp12EventResp(retCode, 0, null));
+                return new ValueTask<ProtocolEvent>(new TransEmp12EventResp(retCode, 0, null));
             }
             default:
             {

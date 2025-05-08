@@ -2,6 +2,7 @@ using System.Collections.Frozen;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Lagrange.Core.Common;
+using Lagrange.Core.Exceptions;
 using Lagrange.Core.Internal.Events;
 using Lagrange.Core.Internal.Packets.Struct;
 using Lagrange.Core.Internal.Services;
@@ -55,12 +56,11 @@ internal class ServiceContext
         _servicesEventType = servicesEventType.ToFrozenDictionary();
     }
 
-    public ValueTask<ProtocolEvent?> Resolve(SsoPacket ssoPacket)
+    public ValueTask<ProtocolEvent> Resolve(SsoPacket ssoPacket)
     {
         if (!_services.TryGetValue(ssoPacket.Command, out var service))
         {
-            _context.LogWarning(Tag, $"Service not found for command: {ssoPacket.Command}");
-            return new ValueTask<ProtocolEvent?>(default(ProtocolEvent));
+            throw new ServiceNotFoundException(ssoPacket.Command);
         }
         
         _context.LogDebug(Tag, $"Incoming SSOFrame: {ssoPacket.Command}");

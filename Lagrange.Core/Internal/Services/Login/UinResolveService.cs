@@ -22,7 +22,7 @@ internal class UinResolveService : BaseService<UinResolveEventReq, UinResolveEve
         return await _packet.Value.BuildOicq04Android(input.Qid);
     }
 
-    protected override ValueTask<UinResolveEventResp?> Parse(ReadOnlyMemory<byte> input, BotContext context)
+    protected override ValueTask<UinResolveEventResp> Parse(ReadOnlyMemory<byte> input, BotContext context)
     {
         if (!_packet.IsValueCreated) _packet = new Lazy<WtLogin>(() => new WtLogin(context));
         
@@ -41,7 +41,7 @@ internal class UinResolveService : BaseService<UinResolveEventReq, UinResolveEve
             string errorTitle = errorReader.ReadString(Prefix.Int16 | Prefix.LengthOnly);
             string errorMessage = errorReader.ReadString(Prefix.Int16 | Prefix.LengthOnly);
             
-            return new ValueTask<UinResolveEventResp?>(new UinResolveEventResp(state, (errorTitle, errorMessage)));
+            return new ValueTask<UinResolveEventResp>(new UinResolveEventResp(state, (errorTitle, errorMessage)));
         }
 
         if (state == 0)
@@ -54,9 +54,9 @@ internal class UinResolveService : BaseService<UinResolveEventReq, UinResolveEve
             short _ = tlv113Reader.Read<short>();
             string qid = tlv113Reader.ReadString(Prefix.Int16 | Prefix.LengthOnly);
             
-            return new ValueTask<UinResolveEventResp?>(new UinResolveEventResp(state, (uin, qid), tlv104));
+            return new ValueTask<UinResolveEventResp>(new UinResolveEventResp(state, (uin, qid), tlv104));
         }
         
-        return new ValueTask<UinResolveEventResp?>(new UinResolveEventResp(state, null));
+        return new ValueTask<UinResolveEventResp>(new UinResolveEventResp(state, null));
     }
 }

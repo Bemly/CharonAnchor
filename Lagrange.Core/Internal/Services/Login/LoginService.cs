@@ -27,12 +27,12 @@ internal class LoginService : BaseService<LoginEventReq, LoginEventResp>
         };
     }
 
-    protected override ValueTask<LoginEventResp?> Parse(ReadOnlyMemory<byte> input, BotContext context)
+    protected override ValueTask<LoginEventResp> Parse(ReadOnlyMemory<byte> input, BotContext context)
     {
         if (!_packet.IsValueCreated) _packet = new Lazy<WtLogin>(() => new WtLogin(context));
 
         var result = Common.Parse(_packet.Value, input, context);
-        return new ValueTask<LoginEventResp?>(result);
+        return new ValueTask<LoginEventResp>(result);
     }
 }
 
@@ -56,12 +56,12 @@ internal class LoginServiceAndroid : BaseService<LoginEventReq, LoginEventResp>
         };
     }
 
-    protected override ValueTask<LoginEventResp?> Parse(ReadOnlyMemory<byte> input, BotContext context)
+    protected override ValueTask<LoginEventResp> Parse(ReadOnlyMemory<byte> input, BotContext context)
     {
         if (!_packet.IsValueCreated) _packet = new Lazy<WtLogin>(() => new WtLogin(context));
 
         var result = Common.Parse(_packet.Value, input, context);
-        return new ValueTask<LoginEventResp?>(result);
+        return new ValueTask<LoginEventResp>(result);
     }
 }
 

@@ -11,7 +11,7 @@ namespace Lagrange.Core.Internal.Services.System;
 [Service("trpc.msg.register_proxy.RegisterProxy.InfoSyncPush")]
 internal class InfoSyncPushService : BaseService<InfoSyncPushEvent, InfoSyncPushEvent>
 {
-    protected override ValueTask<InfoSyncPushEvent?> Parse(ReadOnlyMemory<byte> input, BotContext context)
+    protected override ValueTask<InfoSyncPushEvent> Parse(ReadOnlyMemory<byte> input, BotContext context)
     {
         var obj = ProtoObject.Parse(input.Span);
         var push = ProtoHelper.Deserialize<InfoSyncPush>(input.Span);

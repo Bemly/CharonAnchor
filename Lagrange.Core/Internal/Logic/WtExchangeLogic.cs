@@ -97,11 +97,6 @@ internal class WtExchangeLogic : ILogic, IDisposable
             var result = await _context.EventContext.SendEvent<EasyLoginEventResp>(new EasyLoginEventReq());
             while (true)
             {
-                if (result == null)
-                {
-                    _context.LogError(Tag, "Unexpected null result for trpc.login.*");
-                    return false;
-                }
                 _token?.ThrowIfCancellationRequested();
                 
                 switch (result.State)
@@ -114,8 +109,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
                         _context.LogInfo(Tag, "Unusual device detected, waiting for confirmation");
 
                         var transEmp31 = await _context.EventContext.SendEvent<TransEmp31EventResp>(new TransEmp31EventReq(sig));
-                        if (transEmp31 == null) return false; // TODO: Log error
-                        
+
                         _context.Keystore.State.QrSig = transEmp31.QrSig;
                         _transEmpSource = new TaskCompletionSource<bool>();
                         await _queryStateTimer.DisposeAsync();
@@ -135,7 +129,6 @@ internal class WtExchangeLogic : ILogic, IDisposable
             _context.LogInfo(Tag, "Password is empty or null, use QRCode Login");
             
             var transEmp31 = await _context.EventContext.SendEvent<TransEmp31EventResp>(new TransEmp31EventReq(null));
-            if (transEmp31 == null) return false; // TODO: Log error
 
             _transEmpSource = new TaskCompletionSource<bool>();
             _context.EventInvoker.PostEvent(new BotQrCodeEvent(transEmp31.Url, transEmp31.Image));
@@ -156,7 +149,6 @@ internal class WtExchangeLogic : ILogic, IDisposable
                 Random.Shared.NextBytes(_context.Keystore.WLoginSigs.TgtgtKey);
                 
                 var result = await _context.EventContext.SendEvent<LoginEventResp>(new LoginEventReq(LoginEventReq.Command.Tgtgt, password));
-                if (result == null) return false;
 
                 if (result.State == LoginEventResp.States.CaptchaVerify)
                 {
@@ -182,7 +174,6 @@ internal class WtExchangeLogic : ILogic, IDisposable
                     
                     _token?.ThrowIfCancellationRequested();
                     result = await _context.EventContext.SendEvent<LoginEventResp>(new LoginEventReq(LoginEventReq.Command.Captcha) { Ticket = ticket });
-                    if (result == null) return false;
                 }
 
                 if (result.State == LoginEventResp.States.DeviceLockViaSmsNewArea)
@@ -208,7 +199,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
                     
                     _token?.ThrowIfCancellationRequested();
                     result = await _context.EventContext.SendEvent<LoginEventResp>(new LoginEventReq(LoginEventReq.Command.FetchSMSCode));
-                    if (result?.State == LoginEventResp.States.SmsRequired)
+                    if (result.State == LoginEventResp.States.SmsRequired)
                     {
                         if (result.Tlvs.TryGetValue(0x104, out var tlv1048))
                         {
@@ -225,7 +216,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
                     }
                 }
                 
-                if (result?.State == LoginEventResp.States.Success)
+                if (result.State == LoginEventResp.States.Success)
                 {
                     ReadWLoginSigs(result.Tlvs);
                     
@@ -237,8 +228,8 @@ internal class WtExchangeLogic : ILogic, IDisposable
                 }
                 else
                 {
-                    _context.LogError(Tag, $"Login failed: {result?.RetCode} | Message: {result?.Error}");
-                    _context.EventInvoker.PostEvent(new BotLoginEvent(result?.RetCode ?? byte.MaxValue, result?.Error));
+                    _context.LogError(Tag, $"Login failed: {result.RetCode} | Message: {result.Error}");
+                    _context.EventInvoker.PostEvent(new BotLoginEvent(result.RetCode, result.Error));
                 }
             }
             else
@@ -249,11 +240,6 @@ internal class WtExchangeLogic : ILogic, IDisposable
                 var result = await _context.EventContext.SendEvent<PasswordLoginEventResp>(new PasswordLoginEventReq(password, null));
                 while (true)
                 {
-                    if (result == null)
-                    {
-                        _context.LogError(Tag, "Unexpected null result for trpc.login.*");
-                        return false;
-                    }
                     _token?.ThrowIfCancellationRequested();
                     
                     switch (result.State)
@@ -336,16 +322,14 @@ internal class WtExchangeLogic : ILogic, IDisposable
     public async Task<BotQrCodeInfo?> FetchQrCodeInfo(byte[] k)
     {
         var result = await _context.EventContext.SendEvent<VerifyCodeEventResp>(new VerifyCodeEventReq(k));
-        if (result == null) return null;
-
         return new BotQrCodeInfo(result.Message, result.Platform, result.Location, result.Device);
     }
 
     public async Task<(bool, string)> CloseQrCode(byte[] k, bool confirm)
     {
         var result = await _context.EventContext.SendEvent<CloseCodeEventResp>(new CloseCodeEventReq(k, confirm));
-        bool success = !confirm || result?.State == 0;
-        return (success, result?.Message ?? string.Empty);
+        bool success = !confirm || result.State == 0;
+        return (success, result.Message);
     }
     
     public bool SubmitCaptcha(string ticket, string randStr)
@@ -369,8 +353,6 @@ internal class WtExchangeLogic : ILogic, IDisposable
     private async Task<bool> Online()
     {
         var infoSync = await _context.EventContext.SendEvent<InfoSyncEventResp>(new InfoSyncEventReq());
-        if (infoSync == null) return false;
-
         if (infoSync.Message == "register success")
         {
             _context.EventInvoker.PostEvent(new BotOnlineEvent(BotOnlineEvent.Reasons.Login));
@@ -386,12 +368,6 @@ internal class WtExchangeLogic : ILogic, IDisposable
     private async Task<bool> KeyExchange()
     {
         var keyExchangeResult = await _context.EventContext.SendEvent<KeyExchangeEventResp>(new KeyExchangeEventReq());
-        if (keyExchangeResult == null)
-        {
-            _context.LogError(Tag, "Key exchange failed");
-            return false;
-        }
-
         _context.Keystore.State.KeyExchangeSession = (keyExchangeResult.SessionTicket, keyExchangeResult.SessionKey);
         return true;
     }
@@ -412,7 +388,6 @@ internal class WtExchangeLogic : ILogic, IDisposable
 
         bool isUnusual = (bool?)state ?? false;
         var transEmp12 = await _context.EventContext.SendEvent<TransEmp12EventResp>(new TransEmp12EventReq());
-        if (transEmp12 == null) return;
         
         _context.EventInvoker.PostEvent(new BotQrCodeQueryEvent((BotQrCodeQueryEvent.TransEmpState)transEmp12.State));
         
@@ -430,24 +405,24 @@ internal class WtExchangeLogic : ILogic, IDisposable
                 {
                     var result = await _context.EventContext.SendEvent<UnusualEasyLoginEventResp>(new UnusualEasyLoginEventReq());
 
-                    if (result?.State == NTLoginCommon.State.LOGIN_ERROR_SUCCESS)
+                    if (result.State == NTLoginCommon.State.LOGIN_ERROR_SUCCESS)
                     {
                         _context.EventInvoker.PostEvent(new BotRefreshKeystoreEvent(_context.Keystore));
                         _transEmpSource.TrySetResult(true);
                     }
                     else
                     {
-                        _context.LogError(Tag, $"Login failed: {result?.State} | Message: {result?.Tips}");
+                        _context.LogError(Tag, $"Login failed: {result.State} | Message: {result.Tips}");
                         _transEmpSource.TrySetResult(false);
                     }
                     
-                    _context.EventInvoker.PostEvent(new BotLoginEvent((int?)result?.State ?? int.MaxValue, result?.Tips));
+                    _context.EventInvoker.PostEvent(new BotLoginEvent((int)result.State, result.Tips));
                 }
                 else
                 {
                     var result = await _context.EventContext.SendEvent<LoginEventResp>(new LoginEventReq(LoginEventReq.Command.Tgtgt));
 
-                    if (result?.RetCode == 0)
+                    if (result.RetCode == 0)
                     {
                         ReadWLoginSigs(result.Tlvs);
                         _context.EventInvoker.PostEvent(new BotRefreshKeystoreEvent(_context.Keystore));
@@ -455,11 +430,11 @@ internal class WtExchangeLogic : ILogic, IDisposable
                     }
                     else
                     {
-                        _context.LogError(Tag, $"Login failed: {result?.RetCode} | Message: {result?.Error}");
+                        _context.LogError(Tag, $"Login failed: {result.RetCode} | Message: {result.Error}");
                         _transEmpSource.TrySetResult(false);
                     }
 
-                    _context.EventInvoker.PostEvent(new BotLoginEvent(result?.RetCode ?? byte.MaxValue, result?.Error));
+                    _context.EventInvoker.PostEvent(new BotLoginEvent(result.RetCode, result.Error));
                 } 
                 break;
             case { State: TransEmp12EventResp.TransEmpState.Canceled or TransEmp12EventResp.TransEmpState.Invalid or TransEmp12EventResp.TransEmpState.CodeExpired }:
@@ -474,8 +449,6 @@ internal class WtExchangeLogic : ILogic, IDisposable
     private void OnExchangeEmp(object? state) => Task.Run(async () =>
     {
         var result = await _context.EventContext.SendEvent<ExchangeEmpEventResp>(new ExchangeEmpEventReq(ExchangeEmpEventReq.Command.RefreshByA1));
-        if (result == null) return;
-
         if (result.RetCode == 0)
         {
             ReadWLoginSigs(result.Tlvs);
@@ -500,13 +473,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
             var sig = Encoding.UTF8.GetBytes(json.StrNtSuccToken);
             var result = await _context.EventContext.SendEvent<NewDeviceLoginEventResp>(new NewDeviceLoginEventReq(sig));
 
-            _context.EventInvoker.PostEvent(new BotLoginEvent((int?)result?.State ?? int.MaxValue, result?.Tips));
-
-            if (result == null)
-            {
-                _transEmpSource.TrySetResult(false);
-                return;
-            }
+            _context.EventInvoker.PostEvent(new BotLoginEvent((int)result.State, result.Tips));
             
             if (result.State == NTLoginCommon.State.LOGIN_ERROR_SUCCESS)
             {

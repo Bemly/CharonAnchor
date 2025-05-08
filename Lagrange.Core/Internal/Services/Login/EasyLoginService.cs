@@ -16,11 +16,11 @@ internal class EasyLoginService : BaseService<EasyLoginEventReq, EasyLoginEventR
         return new ValueTask<ReadOnlyMemory<byte>>(NTLoginCommon.Encode(context, a1, null));
     }
 
-    protected override ValueTask<EasyLoginEventResp?> Parse(ReadOnlyMemory<byte> input, BotContext context)
+    protected override ValueTask<EasyLoginEventResp> Parse(ReadOnlyMemory<byte> input, BotContext context)
     {
         var state = NTLoginCommon.Decode(context, input, out var info, out var resp);
         
-        return new ValueTask<EasyLoginEventResp?>(state switch
+        return new ValueTask<EasyLoginEventResp>(state switch
         {
             NTLoginCommon.State.LOGIN_ERROR_SUCCESS => new EasyLoginEventResp(state, null, null),
             NTLoginCommon.State.LOGIN_ERROR_UNUSUAL_DEVICE => new EasyLoginEventResp(state, null, resp.Unusual.Sig),

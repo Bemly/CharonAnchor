@@ -37,7 +37,7 @@ internal class QrLoginService : BaseService<ProtocolEvent, ProtocolEvent>
         }
     }
 
-    protected override ValueTask<ProtocolEvent?> Parse(ReadOnlyMemory<byte> input, BotContext context)
+    protected override ValueTask<ProtocolEvent> Parse(ReadOnlyMemory<byte> input, BotContext context)
     {
         if (!_packet.IsValueCreated) _packet = new Lazy<WtLogin>(() => new WtLogin(context));
 
@@ -51,7 +51,7 @@ internal class QrLoginService : BaseService<ProtocolEvent, ProtocolEvent>
             int appId = reader.Read<int>();
             int flag = reader.Read<int>();
 
-            return new ValueTask<ProtocolEvent?>(new CloseCodeEventResp(0, string.Empty));
+            return new ValueTask<ProtocolEvent>(new CloseCodeEventResp(0, string.Empty));
         }
 
         _ = reader.Read<ushort>();
@@ -88,7 +88,7 @@ internal class QrLoginService : BaseService<ProtocolEvent, ProtocolEvent>
                     device = deviceInfo.DevInfo.DevName;
                 }
 
-                return new ValueTask<ProtocolEvent?>(new VerifyCodeEventResp(state, message, platform, location, device));
+                return new ValueTask<ProtocolEvent>(new VerifyCodeEventResp(state, message, platform, location, device));
             }
             else
             {
@@ -96,19 +96,19 @@ internal class QrLoginService : BaseService<ProtocolEvent, ProtocolEvent>
                 var tlvs = ProtocolHelper.TlvUnPack(ref reader);
                 string message = Encoding.UTF8.GetString(tlvs[0x36]);
             
-                return new ValueTask<ProtocolEvent?>(new CloseCodeEventResp(state, message));
+                return new ValueTask<ProtocolEvent>(new CloseCodeEventResp(state, message));
             }
         }
         
         if (code2dCmd == 0x13)
         {
             string message = reader.ReadString(Prefix.Int16 | Prefix.LengthOnly);
-            return new ValueTask<ProtocolEvent?>(new VerifyCodeEventResp(state, message, string.Empty, string.Empty, null));
+            return new ValueTask<ProtocolEvent>(new VerifyCodeEventResp(state, message, string.Empty, string.Empty, null));
         }
         else
         {
             string message = reader.ReadString(Prefix.Int16 | Prefix.LengthOnly);
-            return new ValueTask<ProtocolEvent?>(new CloseCodeEventResp(state, message));
+            return new ValueTask<ProtocolEvent>(new CloseCodeEventResp(state, message));
         }
     }
 }

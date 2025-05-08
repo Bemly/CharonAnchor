@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using Lagrange.Core.Common.Entity;
-using Lagrange.Core.Exceptions;
 using Lagrange.Core.Internal.Events.System;
 
 namespace Lagrange.Core.Internal.Context;
@@ -99,8 +98,6 @@ internal class CacheContext(BotContext context)
         do
         {
             var result = await context.EventContext.SendEvent<FetchFriendsEventResp>(new FetchFriendsEventReq(cookie));
-            if (result == null) break;
-
             cookie = result.Cookie;
 
             friends.AddRange(result.Friends);
@@ -113,8 +110,6 @@ internal class CacheContext(BotContext context)
     private async Task<List<BotGroup>> FetchGroups()
     {
         var result = await context.EventContext.SendEvent<FetchGroupsEventResp>(new FetchGroupsEventReq());
-        if (result == null) return [];
-
         return result.Groups;
     }
 
@@ -126,8 +121,6 @@ internal class CacheContext(BotContext context)
         do
         {
             var result = await context.EventContext.SendEvent<FetchGroupMembersEventResp>(new FetchGroupMembersEventReq(groupUin, cookie));
-            if (result == null) throw new InvalidTargetException(null, groupUin);
-
             cookie = result.Cookie;
 
             members.AddRange(result.GroupMembers);

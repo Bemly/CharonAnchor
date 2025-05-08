@@ -16,8 +16,8 @@ internal class AliveService : BaseService<AliveEvent, AliveEvent>
         return new ValueTask<ReadOnlyMemory<byte>>(Buffer);
     }
 
-    protected override ValueTask<AliveEvent?> Parse(ReadOnlyMemory<byte> input, BotContext context)
+    protected override ValueTask<AliveEvent> Parse(ReadOnlyMemory<byte> input, BotContext context)
     {
-        return new ValueTask<AliveEvent?>(input.Length == 4 ? new AliveEvent() : null);
+        return new ValueTask<AliveEvent>(new AliveEvent());
     }
 }

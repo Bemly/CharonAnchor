@@ -17,10 +17,10 @@ internal class SendMessageService : BaseService<SendMessageEventReq, SendMessage
         return new ValueTask<ReadOnlyMemory<byte>>(payload);
     }
 
-    protected override ValueTask<SendMessageEventResp?> Parse(ReadOnlyMemory<byte> input, BotContext context)
+    protected override ValueTask<SendMessageEventResp> Parse(ReadOnlyMemory<byte> input, BotContext context)
     {
         var response = ProtoHelper.Deserialize<PbSendMsgResp>(input.Span);
         int sequence = response.ClientSequence == 0 ? response.Sequence : response.ClientSequence;
-        return new ValueTask<SendMessageEventResp?>(new SendMessageEventResp(response.Result, response.SendTime, sequence));
+        return new ValueTask<SendMessageEventResp>(new SendMessageEventResp(response.Result, response.SendTime, sequence));
     }
 }

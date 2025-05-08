@@ -17,7 +17,7 @@ internal class SsoHeartBeatService : BaseService<SsoHeartBeatEventReq, SsoHeartB
         return new ValueTask<ReadOnlyMemory<byte>>(ProtoHelper.Serialize(packet));
     }
 
-    protected override ValueTask<SsoHeartBeatEventResp?> Parse(ReadOnlyMemory<byte> input, BotContext context)
+    protected override ValueTask<SsoHeartBeatEventResp> Parse(ReadOnlyMemory<byte> input, BotContext context)
     {
         var packet = ProtoHelper.Deserialize<SsoHeartBeatResponse>(input.Span);
 
@@ -43,10 +43,10 @@ internal class SsoHeartBeatServiceAndroid : BaseService<SsoHeartBeatEventReq, Ss
         return new ValueTask<ReadOnlyMemory<byte>>(ProtoHelper.Serialize(packet));
     }
 
-    protected override ValueTask<SsoHeartBeatEventResp?> Parse(ReadOnlyMemory<byte> input, BotContext context)
+    protected override ValueTask<SsoHeartBeatEventResp> Parse(ReadOnlyMemory<byte> input, BotContext context)
     {
         var packet = ProtoHelper.Deserialize<SsoHeartBeatResponse>(input.Span);
 
-        return new ValueTask<SsoHeartBeatEventResp?>(new SsoHeartBeatEventResp((int)packet.Interval));
+        return new ValueTask<SsoHeartBeatEventResp>(new SsoHeartBeatEventResp((int)packet.Interval));
     }
 }

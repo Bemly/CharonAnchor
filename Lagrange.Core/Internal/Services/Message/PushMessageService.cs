@@ -10,10 +10,10 @@ namespace Lagrange.Core.Internal.Services.Message;
 [Service("trpc.msg.olpush.OlPushService.MsgPush")]
 internal class PushMessageService : BaseService<PushMessageEvent, PushMessageEvent>
 {
-    protected override ValueTask<PushMessageEvent?> Parse(ReadOnlyMemory<byte> input, BotContext context)
+    protected override ValueTask<PushMessageEvent> Parse(ReadOnlyMemory<byte> input, BotContext context)
     {
         var msg = ProtoHelper.Deserialize<MsgPush>(input.Span);
         
-        return new ValueTask<PushMessageEvent?>(new PushMessageEvent(msg, input));
+        return new ValueTask<PushMessageEvent>(new PushMessageEvent(msg, input));
     }
 }

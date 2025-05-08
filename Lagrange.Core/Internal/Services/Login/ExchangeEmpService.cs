@@ -27,7 +27,7 @@ internal class ExchangeEmpService : BaseService<ExchangeEmpEventReq, ExchangeEmp
         };
     }
 
-    protected override ValueTask<ExchangeEmpEventResp?> Parse(ReadOnlyMemory<byte> input, BotContext context)
+    protected override ValueTask<ExchangeEmpEventResp> Parse(ReadOnlyMemory<byte> input, BotContext context)
     {
         if (!_packet.IsValueCreated) _packet = new Lazy<WtLogin>(() => new WtLogin(context));
 
@@ -46,9 +46,9 @@ internal class ExchangeEmpService : BaseService<ExchangeEmpEventReq, ExchangeEmp
             var tlv119Reader = new BinaryPacket(tlv119);
             var tlvCollection = ProtocolHelper.TlvUnPack(ref tlv119Reader);
             
-            return new ValueTask<ExchangeEmpEventResp?>(new ExchangeEmpEventResp(state, tlvCollection));
+            return new ValueTask<ExchangeEmpEventResp>(new ExchangeEmpEventResp(state, tlvCollection));
         }
 
-        return new ValueTask<ExchangeEmpEventResp?>(new ExchangeEmpEventResp(state, tlvs));
+        return new ValueTask<ExchangeEmpEventResp>(new ExchangeEmpEventResp(state, tlvs));
     }
 }

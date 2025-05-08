@@ -20,12 +20,10 @@ public class ImageEntity : RichMediaEntityBase
 
     public override async Task Postprocess(BotContext context, BotMessage message)
     {
-        NTV2RichMediaDownloadEventResp? result = message.IsGroup()
+        NTV2RichMediaDownloadEventResp result = message.IsGroup()
             ? await context.EventContext.SendEvent<ImageGroupDownloadEventResp>(new ImageGroupDownloadEventReq(message, this))
             : await context.EventContext.SendEvent<ImageDownloadEventResp>(new ImageDownloadEventReq(message, this));
-
-        if (result == null) return;
-
+        
         FileUrl = result.Url;
     }
 

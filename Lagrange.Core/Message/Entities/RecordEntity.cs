@@ -19,12 +19,10 @@ public class RecordEntity : RichMediaEntityBase
 
     public override async Task Postprocess(BotContext context, BotMessage message)
     {
-        NTV2RichMediaDownloadEventResp? result = message.IsGroup()
+        NTV2RichMediaDownloadEventResp result = message.IsGroup()
             ? await context.EventContext.SendEvent<RecordGroupDownloadEventResp>(new RecordGroupDownloadEventReq(message, this))
             : await context.EventContext.SendEvent<RecordDownloadEventResp>(new RecordDownloadEventReq(message, this));
-
-        if (result == null) return;
-
+        
         FileUrl = result.Url;
     }
     

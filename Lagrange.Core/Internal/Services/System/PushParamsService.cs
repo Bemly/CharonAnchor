@@ -10,7 +10,7 @@ namespace Lagrange.Core.Internal.Services.System;
 [Service("trpc.msg.register_proxy.RegisterProxy.PushParams")]
 internal class PushParamsService : BaseService<PushParamsEvent, PushParamsEvent>
 {
-    protected override ValueTask<PushParamsEvent?> Parse(ReadOnlyMemory<byte> input, BotContext context)
+    protected override ValueTask<PushParamsEvent> Parse(ReadOnlyMemory<byte> input, BotContext context)
     {
         var @params = ProtoHelper.Deserialize<PushParams>(input.Span);
         

@@ -16,11 +16,11 @@ internal class UnusualEasyLoginService : BaseService<UnusualEasyLoginEventReq, U
         return new ValueTask<ReadOnlyMemory<byte>>(NTLoginCommon.Encode(context, a1, null));
     }
 
-    protected override ValueTask<UnusualEasyLoginEventResp?> Parse(ReadOnlyMemory<byte> input, BotContext context)
+    protected override ValueTask<UnusualEasyLoginEventResp> Parse(ReadOnlyMemory<byte> input, BotContext context)
     {
         var state = NTLoginCommon.Decode(context, input, out var info, out var resp);
     
-        return new ValueTask<UnusualEasyLoginEventResp?>(state switch
+        return new ValueTask<UnusualEasyLoginEventResp>(state switch
         {
             NTLoginCommon.State.LOGIN_ERROR_SUCCESS => new UnusualEasyLoginEventResp(state, null),
             _ when info is not null => new UnusualEasyLoginEventResp(state, (info.TipsTitle, info.TipsContent)),

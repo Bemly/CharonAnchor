@@ -62,12 +62,12 @@ internal class KeyExchangeService : BaseService<KeyExchangeEventReq, KeyExchange
         return new ValueTask<ReadOnlyMemory<byte>>(ProtoHelper.Serialize(request));
     }
 
-    protected override ValueTask<KeyExchangeEventResp?> Parse(ReadOnlyMemory<byte> input, BotContext context)
+    protected override ValueTask<KeyExchangeEventResp> Parse(ReadOnlyMemory<byte> input, BotContext context)
     {
         var response = ProtoHelper.Deserialize<KeyExchangeResponse>(input.Span);
         var shareKey = context.Keystore.Prime256V1.KeyExchange(response.PublicKey, false);
         var secret = ProtoHelper.Deserialize<KeyExchangeResponseSecret>(AesGcmProvider.Decrypt(response.Secret, shareKey));
 
-        return new ValueTask<KeyExchangeEventResp?>(new KeyExchangeEventResp(secret.SessionTicket, secret.SessionKey));
+        return new ValueTask<KeyExchangeEventResp>(new KeyExchangeEventResp(secret.SessionTicket, secret.SessionKey));
     }
 }
