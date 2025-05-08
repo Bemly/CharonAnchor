@@ -18,8 +18,7 @@ internal class FetchGroupMembersService : OidbService<FetchGroupMembersEventReq,
     {
         return Task.FromResult(new FetchGroupMembersRequest
         {
-            // TODO: uint? ulong?
-            GroupUin = (uint)request.GroupUin,
+            GroupUin = request.GroupUin,
             Field2 = 5,
             Field3 = 2,
             Body = new FetchGroupMembersRequestBody

@@ -7,7 +7,7 @@ namespace Lagrange.Core.Internal.Packets.Service;
 [ProtoPackable]
 internal partial class FetchGroupMembersRequest
 {
-    [ProtoMember(1)] public uint GroupUin { get; set; }
+    [ProtoMember(1)] public long GroupUin { get; set; }
 
     [ProtoMember(2)] public uint Field2 { get; set; }
 
@@ -67,11 +67,11 @@ internal partial class FetchGroupMembersResponse
 
     [ProtoMember(2)] public List<FetchGroupMembersResponseMember> Members { get; set; }
 
-    [ProtoMember(3)] public uint MemberCount { get; set; }
+    [ProtoMember(3)] public uint MemberCount { get; set; } // member_count
 
-    [ProtoMember(5)] public uint MemberListChangeSeq { get; set; }
+    [ProtoMember(5)] public uint MemberListChangeSeq { get; set; }  // member_list_change_seq
 
-    [ProtoMember(6)] public uint MemberCardSeq { get; set; }
+    [ProtoMember(6)] public uint MemberCardSeq { get; set; }  // member_card_seq
 
     [ProtoMember(15)] public byte[]? Cookie { get; set; }
 }

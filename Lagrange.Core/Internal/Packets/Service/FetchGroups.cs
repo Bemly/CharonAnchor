@@ -125,7 +125,7 @@ internal partial class FetchGroupsResponse
 [ProtoPackable]
 internal partial class FetchGroupsResponseGroup
 {
-    [ProtoMember(3)] public uint GroupUin { get; set; }
+    [ProtoMember(3)] public long GroupUin { get; set; }
 
     [ProtoMember(4)] public FetchGroupsResponseGroupInfo Info { get; set; }
 

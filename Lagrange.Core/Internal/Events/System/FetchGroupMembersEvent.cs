@@ -2,9 +2,9 @@ using Lagrange.Core.Common.Entity;
 
 namespace Lagrange.Core.Internal.Events.System;
 
-internal class FetchGroupMembersEventReq(ulong groupUin, byte[]? cookie) : ProtocolEvent
+internal class FetchGroupMembersEventReq(long groupUin, byte[]? cookie) : ProtocolEvent
 {
-    public ulong GroupUin { get; } = groupUin;
+    public long GroupUin { get; } = groupUin;
 
     public byte[]? Cookie { get; } = cookie;
 }

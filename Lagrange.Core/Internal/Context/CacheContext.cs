@@ -127,7 +127,7 @@ internal class CacheContext(BotContext context)
         byte[]? cookie = null;
         do
         {
-            var result = await context.EventContext.SendEvent<FetchGroupMembersEventResp>(new FetchGroupMembersEventReq((ulong)groupUin, cookie));
+            var result = await context.EventContext.SendEvent<FetchGroupMembersEventResp>(new FetchGroupMembersEventReq(groupUin, cookie));
             // TODO: result should not be nullable, and should be thrown directly when an error occurs
             if (result == null) break;
 
