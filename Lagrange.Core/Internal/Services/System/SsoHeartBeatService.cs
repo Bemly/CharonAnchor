@@ -21,7 +21,7 @@ internal class SsoHeartBeatService : BaseService<SsoHeartBeatEventReq, SsoHeartB
     {
         var packet = ProtoHelper.Deserialize<SsoHeartBeatResponse>(input.Span);
 
-        return new ValueTask<SsoHeartBeatEventResp?>(new SsoHeartBeatEventResp((int)packet.Interval));
+        return new ValueTask<SsoHeartBeatEventResp>(new SsoHeartBeatEventResp((int)packet.Interval));
     }
 }
 
