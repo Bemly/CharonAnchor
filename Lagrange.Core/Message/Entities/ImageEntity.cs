@@ -13,6 +13,10 @@ public class ImageEntity : RichMediaEntityBase
     
     public Vector2 ImageSize { get; set; }
     
+    public int SubType { get; set; }
+    
+    public string Summary { get; internal set; } = "[图片]";
+    
     public override Task Preprocess(BotContext context, BotMessage message)
     {
         throw new NotImplementedException();
@@ -42,7 +46,9 @@ public class ImageEntity : RichMediaEntityBase
             return new ImageEntity
             {
                 MsgInfo = msgInfo,
-                ImageSize = new Vector2(info.Width, info.Height)
+                ImageSize = new Vector2(info.Width, info.Height),
+                SubType = (int)msgInfo.ExtBizInfo.Pic.BizType,
+                Summary = string.IsNullOrEmpty(msgInfo.ExtBizInfo.Pic.TextSummary) ? "[图片]" : msgInfo.ExtBizInfo.Pic.TextSummary,
             };
         }
         

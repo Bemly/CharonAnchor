@@ -19,6 +19,7 @@ public abstract class RichMediaEntityBase : IMessageEntity
             FileMd5 = fileInfo.FileHash;
             FileSha1 = fileInfo.FileSha1;
             FileSize = fileInfo.FileSize;
+            FileName = fileInfo.FileName;
             _msgInfo = value;
         } 
     }
@@ -26,6 +27,8 @@ public abstract class RichMediaEntityBase : IMessageEntity
     internal abstract Lazy<Stream>? Stream { get; }
     
     public string FileUrl { get; internal set; } = string.Empty;
+
+    public string FileName { get; internal set; } = string.Empty;
     
     public string FileSha1 { get; internal set; } = string.Empty;
     

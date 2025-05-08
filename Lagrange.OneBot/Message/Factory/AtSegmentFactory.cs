@@ -4,6 +4,7 @@ using Lagrange.OneBot.Message.Entity;
 
 namespace Lagrange.OneBot.Message.Factory;
 
+[SegmentSubscriber<MentionEntity>("at")]
 public class AtSegmentFactory : ISegmentFactory<AtSegment, MentionEntity>
 {
     public Type SegmentType => typeof(AtSegment);
