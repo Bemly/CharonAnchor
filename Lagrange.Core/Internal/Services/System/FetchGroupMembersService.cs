@@ -1,5 +1,6 @@
 using Lagrange.Core.Common;
 using Lagrange.Core.Common.Entity;
+using Lagrange.Core.Exceptions;
 using Lagrange.Core.Internal.Events;
 using Lagrange.Core.Internal.Events.System;
 using Lagrange.Core.Internal.Packets.Service;
@@ -39,8 +40,7 @@ internal class FetchGroupMembersService : OidbService<FetchGroupMembersEventReq,
     private protected override async Task<FetchGroupMembersEventResp> ProcessResponse(FetchGroupMembersResponse response, BotContext context)
     {
         var group = await context.CacheContext.ResolveGroup(response.GroupUin);
-        // TODO: ResolveGroupException
-        if (group == null) throw new Exception($"RESOLVE GROUP({response.GroupUin}) FAILED");
+        if (group == null) throw new InvalidTargetException(null, response.GroupUin);
 
         return new FetchGroupMembersEventResp(
             [.. response.Members.Select(raw => new BotGroupMember(

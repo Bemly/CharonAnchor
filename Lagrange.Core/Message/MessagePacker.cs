@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Lagrange.Core.Common.Entity;
+using Lagrange.Core.Exceptions;
 using Lagrange.Core.Internal.Packets.Message;
 using Lagrange.Core.Message.Entities;
 using Lagrange.Core.Utility;
@@ -77,10 +78,7 @@ internal class MessagePacker
         {
             case 166:
                 var friend = await _context.CacheContext.ResolveFriend(routingHead.FromUin);
-                if (friend == null)
-                {
-                    ArgumentNullException.ThrowIfNull(friend); // TODO: Log
-                }
+                if (friend == null) throw new InvalidTargetException(routingHead.FromUin);
 
                 return friend;
             case 141:
@@ -90,10 +88,7 @@ internal class MessagePacker
                 };
             case 82:
                 var items = await _context.CacheContext.ResolveMember(routingHead.Group.GroupCode, routingHead.FromUin);
-                if (items == null)
-                {
-                    ArgumentNullException.ThrowIfNull(items); // TODO: Log
-                }
+                if (items == null) throw new InvalidTargetException(routingHead.Group.GroupCode, routingHead.FromUin);
 
                 return items.Value.Item2;
             default:

@@ -2,6 +2,7 @@ using System.Collections.Frozen;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Lagrange.Core.Events;
+using Lagrange.Core.Exceptions;
 using Lagrange.Core.Internal.Events;
 using Lagrange.Core.Internal.Logic;
 using Lagrange.Core.Internal.Packets.Struct;
@@ -55,11 +56,7 @@ internal class EventContext : IDisposable
         {
             await HandleOutgoingEvent(@event);
             var (frame, attribute) =  await _context.ServiceContext.Resolve(@event);
-            if (frame.Sequence == 0)
-            {
-                // TODO: Log
-                return null;
-            }
+            if (frame.Sequence == 0) return null;
             
             var @return = await _context.PacketContext.SendPacket(frame, attribute);
             var resolved = await _context.ServiceContext.Resolve(@return);
@@ -70,9 +67,9 @@ internal class EventContext : IDisposable
                 return result;
             }
         }
-        catch (Exception e)
+        catch (Exception e) when (e is not LagrangeException)
         {
-            Console.WriteLine(e);
+            throw new LagrangeException("An error occurred while sending the event", e);
         }
 
         return null;
@@ -88,9 +85,9 @@ internal class EventContext : IDisposable
                 {
                     await logic.Incoming(@event);
                 }
-                catch (Exception e)
+                catch (Exception e) when (e is not LagrangeException)
                 {
-                    // TODO: Log
+                    throw new LagrangeException("An error occurred while processing the incoming event", e);
                 }
             }
         }
@@ -106,9 +103,9 @@ internal class EventContext : IDisposable
                 {
                     await logic.Outgoing(@event);
                 }
-                catch (Exception e)
+                catch (Exception e) when (e is not LagrangeException)
                 {
-                    // TODO: Log
+                    throw new LagrangeException("An error occurred while processing the outgoing event", e);
                 }
             }
         }
@@ -124,9 +121,9 @@ internal class EventContext : IDisposable
                 {
                     await logic.Outgoing(@event);
                 }
-                catch (Exception e)
+                catch (Exception e) when (e is not LagrangeException)
                 {
-                    // TODO: Log
+                    throw new LagrangeException("An error occurred while processing the outgoing event", e);
                 }
             }
         }

@@ -1,4 +1,5 @@
 using Lagrange.Core.Common.Entity;
+using Lagrange.Core.Exceptions;
 using Lagrange.Core.Internal.Events.Message;
 using Lagrange.Core.Internal.Packets.Message;
 using Lagrange.Core.Message;
@@ -17,12 +18,12 @@ internal class MessagingLogic(BotContext context) : ILogic
 
     public async Task<BotMessage> SendGroupMessage(MessageChain chain, long groupUin)
     {
-        var (group, member) = await context.CacheContext.ResolveMember(groupUin, context.BotUin) ?? throw new InvalidOperationException("Can not find group");
+        var (group, member) = await context.CacheContext.ResolveMember(groupUin, context.BotUin) ?? throw new InvalidTargetException(context.BotUin, groupUin);
         var message = await BuildMessage(chain, member, group);
         var result = await context.EventContext.SendEvent<SendMessageEventResp>(new SendMessageEventReq(message));
         
         if (result == null) throw new InvalidOperationException();
-        if (result.Result != 0) throw new InvalidOperationException($"Send message failed: {result.Result}");
+        if (result.Result != 0) throw new OperationException(result.Result);
         
         message.Sequence = result.Sequence;
         message.Time = DateTimeOffset.FromUnixTimeSeconds(result.SendTime).DateTime;
@@ -32,12 +33,12 @@ internal class MessagingLogic(BotContext context) : ILogic
     
     public async Task<BotMessage> SendFriendMessage(MessageChain chain, long friendUin)
     {
-        var friend = await context.CacheContext.ResolveFriend(friendUin) ?? throw new InvalidOperationException("Can not find friend");
+        var friend = await context.CacheContext.ResolveFriend(friendUin) ?? throw new InvalidTargetException(friendUin);
         var message = await BuildMessage(chain, friend, null);
         var result = await context.EventContext.SendEvent<SendMessageEventResp>(new SendMessageEventReq(message));
 
         if (result == null) throw new InvalidOperationException();
-        if (result.Result != 0) throw new InvalidOperationException($"Send message failed: {result.Result}");
+        if (result.Result != 0) throw new OperationException(result.Result);
         
         message.Sequence = result.Sequence;
         message.Time = DateTimeOffset.FromUnixTimeSeconds(result.SendTime).DateTime;

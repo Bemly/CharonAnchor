@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Lagrange.Core.Common.Entity;
+using Lagrange.Core.Exceptions;
 using Lagrange.Core.Internal.Events.System;
 
 namespace Lagrange.Core.Internal.Context;
@@ -63,7 +64,6 @@ internal class CacheContext(BotContext context)
     public async Task<(BotGroup, BotGroupMember)?> ResolveMember(long groupUin, long memberUin)
     {
         Interlocked.CompareExchange(ref _groups, await FetchGroups(), null);
-        // if (_groups == null) Interlocked.Exchange(ref _groups, await FetchGroups());
         var group = _groups.First(g => g.GroupUin == groupUin);
 
         if (!_members.TryGetValue(groupUin, out var members))
@@ -99,7 +99,6 @@ internal class CacheContext(BotContext context)
         do
         {
             var result = await context.EventContext.SendEvent<FetchFriendsEventResp>(new FetchFriendsEventReq(cookie));
-            // TODO: result should not be nullable, and should be thrown directly when an error occurs
             if (result == null) break;
 
             cookie = result.Cookie;
@@ -114,7 +113,6 @@ internal class CacheContext(BotContext context)
     private async Task<List<BotGroup>> FetchGroups()
     {
         var result = await context.EventContext.SendEvent<FetchGroupsEventResp>(new FetchGroupsEventReq());
-        // TODO: result should not be nullable, and should be thrown directly when an error occurs
         if (result == null) return [];
 
         return result.Groups;
@@ -122,20 +120,19 @@ internal class CacheContext(BotContext context)
 
     private async Task<List<BotGroupMember>> FetchGroupMembers(long groupUin)
     {
-        var groupMembers = new List<BotGroupMember>();
+        var members = new List<BotGroupMember>();
 
         byte[]? cookie = null;
         do
         {
             var result = await context.EventContext.SendEvent<FetchGroupMembersEventResp>(new FetchGroupMembersEventReq(groupUin, cookie));
-            // TODO: result should not be nullable, and should be thrown directly when an error occurs
-            if (result == null) break;
+            if (result == null) throw new InvalidTargetException(null, groupUin);
 
             cookie = result.Cookie;
 
-            groupMembers.AddRange(result.GroupMembers);
+            members.AddRange(result.GroupMembers);
         } while (cookie != null);
 
-        return groupMembers;
+        return members;
     }
 }

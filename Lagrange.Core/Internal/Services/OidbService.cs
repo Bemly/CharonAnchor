@@ -1,3 +1,4 @@
+using Lagrange.Core.Exceptions;
 using Lagrange.Core.Internal.Events;
 using Lagrange.Core.Internal.Packets.Service;
 using Lagrange.Core.Utility;
@@ -30,7 +31,7 @@ internal abstract class OidbService<TEventReq, TEventResp, TRequest, TResponse> 
         if (oidb.Result != 0)
         {
             context.LogWarning(Tag, $"Error: {oidb.Result}, Message: {oidb.Message}");
-            return null;
+            throw new OperationException((int)oidb.Result, oidb.Message);
         }
         
         return await ProcessResponse(ProtoHelper.Deserialize<TResponse>(oidb.Body.Span), context);
