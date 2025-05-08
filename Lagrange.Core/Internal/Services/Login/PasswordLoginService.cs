@@ -1,8 +1,12 @@
-﻿using Lagrange.Core.Common;
+﻿using System.Security.Cryptography;
+using System.Text;
+using Lagrange.Core.Common;
 using Lagrange.Core.Internal.Events;
 using Lagrange.Core.Internal.Events.Login;
 using Lagrange.Core.Internal.Packets.Login;
 using Lagrange.Core.Internal.Packets.Struct;
+using Lagrange.Core.Utility.Binary;
+using Lagrange.Core.Utility.Cryptography;
 
 namespace Lagrange.Core.Internal.Services.Login;
 
@@ -12,7 +16,34 @@ internal class PasswordLoginService : BaseService<PasswordLoginEventReq, Passwor
 {
     protected override ValueTask<ReadOnlyMemory<byte>> Build(PasswordLoginEventReq input, BotContext context)
     {
-        var clientA1 = Tlv.GenerateClientA1(context.Keystore, context.AppInfo, input.Password);
+        var md5 = MD5.HashData(Encoding.UTF8.GetBytes(input.Password));
+        
+        var keyWriter = new BinaryPacket(stackalloc byte[16 + 4 + 4]);
+        keyWriter.Write(md5);
+        keyWriter.Write(0); // empty 4 bytes
+        keyWriter.Write((uint)context.Keystore.Uin);
+        var key = MD5.HashData(keyWriter.CreateReadOnlySpan());
+        
+        var plainWriter = new BinaryPacket(stackalloc byte[100]);
+        plainWriter.Write<short>(4); // TGTGT Version
+        plainWriter.Write(Random.Shared.Next());
+        plainWriter.Write(0); // sso_version as empty
+        plainWriter.Write(context.AppInfo.AppId);
+        plainWriter.Write(8001);
+        plainWriter.Write(context.Keystore.Uin);
+        plainWriter.Write((int)DateTimeOffset.Now.ToUnixTimeSeconds());
+        plainWriter.Write(0); // dummy IP Address
+        plainWriter.Write<byte>(1);
+        plainWriter.Write(md5);
+        plainWriter.Write(context.Keystore.WLoginSigs.TgtgtKey);
+        plainWriter.Write(0);  // unknown
+        plainWriter.Write<byte>(1); // guidAvailable
+        plainWriter.Write(context.Keystore.Guid);
+        plainWriter.Write(1); // appid as dummy
+        plainWriter.Write(1); // flag
+        plainWriter.Write(context.Keystore.Uin.ToString(), Prefix.Int16 | Prefix.LengthOnly);
+
+        var clientA1 = TeaProvider.Encrypt(plainWriter.CreateReadOnlySpan(), key);
         return new ValueTask<ReadOnlyMemory<byte>>(NTLoginCommon.Encode(context, clientA1, input.Captcha));
     }
 
