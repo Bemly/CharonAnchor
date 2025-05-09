@@ -2,14 +2,16 @@ using Lagrange.Proto;
 
 namespace Lagrange.Core.Internal.Packets.Message;
 
+#pragma warning disable CS8618
+
 [ProtoPackable]
 internal partial class CommonMessage
 {
-    [ProtoMember(1)] public RoutingHead RoutingHead { get; set; } = new();
+    [ProtoMember(1)] public RoutingHead RoutingHead { get; set; }
     
-    [ProtoMember(2)] public ContentHead ContentHead { get; set; } = new();
+    [ProtoMember(2)] public ContentHead ContentHead { get; set; }
     
-    [ProtoMember(3)] public MessageBody MessageBody { get; set; } = new();
+    [ProtoMember(3)] public MessageBody MessageBody { get; set; }
 }
 
 [ProtoPackable]
@@ -45,7 +47,7 @@ internal partial class RoutingHead
 {
     [ProtoMember(1)] public long FromUin { get; set; }
 
-    [ProtoMember(2)] public string FromUid { get; set; } = string.Empty;
+    [ProtoMember(2)] public string FromUid { get; set; }
 
     [ProtoMember(3)] public int FromAppId { get; set; }
 
@@ -53,11 +55,11 @@ internal partial class RoutingHead
 
     [ProtoMember(5)] public long ToUin { get; set; }
 
-    [ProtoMember(6)] public string ToUid { get; set; } = string.Empty;
+    [ProtoMember(6)] public string ToUid { get; set; }
     
-    [ProtoMember(7)] public CommonC2C CommonC2C { get; set; } = new();
+    [ProtoMember(7)] public CommonC2C CommonC2C { get; set; }
     
-    [ProtoMember(8)] public CommonGroup Group { get; set; } = new();
+    [ProtoMember(8)] public CommonGroup Group { get; set; }
 }
 
 [ProtoPackable]

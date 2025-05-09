@@ -3,12 +3,13 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Lagrange.Core.Common;
 using Lagrange.Core.Internal.Packets.Login;
+using Lagrange.Core.Internal.Packets.Message;
 
 namespace Lagrange.Core.Utility;
 
 internal static partial class JsonHelper
 {
-    [JsonSourceGenerationOptions(GenerationMode = JsonSourceGenerationMode.Default)]
+    [JsonSourceGenerationOptions(GenerationMode = JsonSourceGenerationMode.Default, WriteIndented = true)]
     
     [JsonSerializable(typeof(NTNewDeviceQrCodeRequest))]
     [JsonSerializable(typeof(NTNewDeviceQrCodeResponse))]
@@ -20,6 +21,7 @@ internal static partial class JsonHelper
     [JsonSerializable(typeof(DefaultBotSignProvider.Response))]
     
     [JsonSerializable(typeof(JsonObject))]
+    [JsonSerializable(typeof(MsgPush))]
     private partial class CoreSerializerContext : JsonSerializerContext;
     
     public static T? Deserialize<T>(string json) where T : class => 
