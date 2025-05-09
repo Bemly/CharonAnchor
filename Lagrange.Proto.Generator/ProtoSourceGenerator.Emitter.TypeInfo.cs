@@ -26,13 +26,13 @@ public partial class ProtoSourceGenerator
         
         private string ProtoObjectInfoTypeRefGeneric => string.Format(ProtoObjectInfoTypeRef, _fullQualifiedName);
 
-        private static readonly List<(Func<ProtoFieldInfo, bool>, Func<ProtoFieldInfo, string>, string)> Converters =
+        private static readonly List<(Func<ITypeSymbol, bool>, Func<ITypeSymbol, string>, string)> Converters =
         [
-            (x => x.TypeSymbol.IsValueType && x.TypeSymbol.IsNullable(), x => SymbolResolver.GetGenericTypeNonNull(x.TypeSymbol).GetFullName(), "ProtoNullableConverter<{0}>"),
-            (x => x.TypeSymbol.TypeKind == TypeKind.Enum, x => x.TypeSymbol.GetFullName(), "ProtoEnumConverter<{0}>"),
-            (x => x.TypeSymbol is IArrayTypeSymbol, x => SymbolResolver.GetGenericTypeNonNull(x.TypeSymbol).GetFullName(), "ProtoArrayConverter<{0}>"),
-            (x => x.TypeSymbol is INamedTypeSymbol { IsGenericType: true, ConstructedFrom.Name: "List" } s && s.ContainingNamespace.ToString() == GenericTypeRef, x => SymbolResolver.GetGenericTypeNonNull(x.TypeSymbol).GetFullName(), "ProtoListConverter<{0}>"),
-            (x => SymbolResolver.IsProtoPackable(x.TypeSymbol), x => x.TypeSymbol.GetFullName(), "ProtoSerializableConverter<{0}>"),
+            (x => x.IsValueType && x.IsNullable(), x => SymbolResolver.GetGenericTypeNonNull(x).GetFullName(), "ProtoNullableConverter<{0}>"),
+            (x => x.TypeKind == TypeKind.Enum, x => x.GetFullName(), "ProtoEnumConverter<{0}>"),
+            (x => x is IArrayTypeSymbol, x => SymbolResolver.GetGenericTypeNonNull(x).GetFullName(), "ProtoArrayConverter<{0}>"),
+            (x => x is INamedTypeSymbol { IsGenericType: true, ConstructedFrom.Name: "List" } s && s.ContainingNamespace.ToString() == GenericTypeRef, x => SymbolResolver.GetGenericTypeNonNull(x).GetFullName(), "ProtoListConverter<{0}>"),
+            (x => SymbolResolver.IsProtoPackable(x), x => x.GetFullName(), "ProtoSerializableConverter<{0}>"),
         ];
         
         private void EmitTypeInfo(SourceWriter source)
@@ -47,27 +47,14 @@ public partial class ProtoSourceGenerator
             source.WriteLine('{');
             source.Indentation++;
             
-            foreach (var kv in parser.Fields)
+            foreach (var info in parser.Fields.Select(kv => kv.Value))
             {
-                var info = kv.Value;
-
-                foreach (var kv2 in Converters)
+                if (info.TypeSymbol is INamedTypeSymbol { IsGenericType: true } genericType) // resolve nested generic types
                 {
-                    var predicate = kv2.Item1;
-                    string typeName = kv2.Item2(info);
-                    string converter = ConverterTypeRef + "." + kv2.Item3;
-                    
-                    if (predicate(info))
-                    {
-                        source.WriteLine($"if (!{string.Format(IsRegisteredMethodRef, info.TypeSymbol.GetFullName())}())");
-                        source.WriteLine('{');
-                        source.Indentation++;
-                        source.WriteLine($"{string.Format(RegisterMethodRef, string.Format("new " + converter + "()", typeName))};");
-                        source.Indentation--;
-                        source.WriteLine('}');
-                        source.WriteLine();
-                    }
+                    foreach (var arg in genericType.TypeArguments) EmitByTypeSymbol(source, arg);
                 }
+                
+                EmitByTypeSymbol(source, info.TypeSymbol);
             }
             
             source.WriteLine($"return new {ProtoObjectInfoTypeRefGeneric}()");
@@ -95,6 +82,28 @@ public partial class ProtoSourceGenerator
             source.WriteLine("};");
             source.Indentation--;
             source.WriteLine('}');
+            return;
+            
+            static void EmitByTypeSymbol(SourceWriter source, ITypeSymbol typeSymbol)
+            {
+                foreach (var kv2 in Converters)
+                {
+                    var predicate = kv2.Item1;
+                    string typeName = kv2.Item2(typeSymbol);
+                    string converter = ConverterTypeRef + "." + kv2.Item3;
+                    
+                    if (predicate(typeSymbol))
+                    {
+                        source.WriteLine($"if (!{string.Format(IsRegisteredMethodRef, typeSymbol.GetFullName())}())");
+                        source.WriteLine('{');
+                        source.Indentation++;
+                        source.WriteLine($"{string.Format(RegisterMethodRef, string.Format("new " + converter + "()", typeName))};");
+                        source.Indentation--;
+                        source.WriteLine('}');
+                        source.WriteLine();
+                    }
+                }
+            }
         }
 
         private void EmitFieldInfo(SourceWriter source, int field, ProtoFieldInfo info)
