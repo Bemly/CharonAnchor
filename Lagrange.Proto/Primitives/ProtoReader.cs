@@ -195,7 +195,7 @@ public ref struct ProtoReader
         }
         else
         {
-            return T.CreateTruncating((varintPart1 & 0x000000000000007f) | ((varintPart1 & 0x7f00000000000000) >> 7) | ((varintPart1 & 0x007f000000000000) >> 6) | ((varintPart1 & 0x00007f0000000000) >> 5) | ((varintPart1 & 0x0000007f00000000) >> 4) | ((varintPart1 & 0x000000007f000000) >> 3) | ((varintPart1 & 0x00000000007f0000) >> 2) | ((varintPart1 & 0x0000000000007f00) >> 1) | ((varintPart1 & 0x0000000000000100) << 55) | ((varintPart1 & 0x000000000000007f) << 56));
+            return T.CreateTruncating((varintPart0 & 0x000000000000007f) | ((varintPart0 & 0x7f00000000000000) >> 7) | ((varintPart0 & 0x007f000000000000) >> 6) | ((varintPart0 & 0x00007f0000000000) >> 5) | ((varintPart0 & 0x0000007f00000000) >> 4) | ((varintPart0 & 0x000000007f000000) >> 3) | ((varintPart0 & 0x00000000007f0000) >> 2) | ((varintPart0 & 0x0000000000007f00) >> 1) | ((varintPart1 & 0x0000000000000100) << 55) | ((varintPart1 & 0x000000000000007f) << 56));
         }
     }
     
