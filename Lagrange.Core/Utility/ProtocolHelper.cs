@@ -21,4 +21,16 @@ internal static class ProtocolHelper
         
         return tlv;
     }
+    
+    public static string UInt32ToIPV4Addr(uint i)
+    {
+        Span<byte> ip = stackalloc byte[4];
+        
+        ip[0] = (byte)(i & 0xFF);
+        ip[1] = (byte)((i >> 8) & 0xFF);
+        ip[2] = (byte)((i >> 16) & 0xFF);
+        ip[3] = (byte)((i >> 24) & 0xFF);
+        
+        return $"{ip[0]}.{ip[1]}.{ip[2]}.{ip[3]}";
+    }
 }

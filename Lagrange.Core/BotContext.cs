@@ -21,6 +21,7 @@ public class BotContext : IDisposable
         ServiceContext = new ServiceContext(this);
         SocketContext = new SocketContext(this);
         EventContext = new EventContext(this);
+        HighwayContext = new HighwayContext(this);
     }
 
     public BotConfig Config { get; }
@@ -38,6 +39,8 @@ public class BotContext : IDisposable
     internal ServiceContext ServiceContext { get; }
     internal SocketContext SocketContext { get; }
     internal EventContext EventContext { get; }
+    
+    internal HighwayContext HighwayContext { get; }
 
     #region Shortcut Methods
 
