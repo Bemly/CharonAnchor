@@ -7,6 +7,10 @@ namespace Lagrange.Core.Message.Entities;
 public abstract class RichMediaEntityBase : IMessageEntity
 {
     private MsgInfo? _msgInfo;
+
+    protected byte[]? _compat;
+
+    private protected bool IsGroup;
     
     internal MsgInfo? MsgInfo
     {
