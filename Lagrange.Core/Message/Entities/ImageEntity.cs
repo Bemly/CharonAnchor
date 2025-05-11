@@ -13,15 +13,17 @@ public class ImageEntity : RichMediaEntityBase
     
     public Vector2 ImageSize { get; set; }
     
-    public int SubType { get; set; }
+    public int SubType { get; init; }
     
-    public string Summary { get; internal set; } = "[图片]";
+    public string Summary { get; init; } = "[图片]";
 
     public ImageEntity() { }
     
-    public ImageEntity(Stream stream)
+    public ImageEntity(Stream stream, string? summary = "[图片]", int subType = 0)
     {
         Stream = new Lazy<Stream>(() => stream);
+        Summary = summary ?? "[图片]";
+        SubType = subType;
     }
     
     public override async Task Preprocess(BotContext context, BotMessage message)

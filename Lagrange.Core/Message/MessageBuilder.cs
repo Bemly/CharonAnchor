@@ -14,41 +14,37 @@ public class MessageBuilder
         return this;
     }
 
-    public MessageBuilder Image(string path)
+    public MessageBuilder Image(string path, string? summary = "[图片]", int subType = 0) =>
+        Image(new FileStream(path, FileMode.Open, FileAccess.Read), summary, subType);
+
+    public MessageBuilder Image(byte[] image, string? summary = "[图片]", int subType = 0) =>
+        Image(new MemoryStream(image), summary, subType);
+    
+    public MessageBuilder Image(Stream stream, string? summary = "[图片]", int subType = 0)
     {
-        _entities.Add(new ImageEntity(new FileStream(path, FileMode.Open, FileAccess.Read)));
+        _entities.Add(new ImageEntity(stream, summary, subType));
         return this;
     }
 
-    public MessageBuilder Image(byte[] image)
+    public MessageBuilder Record(string path) => Record(new FileStream(path, FileMode.Open, FileAccess.Read));
+
+    public MessageBuilder Record(byte[] record) => Record(new MemoryStream(record));
+    
+    public MessageBuilder Record(Stream stream)
     {
-        _entities.Add(new ImageEntity(new MemoryStream(image)));
+        _entities.Add(new RecordEntity(stream));
         return this;
     }
 
-    public MessageBuilder Record(string path)
-    {
-        _entities.Add(new RecordEntity(new FileStream(path, FileMode.Open, FileAccess.Read)));
-        return this;
-    }
+    public MessageBuilder Video(string path, string? thumbnail) =>
+        Video(new FileStream(path, FileMode.Open, FileAccess.Read), thumbnail != null ? new FileStream(thumbnail, FileMode.Open, FileAccess.Read) : null);
 
-    public MessageBuilder Record(byte[] record)
+    public MessageBuilder Video(byte[] video, byte[]? thumbnail) =>
+        Video(new MemoryStream(video), thumbnail != null ? new MemoryStream(thumbnail) : null);
+    
+    public MessageBuilder Video(Stream video, Stream? thumbnail)
     {
-        _entities.Add(new RecordEntity(new MemoryStream(record)));
-        return this;
-    }
-
-    public MessageBuilder Video(string path, string? thumbnail)
-    {
-        var thumbnailStream = string.IsNullOrEmpty(thumbnail) ? null : new FileStream(thumbnail, FileMode.Open, FileAccess.Read);
-        _entities.Add(new VideoEntity(new FileStream(path, FileMode.Open, FileAccess.Read), thumbnailStream));
-        return this;
-    }
-
-    public MessageBuilder Video(byte[] video, byte[]? thumbnail)
-    {
-        var thumbnailStream = thumbnail == null ? null : new MemoryStream(thumbnail);
-        _entities.Add(new VideoEntity(new MemoryStream(video), thumbnailStream));
+        _entities.Add(new VideoEntity(video, thumbnail));
         return this;
     }
     
