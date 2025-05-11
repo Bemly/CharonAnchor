@@ -75,7 +75,7 @@ internal class HighwayContext : IClientListener, IDisposable
         _context.LogError(Tag, $"Highway Socket error: {e.Message}");
     }
     
-    public async Task<bool> UploadFile(Stream stream, int commandId, byte[] extendInfo)
+    public async Task<bool> UploadFile(Stream stream, int commandId, ReadOnlyMemory<byte> extendInfo)
     {
         if (_ticket == null || _url == null || DateTime.Now - _ticket.Value.Item2 > TimeSpan.FromDays(0.5))
         {

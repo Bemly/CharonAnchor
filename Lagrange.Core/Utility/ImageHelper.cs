@@ -6,10 +6,8 @@ namespace Lagrange.Core.Utility;
 
 internal static class ImageHelper
 {
-    public static ImageFormat Resolve(byte[] image, out Vector2 size)
+    public static ImageFormat Resolve(scoped Span<byte> span, out Vector2 size)
     {
-        ReadOnlySpan<byte> span = image.AsSpan();
-        
         if (BinaryPrimitives.ReadUInt64BigEndian(span) == 0x0000000C6A502020) // JPEG2000
         {
             size = new Vector2(BinaryPrimitives.ReadUInt32BigEndian(span[0x30..0x34]), BinaryPrimitives.ReadUInt32BigEndian(span[0x34..0x38]));
@@ -28,7 +26,7 @@ internal static class ImageHelper
             
             for (int i = 2; i < span.Length - 10; i++)
             {
-                if ((Unsafe.ReadUnaligned<ushort>(ref image[i]) & 0xFCFF) == 0xC0FF) // SOF0 ~ SOF3
+                if ((Unsafe.ReadUnaligned<ushort>(ref span[i]) & 0xFCFF) == 0xC0FF) // SOF0 ~ SOF3
                 {
                     size = new Vector2(BinaryPrimitives.ReadUInt16BigEndian(span[(i + 7)..(i + 9)]), BinaryPrimitives.ReadUInt16BigEndian(span[(i + 5)..(i + 7)]));
                     break;

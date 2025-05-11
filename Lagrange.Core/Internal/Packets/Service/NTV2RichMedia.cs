@@ -1,24 +1,21 @@
 using Lagrange.Core.Common.Entity;
 using Lagrange.Core.Message;
 using Lagrange.Core.Message.Entities;
+using Lagrange.Core.Utility;
 using Lagrange.Core.Utility.Extension;
 
 namespace Lagrange.Core.Internal.Packets.Service;
 
-internal class NTV2RichMedia
+internal static class NTV2RichMedia
 {
     public static NTV2RichMediaReq BuildDownloadReq(BotMessage @struct, RichMediaEntityBase entity, DownloadExt ext)
     {
         if (entity.MsgInfo == null) throw new InvalidOperationException("MsgInfo is null");
-        
+
         return new NTV2RichMediaReq
         {
             ReqHead = BuildHead(@struct, entity, 200),
-            Download = new DownloadReq
-            {
-                Node = entity.MsgInfo.MsgInfoBody[0].Index,
-                Download = ext
-            }
+            Download = new DownloadReq { Node = entity.MsgInfo.MsgInfoBody[0].Index, Download = ext }
         };
     }
     
@@ -31,7 +28,7 @@ internal class NTV2RichMedia
         
         return new NTV2RichMediaReq
         {
-            ReqHead = BuildHead(@struct, entity, 201),
+            ReqHead = BuildHead(@struct, entity, 100),
             Upload = new UploadReq
             {
                 UploadInfo = 
@@ -70,16 +67,9 @@ internal class NTV2RichMedia
 
         return new MultiMediaReqHead
         {
-            Common = new CommonHead
-            {
-                RequestId = 1,
-                Command = cmd
-            },
+            Common = new CommonHead { RequestId = 1, Command = cmd },
             Scene = BuildSceneInfo(@struct.Contact, request, business),
-            Client = new ClientMeta
-            {
-                AgentType = 2
-            }
+            Client = new ClientMeta { AgentType = 2 }
         };
     }
     
@@ -94,19 +84,12 @@ internal class NTV2RichMedia
         if (contact is BotGroupMember member)
         {
             sceneInfo.SceneType = 2;
-            sceneInfo.Group = new GroupInfo
-            {
-                GroupUin = member.Group.GroupUin,
-            };
+            sceneInfo.Group = new GroupInfo { GroupUin = member.Group.GroupUin, };
         }
         else
         {
             sceneInfo.SceneType = 1;
-            sceneInfo.C2C = new C2CUserInfo
-            {
-                TargetUid = contact.Uid,
-                AccountType = 2
-            };
+            sceneInfo.C2C = new C2CUserInfo { TargetUid = contact.Uid, AccountType = 2 };
         }
         return sceneInfo;
     }
@@ -127,17 +110,39 @@ internal class NTV2RichMedia
 
         switch (entity)
         {
-            case ImageEntity image:
+            case ImageEntity:
             {
+                Span<byte> fileHead = stackalloc byte[10240];
+                stream.Seek(0, SeekOrigin.Begin);
+                _ = stream.Read(fileHead);
+                stream.Seek(0, SeekOrigin.Begin);
+
+                var type = ImageHelper.Resolve(fileHead, out var size);
+                info.Type = new FileType { Type = 2, PicFormat = (uint)type };
+                info.Width = (uint)size.X;
+                info.Height = (uint)size.Y;
                 break;
             }
-            case RecordEntity record:
+            case RecordEntity:
             {
+                var payload = GC.AllocateUninitializedArray<byte>((int)entity.Stream.Value.Length);
+                stream.Seek(0, SeekOrigin.Begin);
+                _ = stream.Read(payload);
+                stream.Seek(0, SeekOrigin.Begin);
+                
+                var type = AudioHelper.DetectAudio(payload);
+                info.Type = new FileType { Type = 1, VoiceFormat = 1 };
+                info.Time = type switch
+                {
+                    AudioFormat.TenSilkV3 => (uint)AudioHelper.GetTenSilkTime(payload),
+                    AudioFormat.SilkV3 => (uint)AudioHelper.GetSilkTime(payload),
+                    _ => 0
+                };
                 break;
             }
             case VideoEntity video:
             {
-                break;
+                throw new NotImplementedException();
             }
         }
         

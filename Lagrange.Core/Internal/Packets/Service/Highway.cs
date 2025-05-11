@@ -11,7 +11,7 @@ internal partial class ReqDataHighwayHead
     
     [ProtoMember(2)] public SegHead MsgSegHead { get; set; }
     
-    [ProtoMember(3)] public byte[] BytesReqExtendInfo { get; set; }
+    [ProtoMember(3)] public ReadOnlyMemory<byte> BytesReqExtendInfo { get; set; }
     
     [ProtoMember(4)] public ulong Timestamp { get; set; }
     
