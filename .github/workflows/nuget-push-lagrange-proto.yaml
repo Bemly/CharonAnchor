@@ -1,0 +1,57 @@
+name: Nuget push Lagrange.Proto
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "Lagrange.Proto/Lagrange.Proto.csproj"
+  workflow_dispatch:
+
+jobs:
+  nuget-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Check Version
+      - shell: pwsh
+        run: |
+          $lversion = ([xml](Get-Content .\Lagrange.Proto\Lagrange.Proto.csproj)).Project.PropertyGroup.Version
+          echo "Local version: $lversion"
+
+          try {
+            $response = Invoke-WebRequest -Uri "https://api.nuget.org/v3-flatcontainer/lagrange.proto/index.json"
+          } catch {
+            if ($_.Exception.Response.StatusCode.value__ -eq 404) {
+              echo "No remote version"
+              echo "continued=true" >> $env:GITHUB_ENV
+              exit 0
+            } else {
+              throw
+            }
+          }
+
+          $rversions = ($response.Content | ConvertFrom-Json).versions
+          echo "Remote version: $rversions"
+          if ($lversion -in $rversions) {
+            echo "Version($lversion) already exists"
+            echo "continued=false" >> $env:GITHUB_ENV
+            exit 0
+          }
+
+          echo "Version($lversion) does not exist"
+          echo "continued=true" >> $env:GITHUB_ENV
+          exit 0
+
+      - if: env.continued == 'true'
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9'
+      
+      - if: env.continued == 'true'
+        run: dotnet pack -c Release -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg Lagrange.Proto
+
+      - if: env.continued == 'true'
+        run: dotnet nuget push ./Lagrange.Proto/bin/Release/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_TOKEN }}

@@ -1,17 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>13</LangVersion>
+    <IsAotCompatible>true</IsAotCompatible>
 
-    <PropertyGroup>
-      <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
-      <ImplicitUsings>enable</ImplicitUsings>
-      <Nullable>enable</Nullable>
-      <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-      <LangVersion>13</LangVersion>
-      <IsAotCompatible>true</IsAotCompatible>
-    </PropertyGroup>
+    <Version>2.0.1-beta</Version>
+  </PropertyGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\Lagrange.Proto.Generator\Lagrange.Proto.Generator.csproj" PrivateAssets="all" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-      <ProjectReference Include="..\Lagrange.Proto\Lagrange.Proto.csproj" />
-    </ItemGroup>
-
+  <ItemGroup>
+    <ProjectReference Include="..\Lagrange.Proto.Generator\Lagrange.Proto.Generator.csproj" PrivateAssets="all" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Lagrange.Proto\Lagrange.Proto.csproj" />
+  </ItemGroup>
 </Project>
