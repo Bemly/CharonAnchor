@@ -34,6 +34,7 @@ namespace Lagrange.OneBot.Entity;
 [JsonSerializable(typeof(AtSegment))]
 [JsonSerializable(typeof(ImageSegment))]
 [JsonSerializable(typeof(RecordSegment))]
+[JsonSerializable(typeof(VideoSegment))]
 
 [JsonSerializable(typeof(OneBotEntityBase))]
 [JsonSerializable(typeof(OneBotAction))]

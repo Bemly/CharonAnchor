@@ -11,7 +11,10 @@ public class RecordSegmentFactory : ISegmentFactory<RecordSegment, RecordEntity>
     
     public void Build(MessageBuilder builder, RecordSegment segment)
     {
-        throw new NotImplementedException();
+        if (CommonResolver.ResolveStream(segment.File) is { } stream)
+        {
+            builder.Record(stream);
+        }
     }
 
     public RecordSegment Parse(BotMessage message, RecordEntity entity)

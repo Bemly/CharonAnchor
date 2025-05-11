@@ -11,7 +11,10 @@ public class ImageSegmentFactory : ISegmentFactory<ImageSegment, ImageEntity>
     
     public void Build(MessageBuilder builder, ImageSegment segment)
     {
-        throw new NotImplementedException();
+        if (CommonResolver.ResolveStream(segment.File) is { } stream)
+        {
+            builder.Image(stream, segment.Summary, segment.SubType);
+        }
     }
 
     public ImageSegment Parse(BotMessage message, ImageEntity entity)
