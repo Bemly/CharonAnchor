@@ -7,6 +7,44 @@ namespace Lagrange.Core.NativeAPI.ReverseEvent
 {
     public static class EventEntryPoint
     {
+        [UnmanagedCallersOnly(EntryPoint = "GetEventCount")]
+        public static IntPtr GetEventCount(int index)
+        {
+            var eventCount = new ReverseEventCountStruct
+            {
+                BotCaptchaEventCount = Program.Contexts[index].EventInvoker.BotCaptchaEvent.Events.Count,
+                BotLoginEventCount = Program.Contexts[index].EventInvoker.BotLoginEvent.Events.Count,
+                BotLogEventCount = Program.Contexts[index].EventInvoker.BotLogEvent.Events.Count,
+                BotMessageEventCount = Program.Contexts[index].EventInvoker.BotMessageEvent.Events.Count,
+                BotNewDeviceVerifyEventCount = Program.Contexts[index].EventInvoker.BotNewDeviceVerifyEvent.Events.Count,
+                BotOnlineEventCount = Program.Contexts[index].EventInvoker.BotOnlineEvent.Events.Count,
+                BotQrCodeEventCount = Program.Contexts[index].EventInvoker.BotQrCodeEvent.Events.Count,
+                BotQrCodeQueryEventCount = Program.Contexts[index].EventInvoker.BotQrCodeQueryEvent.Events.Count,
+                BotRefreshKeystoreEventCount = Program.Contexts[index].EventInvoker.BotRefreshKeystoreEvent.Events.Count,
+                BotSMSEventCount = Program.Contexts[index].EventInvoker.BotSMSEvent.Events.Count
+            };
+
+            IntPtr eventCountPtr = Marshal.AllocHGlobal(Marshal.SizeOf<ReverseEventCountStruct>());
+            Marshal.StructureToPtr(eventCount, eventCountPtr, false);
+
+            return eventCountPtr;
+        }
+        
+        [UnmanagedCallersOnly(EntryPoint = "GetCaptchaEvent")]
+        public static IntPtr GetCaptchaEvent(int index)
+        {
+            if (index >= Program.Contexts.Count)
+            {
+                return IntPtr.Zero;
+            }
+
+            var botCaptchaEvent = Program.Contexts[index].EventInvoker.BotCaptchaEvent;
+
+            IntPtr eventPtr = GetEventStructPtr<BotCaptchaEventStruct>(botCaptchaEvent);
+
+            return eventPtr;
+        }
+        
         [UnmanagedCallersOnly(EntryPoint = "GetLoginEvent")]
         public static IntPtr GetLoginEvent(int index)
         {
@@ -37,18 +75,108 @@ namespace Lagrange.Core.NativeAPI.ReverseEvent
             return eventPtr;
         }
         
-        [UnmanagedCallersOnly(EntryPoint = "GetCaptchaEvent")]
-        public static IntPtr GetCaptchaEvent(int index)
+        [UnmanagedCallersOnly(EntryPoint = "GetMessageEvent")]
+        public static IntPtr GetMessageEvent(int index)
         {
             if (index >= Program.Contexts.Count)
             {
                 return IntPtr.Zero;
             }
-            
-            var botCaptchaEvent = Program.Contexts[index].EventInvoker.BotCaptchaEvent;
-            
-            IntPtr eventPtr = GetEventStructPtr<BotCaptchaEventStruct>(botCaptchaEvent);
-            
+
+            var botMessageEvent = Program.Contexts[index].EventInvoker.BotMessageEvent;
+
+            IntPtr eventPtr = GetEventStructPtr<BotMessageEventStruct>(botMessageEvent);
+
+            return eventPtr;
+        }
+        
+        [UnmanagedCallersOnly(EntryPoint = "GetNewDeviceVerifyEvent")]
+        public static IntPtr GetNewDeviceVerifyEvent(int index)
+        {
+            if (index >= Program.Contexts.Count)
+            {
+                return IntPtr.Zero;
+            }
+
+            var botNewDeviceVerifyEvent = Program.Contexts[index].EventInvoker.BotNewDeviceVerifyEvent;
+
+            IntPtr eventPtr = GetEventStructPtr<BotNewDeviceVerifyEventStruct>(botNewDeviceVerifyEvent);
+
+            return eventPtr;
+        }
+        
+        [UnmanagedCallersOnly(EntryPoint = "GetOnlineEvent")]
+        public static IntPtr GetOnlineEvent(int index)
+        {
+            if (index >= Program.Contexts.Count)
+            {
+                return IntPtr.Zero;
+            }
+
+            var botOnlineEvent = Program.Contexts[index].EventInvoker.BotOnlineEvent;
+
+            IntPtr eventPtr = GetEventStructPtr<BotOnlineEventStruct>(botOnlineEvent);
+
+            return eventPtr;
+        }
+        
+        [UnmanagedCallersOnly(EntryPoint = "GetQrCodeEvent")]
+        public static IntPtr GetQrCodeEvent(int index)
+        {
+            if (index >= Program.Contexts.Count)
+            {
+                return IntPtr.Zero;
+            }
+
+            var botQrCodeEvent = Program.Contexts[index].EventInvoker.BotQrCodeEvent;
+
+            IntPtr eventPtr = GetEventStructPtr<BotQrCodeEventStruct>(botQrCodeEvent);
+
+            return eventPtr;
+        }
+        
+        [UnmanagedCallersOnly(EntryPoint = "GetQrCodeQueryEvent")]
+        public static IntPtr GetQrCodeQueryEvent(int index)
+        {
+            if (index >= Program.Contexts.Count)
+            {
+                return IntPtr.Zero;
+            }
+
+            var botQrCodeQueryEvent = Program.Contexts[index].EventInvoker.BotQrCodeQueryEvent;
+
+            IntPtr eventPtr = GetEventStructPtr<BotQrCodeQueryEventStruct>(botQrCodeQueryEvent);
+
+            return eventPtr;
+        }
+        
+        [UnmanagedCallersOnly(EntryPoint = "GetRefreshKeystoreEvent")]
+        public static IntPtr GetRefreshKeystoreEvent(int index)
+        {
+            if (index >= Program.Contexts.Count)
+            {
+                return IntPtr.Zero;
+            }
+
+            var botRefreshKeystoreEvent = Program.Contexts[index].EventInvoker.BotRefreshKeystoreEvent;
+
+            IntPtr eventPtr = GetEventStructPtr<BotRefreshKeystoreEventStruct>(botRefreshKeystoreEvent);
+
+            return eventPtr;
+        }
+        
+        [UnmanagedCallersOnly(EntryPoint = "GetSMSEvent")]
+        public static IntPtr GetSMSEvent(int index)
+        {
+            if (index >= Program.Contexts.Count)
+            {
+                return IntPtr.Zero;
+            }
+
+            var botSMSEvent = Program.Contexts[index].EventInvoker.BotSMSEvent;
+
+            IntPtr eventPtr = GetEventStructPtr<BotSMSEventStruct>(botSMSEvent);
+
             return eventPtr;
         }
 

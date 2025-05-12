@@ -11,7 +11,7 @@ namespace Lagrange.Core.NativeAPI.ReverseEvent
         {
             context.EventInvoker.RegisterEvent<BotLoginEvent>((ctx, e) =>
             {
-                Events.Add(e.ToStruct());
+                Events.Add((BotLoginEventStruct)e);
             });
         }
     }

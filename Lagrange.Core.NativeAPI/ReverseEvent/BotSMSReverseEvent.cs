@@ -5,14 +5,12 @@ using Lagrange.Core.NativeAPI.ReverseEvent.Abstract;
 
 namespace Lagrange.Core.NativeAPI.ReverseEvent
 {
-    public class BotLogReverseEvent : ReverseEventBase
+    public class BotSMSReverseEvent : ReverseEventBase
     {
         public override void RegisterEventHandler(BotContext context)
         {
-            context.EventInvoker.RegisterEvent<BotLogEvent>((ctx, e) =>
-            {
-                Events.Add((BotLogEventStruct)e);
-            });
+            context.EventInvoker.RegisterEvent<BotSMSEvent>((ctx, e) => Events.Add((BotSMSEventStruct)e)
+            );
         }
     }
 }

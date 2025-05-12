@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Lagrange.Core.Common;
 
 namespace Lagrange.Core.NativeAPI.NativeModel.Context
 {
@@ -22,5 +23,33 @@ namespace Lagrange.Core.NativeAPI.NativeModel.Context
         public uint HighwayConcurrent { get; set; } = 4;
 
         public bool AutoReLogin { get; set; } = true;
+        
+        public static implicit operator BotConfig(BotConfigStruct config)
+        {
+            return new BotConfig()
+            {
+                Protocol = (Protocols)config.Protocol,
+                AutoReconnect = config.AutoReconnect,
+                UseIPv6Network = config.UseIPv6Network,
+                GetOptimumServer = config.GetOptimumServer,
+                HighwayChunkSize = config.HighwayChunkSize,
+                HighwayConcurrent = config.HighwayConcurrent,
+                AutoReLogin = config.AutoReLogin
+            };
+        }
+        
+        public static implicit operator BotConfigStruct(BotConfig config)
+        {
+            return new BotConfigStruct()
+            {
+                Protocol = (byte)config.Protocol,
+                AutoReconnect = config.AutoReconnect,
+                UseIPv6Network = config.UseIPv6Network,
+                GetOptimumServer = config.GetOptimumServer,
+                HighwayChunkSize = config.HighwayChunkSize,
+                HighwayConcurrent = config.HighwayConcurrent,
+                AutoReLogin = config.AutoReLogin
+            };
+        }
     }
 }

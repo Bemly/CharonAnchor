@@ -6,9 +6,10 @@ using Lagrange.Core.NativeAPI.NativeModel.Common;
 namespace Lagrange.Core.NativeAPI.NativeModel.Message.Entity
 {
     [StructLayout(LayoutKind.Sequential)]
-    public struct RecordEntityStruct : IEntityStruct
+    public struct VideoEntityStruct : IEntityStruct
     {
-        public RecordEntityStruct() { }
+        public VideoEntityStruct() { }
+        
         public ByteArrayNative FileUrl = new();
 
         public ByteArrayNative FileName = new();
@@ -19,9 +20,9 @@ namespace Lagrange.Core.NativeAPI.NativeModel.Message.Entity
 
         public ByteArrayNative FileMd5 = new();
         
-        public static implicit operator RecordEntityStruct(RecordEntity entity)
+        public static implicit operator VideoEntityStruct(VideoEntity entity)
         {
-            return new RecordEntityStruct()
+            return new VideoEntityStruct()
             {
                 FileUrl = Encoding.UTF8.GetBytes(entity.FileUrl),
                 FileName = Encoding.UTF8.GetBytes(entity.FileName),

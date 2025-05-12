@@ -1,3 +1,5 @@
+using System.Text;
+using Lagrange.Core.Common;
 using Lagrange.Core.NativeAPI.NativeModel.Common;
 
 namespace Lagrange.Core.NativeAPI.NativeModel.Context
@@ -6,54 +8,138 @@ namespace Lagrange.Core.NativeAPI.NativeModel.Context
     {
         public BotKeystoreStruct() { }
 
-        public long Uin { get; set; } = 0;
+        public long Uin = 0;
 
-        public byte[] Uid { get; set; } = [];
+        public ByteArrayNative Uid = new();
 
-        public byte[] Guid { get; set; } = [];
+        public ByteArrayNative Guid = new();
 
-        public byte[] AndroidId { get; set; } = [];
+        public ByteArrayNative AndroidId = new();
 
-        public byte[] Qimei { get; set; } = [];
+        public ByteArrayNative Qimei = new();
 
-        public byte[] DeviceName { get; set; } = [];
+        public ByteArrayNative DeviceName = new();
 
         // WLoginSigs
 
-        public byte[] A2 { get; set; } = [];
+        public ByteArrayNative A2 = new();
 
-        public byte[] A2Key { get; set; } = new byte[16];
+        public ByteArrayNative A2Key = new byte[16];
 
-        public byte[] D2 { get; set; } = [];
+        public ByteArrayNative D2 = new();
 
-        public byte[] D2Key { get; set; } = new byte[16];
+        public ByteArrayNative D2Key = new byte[16];
 
-        public byte[] A1 { get; set; } = [];
+        public ByteArrayNative A1 = new();
 
-        public byte[] A1Key { get; set; } = new byte[16];
+        public ByteArrayNative A1Key = new byte[16];
 
-        public byte[] NoPicSig { get; set; } = [];
+        public ByteArrayNative NoPicSig = new();
 
-        public byte[] TgtgtKey { get; set; } = [];
+        public ByteArrayNative TgtgtKey = new();
 
-        public byte[] Ksid { get; set; } = [];
+        public ByteArrayNative Ksid = new();
 
-        public byte[] SuperKey { get; set; } = [];
+        public ByteArrayNative SuperKey = new();
 
-        public byte[] StKey { get; set; } = [];
+        public ByteArrayNative StKey = new();
 
-        public byte[] StWeb { get; set; } = [];
+        public ByteArrayNative StWeb = new();
 
-        public byte[] St { get; set; } = [];
+        public ByteArrayNative St = new();
 
-        public byte[] WtSessionTicket { get; set; } = [];
+        public ByteArrayNative WtSessionTicket = new();
 
-        public byte[] WtSessionTicketKey { get; set; } = [];
+        public ByteArrayNative WtSessionTicketKey = new();
 
-        public byte[] RandomKey { get; set; } = new byte[16];
+        public ByteArrayNative RandomKey = new byte[16];
 
-        public byte[] SKey { get; set; } = [];
+        public ByteArrayNative SKey = new();
 
-        public KeyValuePairNative<byte[], byte[]>[] PsKey { get; set; } = [];
+        public KeyValuePairNative<ByteArrayNative, ByteArrayNative>[] PsKey = [];
+
+        public static implicit operator BotKeystore(BotKeystoreStruct keystore)
+        {
+            var psKey = new Dictionary<string, string>();
+            foreach (var kvp in keystore.PsKey)
+            {
+                psKey[Encoding.UTF8.GetString(kvp.Key)] = Encoding.UTF8.GetString(kvp.Value);
+            }
+
+            return new BotKeystore()
+            {
+                Uin = keystore.Uin,
+                Uid = Encoding.UTF8.GetString(keystore.Uid),
+                Guid = keystore.Guid,
+                AndroidId = Encoding.UTF8.GetString(keystore.AndroidId),
+                Qimei = Encoding.UTF8.GetString(keystore.Qimei),
+                DeviceName = Encoding.UTF8.GetString(keystore.DeviceName),
+                WLoginSigs = new WLoginSigs()
+                {
+                    A2 = keystore.A2,
+                    A2Key = keystore.A2Key,
+                    D2 = keystore.D2,
+                    D2Key = keystore.D2Key,
+                    A1 = keystore.A1,
+                    A1Key = keystore.A1Key,
+                    NoPicSig = keystore.NoPicSig,
+                    TgtgtKey = keystore.TgtgtKey,
+                    Ksid = keystore.Ksid,
+                    SuperKey = keystore.SuperKey,
+                    StKey = keystore.StKey,
+                    StWeb = keystore.StWeb,
+                    St = keystore.St,
+                    WtSessionTicket = keystore.WtSessionTicket,
+                    WtSessionTicketKey = keystore.WtSessionTicketKey,
+                    RandomKey = keystore.RandomKey,
+                    SKey = keystore.SKey,
+                    PsKey = psKey
+                }
+            };
+        }
+
+        public static implicit operator BotKeystoreStruct(BotKeystore keystore)
+        {
+            var bytePsKey = new KeyValuePairNative<ByteArrayNative, ByteArrayNative>[
+                keystore.WLoginSigs.PsKey.Count
+            ];
+            int i = 0;
+            foreach (var kvp in keystore.WLoginSigs.PsKey)
+            {
+                bytePsKey[i++] = new KeyValuePairNative<ByteArrayNative, ByteArrayNative>()
+                {
+                    Key = Encoding.UTF8.GetBytes(kvp.Key),
+                    Value = Encoding.UTF8.GetBytes(kvp.Value)
+                };
+            }
+
+            return new BotKeystoreStruct()
+            {
+                Uin = keystore.Uin,
+                Uid = Encoding.UTF8.GetBytes(keystore.Uid),
+                Guid = keystore.Guid,
+                AndroidId = Encoding.UTF8.GetBytes(keystore.AndroidId),
+                Qimei = Encoding.UTF8.GetBytes(keystore.Qimei),
+                DeviceName = Encoding.UTF8.GetBytes(keystore.DeviceName),
+                A2 = keystore.WLoginSigs.A2,
+                A2Key = keystore.WLoginSigs.A2Key,
+                D2 = keystore.WLoginSigs.D2,
+                D2Key = keystore.WLoginSigs.D2Key,
+                A1 = keystore.WLoginSigs.A1,
+                A1Key = keystore.WLoginSigs.A1Key,
+                NoPicSig = keystore.WLoginSigs.NoPicSig,
+                TgtgtKey = keystore.WLoginSigs.TgtgtKey,
+                Ksid = keystore.WLoginSigs.Ksid,
+                SuperKey = keystore.WLoginSigs.SuperKey,
+                StKey = keystore.WLoginSigs.StKey,
+                StWeb = keystore.WLoginSigs.StWeb,
+                St = keystore.WLoginSigs.St,
+                WtSessionTicket = keystore.WLoginSigs.WtSessionTicket,
+                WtSessionTicketKey = keystore.WLoginSigs.WtSessionTicketKey,
+                RandomKey = keystore.WLoginSigs.RandomKey,
+                SKey = keystore.WLoginSigs.SKey,
+                PsKey = bytePsKey
+            };
+        }
     }
 }

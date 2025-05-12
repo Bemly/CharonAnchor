@@ -13,13 +13,13 @@ public static class Program
     public static int Initialize(IntPtr botConfigPtr, IntPtr keystorePtr)
     {
         var botConfigStruct = Marshal.PtrToStructure<BotConfigStruct>(botConfigPtr);
-        var botConfig = botConfigStruct.ToConfig();
+        var botConfig = botConfigStruct;
 
         int index = Contexts.Count;
         if (keystorePtr != IntPtr.Zero)
         {
             var keystoreStruct = Marshal.PtrToStructure<BotKeystoreStruct>(keystorePtr);
-            var keystore = keystoreStruct.ToKeystore();
+            var keystore = keystoreStruct;
             Contexts.Add(new Context(BotFactory.Create(botConfig, keystore)));
         }
         else
