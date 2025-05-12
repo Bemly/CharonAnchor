@@ -54,6 +54,19 @@ internal abstract partial class ClientListener : IClientListener
 
         return InternalConnectAsync(createdSession, uri, port);
     }
+    
+    public Task<bool> Connect(string uri, ushort port)
+    {
+        SocketSession? previousSession = Session, createdSession = null;
+        if (previousSession != null || // The client has been connected
+            Interlocked.CompareExchange(ref Session, createdSession = new SocketSession(), null) != null) // Another connect request before this request
+        {
+            createdSession?.Dispose();
+            return Task.FromResult(false);
+        }
+
+        return InternalConnectAsync(createdSession, uri, port);
+    }
 
     /// <summary>
     /// Disconnect
@@ -70,7 +83,7 @@ internal abstract partial class ClientListener : IClientListener
     /// <param name="buffer"></param>
     /// <param name="timeout"></param>
     /// <returns></returns>
-    public ValueTask<int> Send(ReadOnlyMemory<byte> buffer, int timeout = -1)
+    public ValueTask<int> Send(ReadOnlyMemory<byte> buffer, SocketFlags flags = SocketFlags.None, int timeout = -1)
     {
         try
         {
@@ -95,7 +108,7 @@ internal abstract partial class ClientListener : IClientListener
             
             try
             {
-                return session.Socket.SendAsync(buffer, SocketFlags.None, token);
+                return session.Socket.SendAsync(buffer, flags, token);
             }
             finally
             {

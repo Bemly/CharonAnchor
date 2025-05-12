@@ -1,4 +1,5 @@
 using Lagrange.Proto;
+using Lagrange.Proto.Serialization;
 
 namespace Lagrange.Core.Internal.Packets.Service;
 
@@ -65,7 +66,7 @@ internal partial class IpAddr
 {
     [ProtoMember(1)] public uint Type { get; set; }
     
-    [ProtoMember(2)] public uint Ip { get; set; }
+    [ProtoMember(2, NumberHandling = ProtoNumberHandling.Fixed32)] public uint Ip { get; set; }
     
     [ProtoMember(3)] public uint Port { get; set; }
     

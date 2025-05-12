@@ -1,6 +1,7 @@
 using System.Buffers;
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
+using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Threading.Tasks.Sources;
 using Lagrange.Core.Internal.Events.System;
@@ -42,10 +43,10 @@ internal class HighwayContext : IClientListener, IDisposable
         _concurrent = (int)context.Config.HighwayConcurrent;
     }
 
-    public uint HeaderSize => 4;
+    public uint HeaderSize => 1 + 4 + 4;
     
-    public uint GetPacketLength(ReadOnlySpan<byte> header) => BinaryPrimitives.ReadUInt32BigEndian(header);
-    
+    public uint GetPacketLength(ReadOnlySpan<byte> header) => 1 + 1 + 4 + 4 + BinaryPrimitives.ReadUInt32BigEndian(header[1..]) + BinaryPrimitives.ReadUInt32BigEndian(header[5..]);
+
     public void OnRecvPacket(ReadOnlySpan<byte> packet)
     {
         var reader = new BinaryPacket(packet);
@@ -64,8 +65,6 @@ internal class HighwayContext : IClientListener, IDisposable
                 _tasks[(int)obj.MsgBaseHead.Seq].SetResult((obj, body));
             }
         }
-
-        throw new Exception();
     }
 
     public void OnDisconnect() { }
@@ -85,6 +84,10 @@ internal class HighwayContext : IClientListener, IDisposable
         }
 
         var client = _clients.Get();
+        string url = _url.Split(":")[0];
+        ushort port = ushort.Parse(_url.Split(":")[1]);
+        if (!await client.Connect(url, port)) return false;
+        
         var tasks = new List<Task<bool>>();
         bool result = false;
 
@@ -95,7 +98,7 @@ internal class HighwayContext : IClientListener, IDisposable
         while (offset < fileSize)
         {
             var buffer = ArrayPool<byte>.Shared.Rent((int)_chunkSize);
-            ulong payload = (ulong)await stream.ReadAsync(buffer.AsMemory());
+            ulong payload = (ulong)await stream.ReadAsync(buffer.AsMemory(0, (int)_chunkSize));
 
             ulong currentBlockOffset = offset;
             var task = Task.Run(async () => // closure
@@ -116,7 +119,7 @@ internal class HighwayContext : IClientListener, IDisposable
                     DataOffset = currentBlockOffset,
                     DataLength = (uint)payload,
                     ServiceTicket = _ticket.Value.Item1,
-                    Md5 = MD5.HashData(buffer),
+                    Md5 = MD5.HashData(buffer.AsSpan(0, (int)payload)),
                     FileMd5 = fileMd5,
                 };
                 var loginHead = new LoginSigHead
@@ -135,17 +138,20 @@ internal class HighwayContext : IClientListener, IDisposable
                 };
 
                 var headProto = ProtoHelper.Serialize(highwayHead);
-
-                var writer = new BinaryPacket(2 + 8 + headProto.Length + (int)payload);
-                writer.Write<byte>(0x28);
-                writer.Write(headProto.Length);
-                writer.Write((int)payload);
-                writer.Write(headProto.Span);
-                writer.Write(buffer);
-                writer.Write<byte>(0x29);
-
+                
                 var tcs = new HighwayValueTaskSource();
                 _tasks[sequence] = tcs;
+
+                var length = new byte[8];
+                BinaryPrimitives.WriteUInt32BigEndian(length.AsSpan(0), (uint)headProto.Length);
+                BinaryPrimitives.WriteUInt32BigEndian(length.AsSpan(4), (uint)payload);
+                
+                await client.Send(new ReadOnlyMemory<byte>([0x28]), SocketFlags.Partial);
+                await client.Send(length, SocketFlags.Partial);
+                await client.Send(headProto, SocketFlags.Partial);
+                await client.Send(buffer.AsMemory(0, (int)payload), SocketFlags.Partial);
+                await client.Send(new ReadOnlyMemory<byte>([0x29]));
+
                 var (respHead, resp) = await new ValueTask<(RespDataHighwayHead, byte[])>(tcs, 0);
 
                 _context.LogDebug(Tag, $"Highway Block Result: {respHead.ErrorCode} | {respHead.MsgSegHead?.RetCode} | {Convert.ToHexString(resp)}");
