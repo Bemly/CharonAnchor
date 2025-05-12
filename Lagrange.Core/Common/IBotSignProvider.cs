@@ -1,4 +1,3 @@
-using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -14,8 +13,10 @@ public interface IBotSignProvider
     Task<SsoSecureInfo?> GetSecSign(long uin, string cmd, int seq, ReadOnlyMemory<byte> body);
 }
 
-internal class DefaultBotSignProvider(Protocols protocol, BotAppInfo appInfo) : IBotSignProvider, IDisposable
+internal class DefaultBotSignProvider(BotContext context) : IBotSignProvider, IDisposable
 {
+    private const string Tag =  nameof(DefaultBotSignProvider);
+    
     private static readonly HashSet<string> WhiteListCommand =
     [
         "trpc.o3.ecdh_access.EcdhAccess.SsoEstablishShareKey",
@@ -61,14 +62,14 @@ internal class DefaultBotSignProvider(Protocols protocol, BotAppInfo appInfo) : 
     
     private readonly HttpClient _client = new();
     
-    private readonly string _url = protocol switch
+    private readonly string _url = context.Config.Protocol switch
     {
         Protocols.Windows => throw new NotSupportedException("Windows is not supported"),
         Protocols.MacOs => throw new NotSupportedException("MacOs is not supported"),
-        Protocols.Linux => $"https://sign.lagrangecore.org/api/sign/{appInfo.AppClientVersion}",
+        Protocols.Linux => $"https://sign.lagrangecore.org/api/sign/{context.AppInfo.AppClientVersion}",
         Protocols.AndroidPhone => throw new NotSupportedException("AndroidPhone is not supported"),
         Protocols.AndroidPad => throw new NotSupportedException("AndroidPad is not supported"),
-        _ => throw new ArgumentOutOfRangeException(nameof(protocol))
+        _ => throw new ArgumentOutOfRangeException()
     };
     
     public bool IsWhiteListCommand(string cmd) => WhiteListCommand.Contains(cmd);
@@ -99,7 +100,7 @@ internal class DefaultBotSignProvider(Protocols protocol, BotAppInfo appInfo) : 
         }
         catch (Exception e)
         {
-            // TODO: Log the exception
+            context.LogWarning(Tag, $"Failed to get sign: {e.Message}");
             return null;
         }
     }

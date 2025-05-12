@@ -15,6 +15,8 @@ public interface IAndroidBotSignProvider : IBotSignProvider
 
 internal class DefaultAndroidBotSignProvider(BotContext context) : IAndroidBotSignProvider, IDisposable
 {
+    private const string Tag = nameof(DefaultAndroidBotSignProvider);
+    
     private readonly HttpClient _client = new();
 
     private readonly string _url = "http://127.0.0.1:8081";
@@ -186,7 +188,7 @@ internal class DefaultAndroidBotSignProvider(BotContext context) : IAndroidBotSi
         }
         catch (Exception e)
         {
-            // TODO: Log the exception
+            context.LogWarning(Tag, $"Failed to get sign: {e.Message}");
             return null;
         }
     }
@@ -212,7 +214,7 @@ internal class DefaultAndroidBotSignProvider(BotContext context) : IAndroidBotSi
         }
         catch (Exception e)
         {
-            // TODO: Log the exception
+            context.LogWarning(Tag, $"Failed to get energy: {e.Message}");
             return [];
         }
     }
@@ -237,7 +239,7 @@ internal class DefaultAndroidBotSignProvider(BotContext context) : IAndroidBotSi
         }
         catch (Exception e)
         {
-            // TODO: Log the exception
+            context.LogWarning(Tag, $"Failed to get debug_xwid: {e.Message}");
             return [];
         }
     }

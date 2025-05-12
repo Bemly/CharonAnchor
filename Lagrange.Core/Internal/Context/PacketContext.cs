@@ -15,7 +15,7 @@ internal class PacketContext(BotContext context)
     
     internal readonly IBotSignProvider SignProvider = context.Config.SignProvider ?? context.Config.Protocol switch
     {
-        Protocols.Linux or Protocols.Windows or Protocols.MacOs => new DefaultBotSignProvider(context.Config.Protocol, context.AppInfo),
+        Protocols.Linux or Protocols.Windows or Protocols.MacOs => new DefaultBotSignProvider(context),
         Protocols.AndroidPhone or Protocols.AndroidPad => new DefaultAndroidBotSignProvider(context),
         _ => throw new ArgumentOutOfRangeException(nameof(context.Config.Protocol))
     };
