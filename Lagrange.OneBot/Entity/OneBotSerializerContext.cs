@@ -47,6 +47,7 @@ namespace Lagrange.OneBot.Entity;
 [JsonSerializable(typeof(OneBotMessage))]
 [JsonSerializable(typeof(OneBotMessageResponse))]
 [JsonSerializable(typeof(OneBotQrCodeRequest))]
+[JsonSerializable(typeof(OneBotUploadPrivateFile))]
 public partial class OneBotSerializerContext : JsonSerializerContext;
 
 public class BooleanConverter : JsonConverter<bool>
