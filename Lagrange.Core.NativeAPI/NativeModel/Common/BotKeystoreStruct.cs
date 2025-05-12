@@ -141,5 +141,45 @@ namespace Lagrange.Core.NativeAPI.NativeModel.Context
                 PsKey = bytePsKey
             };
         }
+
+        public BotKeystore ToKeystoreWithoutFree()
+        {
+            var psKey = new Dictionary<string, string>();
+            foreach (var kvp in PsKey)
+            {
+                psKey[Encoding.UTF8.GetString(kvp.Key)] = Encoding.UTF8.GetString(kvp.Value);
+            }
+
+            return new BotKeystore()
+            {
+                Uin = Uin,
+                Uid = Encoding.UTF8.GetString(Uid.ToByteArrayWithoutFree()),
+                Guid = Guid.ToByteArrayWithoutFree(),
+                AndroidId = Encoding.UTF8.GetString(AndroidId.ToByteArrayWithoutFree()),
+                Qimei = Encoding.UTF8.GetString(Qimei.ToByteArrayWithoutFree()),
+                DeviceName = Encoding.UTF8.GetString(DeviceName.ToByteArrayWithoutFree()),
+                WLoginSigs = new WLoginSigs()
+                {
+                    A2 = A2.ToByteArrayWithoutFree(),
+                    A2Key = A2Key.ToByteArrayWithoutFree(),
+                    D2 = D2.ToByteArrayWithoutFree(),
+                    D2Key = D2Key.ToByteArrayWithoutFree(),
+                    A1 = A1.ToByteArrayWithoutFree(),
+                    A1Key = A1Key.ToByteArrayWithoutFree(),
+                    NoPicSig = NoPicSig.ToByteArrayWithoutFree(),
+                    TgtgtKey = TgtgtKey.ToByteArrayWithoutFree(),
+                    Ksid = Ksid.ToByteArrayWithoutFree(),
+                    SuperKey = SuperKey.ToByteArrayWithoutFree(),
+                    StKey = StKey.ToByteArrayWithoutFree(),
+                    StWeb = StWeb.ToByteArrayWithoutFree(),
+                    St = St.ToByteArrayWithoutFree(),
+                    WtSessionTicket = WtSessionTicket.ToByteArrayWithoutFree(),
+                    WtSessionTicketKey = WtSessionTicketKey.ToByteArrayWithoutFree(),
+                    RandomKey = RandomKey.ToByteArrayWithoutFree(),
+                    SKey = SKey.ToByteArrayWithoutFree(),
+                    PsKey = psKey
+                }
+            };
+        }
     }
 }
