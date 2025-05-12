@@ -51,6 +51,8 @@ internal partial class SendRoutingHead // EncodeSendMsgReqRoutingHead
     [ProtoMember(1)] public C2C C2C { get; set; }
     
     [ProtoMember(2)] public Grp Group { get; set; }
+    
+    [ProtoMember(15)] public Trans0X211 Trans0X211 { get; set; }
 }
 
 [ProtoPackable]
@@ -65,4 +67,14 @@ internal partial class C2C
 internal partial class Grp
 {
     [ProtoMember(1)] public long GroupUin { get; set; } // group_uin
+}
+
+[ProtoPackable]
+internal partial class Trans0X211
+{
+    [ProtoMember(1)] public long ToUin { get; set; }
+    
+    [ProtoMember(2)] public uint CcCmd { get; set; }
+    
+    [ProtoMember(8)] public string Uid { get; set; }
 }

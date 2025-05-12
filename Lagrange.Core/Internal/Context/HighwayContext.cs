@@ -72,6 +72,7 @@ internal class HighwayContext : IClientListener, IDisposable
     public void OnSocketError(Exception e, ReadOnlyMemory<byte> data = default)
     {
         _context.LogError(Tag, $"Highway Socket error: {e.Message}");
+        if (e.StackTrace is { } stack) _context.LogDebug(Tag, stack);
     }
     
     public async Task<bool> UploadFile(Stream stream, int commandId, ReadOnlyMemory<byte> extendInfo)
@@ -84,12 +85,14 @@ internal class HighwayContext : IClientListener, IDisposable
         }
 
         var client = _clients.Get();
+        if (client.Connected) client.Disconnect();
+        
         string url = _url.Split(":")[0];
         ushort port = ushort.Parse(_url.Split(":")[1]);
         if (!await client.Connect(url, port)) return false;
         
         var tasks = new List<Task<bool>>();
-        bool result = false;
+        bool result = true;
 
         ulong fileSize = (ulong)stream.Length;
         ulong offset = 0;
@@ -161,7 +164,7 @@ internal class HighwayContext : IClientListener, IDisposable
 
 
             tasks.Add(task);
-            if (tasks.Count == _concurrent)
+            if (tasks.Count == (commandId == 95 ? 1 : _concurrent))
             {
                 var successBlocks = await Task.WhenAll(tasks);
                 foreach (bool t in successBlocks) result &= t;
@@ -178,7 +181,6 @@ internal class HighwayContext : IClientListener, IDisposable
             tasks.Clear();
         }
 
-        client.Disconnect();
         _clients.Return(client);
 
         return result;

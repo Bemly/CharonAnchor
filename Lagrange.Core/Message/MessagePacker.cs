@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Lagrange.Core.Common.Entity;
 using Lagrange.Core.Exceptions;
+using Lagrange.Core.Internal.Events.System;
 using Lagrange.Core.Internal.Packets.Message;
 using Lagrange.Core.Message.Entities;
 using Lagrange.Core.Utility;
@@ -96,7 +97,7 @@ internal class MessagePacker
         }
     }
 
-    public ReadOnlyMemory<byte> Build(BotMessage message)
+    public static ReadOnlyMemory<byte> Build(BotMessage message)
     {
         var routingHead = new SendRoutingHead();
 
@@ -134,6 +135,52 @@ internal class MessagePacker
             MessageBody = messageBody,
             ClientSequence = message.ClientSequence,
             Random = message.Random,
+        };
+        return ProtoHelper.Serialize(proto);
+    }
+
+    public static ReadOnlyMemory<byte> BuildTrans0X211(BotFriend friend, FileUploadEventReq req, FileUploadEventResp resp, int clientSequence, uint random)
+    {
+        var extra = new FileExtra
+        {
+            File = new NotOnlineFile
+            {
+                FileType = 0,
+                FileUuid = resp.FileId,
+                FileMd5 = req.FileMd5,
+                FileName = req.FileName,
+                FileSize = (ulong)req.FileStream.Length,
+                SubCmd = 1,
+                DangerLevel = 0,
+                ExpireTime = (uint)DateTimeOffset.Now.AddDays(7).ToUnixTimeSeconds(),
+                FileIdCrcMedia = resp.CrcMedia
+            }
+        };
+            
+        var proto = new PbSendMsgReq
+        {
+            RoutingHead = new SendRoutingHead
+            {
+                Trans0X211 = new Trans0X211
+                {
+                    ToUin = friend.Uin,
+                    CcCmd = 4,
+                    Uid = friend.Uid
+                }
+            },
+            ContentHead = new SendContentHead
+            {
+                PkgNum = 1,
+                PkgIndex = 0,
+                DivSeq = 0,
+                AutoReply = 0
+            },
+            MessageBody = new MessageBody
+            {
+                MsgContent = ProtoHelper.Serialize(extra)
+            },
+            ClientSequence = clientSequence,
+            Random = random
         };
         return ProtoHelper.Serialize(proto);
     }

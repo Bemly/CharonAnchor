@@ -89,7 +89,7 @@ internal partial class SegHead
     
     [ProtoMember(4)] public uint DataLength { get; set; }
     
-    [ProtoMember(5)] public uint RetCode { get; set; }
+    [ProtoMember(5)] public uint? RetCode { get; set; }
 
     [ProtoMember(6)] public byte[] ServiceTicket { get; set; } = [];
     

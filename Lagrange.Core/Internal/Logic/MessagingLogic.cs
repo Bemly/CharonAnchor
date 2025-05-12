@@ -14,8 +14,6 @@ internal class MessagingLogic(BotContext context) : ILogic
     
     public Task<BotMessage> Parse(MsgPush msg) => _packer.Parse(msg);
     
-    public ReadOnlyMemory<byte> Build(BotMessage message) => _packer.Build(message);
-
     public async Task<BotMessage> SendGroupMessage(MessageChain chain, long groupUin)
     {
         var (group, member) = await context.CacheContext.ResolveMember(groupUin, context.BotUin) ?? throw new InvalidTargetException(context.BotUin, groupUin);

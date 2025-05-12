@@ -103,7 +103,7 @@ internal partial class MessageBody
 {
     [ProtoMember(1)] public RichText RichText { get; set; } = new();
 
-    [ProtoMember(2)] public byte[]? MsgContent { get; set; }
+    [ProtoMember(2)] public ReadOnlyMemory<byte> MsgContent { get; set; }
 
     [ProtoMember(3)] public byte[]? MsgEncryptContent { get; set; }
 }
@@ -155,11 +155,11 @@ internal partial class NotOnlineFile
     
     [ProtoMember(2)] public byte[]? Sig { get; set; }
     
-    [ProtoMember(3)] public byte[]? FileUuid { get; set; }
+    [ProtoMember(3)] public string FileUuid { get; set; }
     
     [ProtoMember(4)] public byte[]? FileMd5 { get; set; }
     
-    [ProtoMember(5)] public byte[]? FileName { get; set; }
+    [ProtoMember(5)] public string FileName { get; set; }
     
     [ProtoMember(6)] public ulong FileSize { get; set; }
     
