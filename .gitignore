@@ -7,3 +7,7 @@
 
 # VS
 /.vs
+
+# Rider (and other IDEs that use .idea)
+/.idea
+/global.json
