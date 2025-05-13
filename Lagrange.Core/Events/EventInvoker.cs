@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection.Emit;
@@ -6,111 +7,122 @@ using Lagrange.Core.Events.EventArgs;
 
 namespace Lagrange.Core.Events;
 
-public class EventInvoker(BotContext context) : IDisposable
+public sealed class EventInvoker(BotContext context) : IDisposable
 {
     private const string Tag = nameof(EventInvoker);
 
-    private readonly Dictionary<Type, Action<BotContext, EventBase>> _actions = new();
+    private readonly ConcurrentDictionary<Type, Delegate> _syncHandlers = new();
+    private readonly ConcurrentDictionary<Type, Delegate> _asyncHandlers = new();
 
-    private readonly Dictionary<Type, Func<BotContext, EventBase, Task>> _asyncActions = new();
+    public delegate void  LagrangeEventHandler <in TEvent>(BotContext ctx, TEvent e) where TEvent : EventBase;
+    public delegate Task  LagrangeAsyncEventHandler<in TEvent>(BotContext ctx, TEvent e) where TEvent : EventBase;
 
-    public delegate void LagrangeEventHandler<in TEvent>(BotContext context, TEvent e) where TEvent : EventBase;
-
-    public delegate Task LagrangeAsyncEventHandler<in TEvent>(BotContext context, TEvent e) where TEvent : EventBase;
-
-    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "DynamicMethod is not supported in AOT, but this if block is not executed in AOT")]
     public void RegisterEvent<TEvent>(LagrangeEventHandler<TEvent> handler) where TEvent : EventBase
     {
         Debug.Assert(!handler.Method.IsStatic);
-        ArgumentNullException.ThrowIfNull(handler.Target);
-
-        if (RuntimeFeature.IsDynamicCodeSupported)
-        {
-            Type[] args = [handler.Target.GetType(), typeof(BotContext), typeof(EventBase)];
-            var method = new DynamicMethod($"EventInvoker_{typeof(TEvent)}", typeof(void), args, typeof(EventInvoker), true);
-            var il = method.GetILGenerator();
-
-            il.Emit(OpCodes.Ldarg_0); // [Target]
-            il.Emit(OpCodes.Ldarg_1); // [Target, BotContext]
-            il.Emit(OpCodes.Ldarg_2); // [Target, BotContext, EventBase]
-            il.Emit(OpCodes.Castclass, typeof(TEvent)); // [Target, BotContext, TEvent]
-            il.Emit(OpCodes.Callvirt, handler.Method); // []
-            il.Emit(OpCodes.Ret); // []
-
-            _actions[typeof(TEvent)] = method.CreateDelegate<Action<BotContext, EventBase>>(handler.Target);
-        }
-        else
-        {
-            _actions[typeof(TEvent)] = (ctx, e) => handler(ctx, (TEvent)e);
-        }
+        
+        AddHandler(_syncHandlers, typeof(TEvent), BuildSyncDelegate(handler));
     }
 
-    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "DynamicMethod is not supported in AOT, but this if block is not executed in AOT")]
     public void RegisterEvent<TEvent>(LagrangeAsyncEventHandler<TEvent> handler) where TEvent : EventBase
     {
         Debug.Assert(!handler.Method.IsStatic);
-        ArgumentNullException.ThrowIfNull(handler.Target);
-
-        if (RuntimeFeature.IsDynamicCodeSupported)
-        {
-            Type[] args = [handler.Target.GetType(), typeof(BotContext), typeof(EventBase)];
-            var method = new DynamicMethod($"EventInvoker_{typeof(TEvent)}", typeof(Task), args, typeof(EventInvoker), true);
-            var il = method.GetILGenerator();
-
-            il.Emit(OpCodes.Ldarg_0); // [Target]
-            il.Emit(OpCodes.Ldarg_1); // [Target, BotContext]
-            il.Emit(OpCodes.Ldarg_2); // [Target, BotContext, EventBase]
-            il.Emit(OpCodes.Castclass, typeof(TEvent)); // [Target, BotContext, TEvent]
-            il.Emit(OpCodes.Callvirt, handler.Method); // [Task]
-            il.Emit(OpCodes.Ret); // []
-
-            _asyncActions[typeof(TEvent)] = method.CreateDelegate<Func<BotContext, EventBase, Task>>(handler.Target);
-        }
-        else
-        {
-            _asyncActions[typeof(TEvent)] = (ctx, e) => handler(ctx, (TEvent)e);
-        }
+        
+        AddHandler(_asyncHandlers, typeof(TEvent), BuildAsyncDelegate(handler));
     }
 
+    public void UnregisterEvent<TEvent>(LagrangeEventHandler<TEvent> handler) where TEvent : EventBase => RemoveHandler(_syncHandlers, typeof(TEvent), handler);
+
+    public void UnregisterEvent<TEvent>(LagrangeAsyncEventHandler<TEvent> handler) where TEvent : EventBase => RemoveHandler(_asyncHandlers, typeof(TEvent), handler);
+    
     public void UnregisterEvent<TEvent>() where TEvent : EventBase
     {
-        Type type = typeof(TEvent);
-
-        _actions.Remove(type);
-        _asyncActions.Remove(type);
+        _syncHandlers.TryRemove(typeof(TEvent), out _);
+        _asyncHandlers.TryRemove(typeof(TEvent), out _);
     }
 
-    internal void PostEvent<T>(T @event) where T : EventBase => Task.Run(async () =>
+    internal void PostEvent<T>(T ev) where T : EventBase => Task.Run(async () =>
     {
-        await context.EventContext.HandleOutgoingEvent(@event);
+        await context.EventContext.HandleOutgoingEvent(ev);
 
         try
         {
-            if (_actions.TryGetValue(typeof(T), out var @delegate))
+            if (_syncHandlers.TryGetValue(typeof(T), out var @delegate))
             {
-                @delegate(context, @event);
+                ((Action<BotContext, EventBase>)@delegate).Invoke(context, ev);
             }
-            else if (_asyncActions.TryGetValue(typeof(T), out var asyncDelegate))
+
+            if (_asyncHandlers.TryGetValue(typeof(T), out var asyncDelegate))
             {
-                await asyncDelegate(context, @event);
+                await ((Func<BotContext, EventBase, Task>)asyncDelegate)(context, ev);
             }
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             if (typeof(T) == typeof(BotLogEvent))
             {
-                Console.WriteLine($"Failed to post event: {@event}");
+                Console.WriteLine($"Failed to post event: {ev}");
                 return;
             }
-
-            PostEvent(new BotLogEvent(Tag, LogLevel.Error, $"{ex}"));
+            PostEvent(new BotLogEvent(Tag, LogLevel.Error, ex.ToString()));
         }
     });
 
-
     public void Dispose()
     {
-        _actions.Clear();
-        _asyncActions.Clear();
+        _syncHandlers.Clear();
+        _asyncHandlers.Clear();
+    }
+
+    private static void AddHandler(ConcurrentDictionary<Type, Delegate> dict, Type key, Delegate handler)
+    {
+        dict.AddOrUpdate(key, handler, (_, old) => Delegate.Combine(old, handler));
+    }
+
+    private static void RemoveHandler(ConcurrentDictionary<Type, Delegate> dict, Type key, Delegate handler)
+    {
+        dict.AddOrUpdate(key, _ => null!, (_, old) =>
+        {
+            var updated = Delegate.Remove(old, handler);
+            return updated != null && updated.GetInvocationList().Length > 0 ? updated : null!;
+        });
+        
+        if (dict.TryRemove(key, out var d) && d is not { }) dict.TryRemove(key, out _); // is not { } is needed to avoid removing the key if the delegate is null, and escape from ReSharper's warning
+    }
+
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "DynamicMethod is not supported in AOT, but this branch is skipped there")]
+    private static Action<BotContext, EventBase> BuildSyncDelegate<TEvent>(LagrangeEventHandler<TEvent> h) where TEvent : EventBase
+    {
+        if (!RuntimeFeature.IsDynamicCodeSupported) return (ctx, ev) => h(ctx, (TEvent)ev);
+
+        var dm = new DynamicMethod($"EventInvoker_{typeof(TEvent).Name}", typeof(void), [h.Target!.GetType(), typeof(BotContext), typeof(EventBase)], typeof(EventInvoker), true);
+        var il = dm.GetILGenerator();
+        
+        il.Emit(OpCodes.Ldarg_0);
+        il.Emit(OpCodes.Ldarg_1);
+        il.Emit(OpCodes.Ldarg_2);
+        il.Emit(OpCodes.Castclass, typeof(TEvent));
+        il.Emit(OpCodes.Callvirt, h.Method);
+        il.Emit(OpCodes.Ret);
+
+        return dm.CreateDelegate<Action<BotContext, EventBase>>(h.Target);
+    }
+
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "DynamicMethod is not supported in AOT, but this branch is skipped there")]
+    private static Func<BotContext, EventBase, Task> BuildAsyncDelegate<TEvent>(LagrangeAsyncEventHandler<TEvent> h) where TEvent : EventBase
+    {
+        if (!RuntimeFeature.IsDynamicCodeSupported) return (ctx, ev) => h(ctx, (TEvent)ev);
+
+        var dm = new DynamicMethod($"EventInvoker_{typeof(TEvent).Name}_Async", typeof(Task), [h.Target!.GetType(), typeof(BotContext), typeof(EventBase)], typeof(EventInvoker), true);
+        var il = dm.GetILGenerator();
+        
+        il.Emit(OpCodes.Ldarg_0);
+        il.Emit(OpCodes.Ldarg_1);
+        il.Emit(OpCodes.Ldarg_2);
+        il.Emit(OpCodes.Castclass, typeof(TEvent));
+        il.Emit(OpCodes.Callvirt, h.Method);
+        il.Emit(OpCodes.Ret);
+
+        return dm.CreateDelegate<Func<BotContext, EventBase, Task>>(h.Target);
     }
 }
