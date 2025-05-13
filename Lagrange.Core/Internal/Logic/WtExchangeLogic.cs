@@ -3,6 +3,7 @@ using System.Web;
 using Lagrange.Core.Common;
 using Lagrange.Core.Common.Response;
 using Lagrange.Core.Events.EventArgs;
+using Lagrange.Core.Exceptions;
 using Lagrange.Core.Internal.Events.Login;
 using Lagrange.Core.Internal.Events.System;
 using Lagrange.Core.Internal.Packets.Login;
@@ -373,14 +374,21 @@ internal class WtExchangeLogic : ILogic, IDisposable
 
     private async Task<bool> Online()
     {
-        var infoSync = await _context.EventContext.SendEvent<InfoSyncEventResp>(new InfoSyncEventReq());
-        if (infoSync.Message == "register success")
+        try
         {
-            _context.EventInvoker.PostEvent(new BotOnlineEvent(BotOnlineEvent.Reasons.Login));
-            _context.IsOnline = true;
-            
-            _ssoHeartBeatTimer.Change(0, 270 * 1000);
-            return true;
+            var infoSync = await _context.EventContext.SendEvent<InfoSyncEventResp>(new InfoSyncEventReq());
+            if (infoSync.Message == "register success")
+            {
+                _context.EventInvoker.PostEvent(new BotOnlineEvent(BotOnlineEvent.Reasons.Login));
+                _context.IsOnline = true;
+
+                _ssoHeartBeatTimer.Change(0, 270 * 1000);
+                return true;
+            }
+        }
+        catch (LagrangeException e) when (e.InnerException is InvalidOperationException invalid)
+        {
+            _context.LogError(Tag, $"Failed to send InfoSyncEvent: {invalid.Message}");
         }
 
         return false;
