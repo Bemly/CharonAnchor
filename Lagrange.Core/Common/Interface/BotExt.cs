@@ -9,6 +9,9 @@ public static class BotExt
     
     public static Task<bool> Login(this BotContext context, CancellationToken token = default) =>
         context.EventContext.GetLogic<WtExchangeLogic>().Login(0, null, token);
+
+    public static Task<bool> Logout(this BotContext context) =>
+        context.EventContext.GetLogic<WtExchangeLogic>().Logout();
     
     public static Task<long> ResolveUinByQid(this BotContext context, string qid) =>
         context.EventContext.GetLogic<WtExchangeLogic>().ResolveUinByQid(qid);

@@ -82,6 +82,27 @@ internal class WtExchangeLogic : ILogic, IDisposable
         return await ManualLogin(uin, password);
     }
     
+    public async Task<bool> Logout()
+    {
+        if (_context.IsOnline)
+        {
+            var result = await _context.EventContext.SendEvent<SsoUnregisterEventResp>(new SsoUnregisterEventReq());
+            if (result.Message == "unregister success")
+            {
+                _context.LogInfo(Tag, "Logout success");
+                _context.IsOnline = false;
+                _context.EventInvoker.PostEvent(new BotOfflineEvent(BotOfflineEvent.Reasons.Logout, null));
+            }
+            else
+            {
+                _context.LogError(Tag, $"Logout failed, directly offline {result.Message}");
+            }
+        }
+        
+        _context.SocketContext.Disconnect();
+        return true;
+    }
+    
     private async Task<bool> ManualLogin(long uin, string? password)
     {
         if (string.IsNullOrEmpty(password) && _context.Config.Protocol.IsAndroid())

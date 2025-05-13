@@ -106,7 +106,7 @@ public partial class BotService(
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        
+        await context.Logout();
     }
 
     private static partial class Log
