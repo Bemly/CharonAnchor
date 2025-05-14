@@ -54,6 +54,7 @@ public static class HostApplicationBuilderExt
         }
 
         builder.Services.AddHostedService<BotService>();
+        builder.Services.AddSingleton<ICaptchaResolver, OnlineCaptchaResolver>();
         return builder;
     }
 }
