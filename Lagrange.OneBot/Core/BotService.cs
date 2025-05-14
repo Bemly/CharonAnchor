@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using Lagrange.Core;
 using Lagrange.Core.Common.Interface;
 using Lagrange.Core.Events.EventArgs;
@@ -13,13 +14,14 @@ using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 namespace Lagrange.OneBot.Core;
 
 public partial class BotService(
-    ILogger<BotService> logger,
     ILoggerFactory loggerFactory, 
     BotContext context, 
     IConfiguration config, 
     IOptionsSnapshot<AccountOption> options,
     ICaptchaResolver captchaResolver) : IHostedService
 {
+    private readonly ILogger _logger = loggerFactory.CreateLogger<BotService>();
+    
     private readonly ConcurrentDictionary<string, ILogger> _contextLoggers = new();
     
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -37,7 +39,7 @@ public partial class BotService(
                 _ => throw new ArgumentOutOfRangeException()
             };
             
-            var contextLogger = _contextLoggers.GetOrAdd(@event.Tag, _ => loggerFactory.CreateLogger(@event.Tag));
+            var contextLogger = _contextLoggers.GetOrAdd(@event.Tag, _ => loggerFactory.CreateLogger(InferFullName(@event.Tag)));
             Log.LogBotMessage(contextLogger, level, @event.Message);
         });
         
@@ -46,7 +48,7 @@ public partial class BotService(
             await File.WriteAllBytesAsync("qrcode.png", @event.Image, cancellationToken);
             bool compatibilityMode = config.GetValue<bool>("QrCode:ConsoleCompatibilityMode");
             QrCodeHelper.Output(@event.Url, compatibilityMode);
-            Log.QrCodeSuccess(logger, 120, @event.Url);
+            Log.QrCodeSuccess(_logger, 120, @event.Url);
         });
         
         context.EventInvoker.RegisterEvent<BotQrCodeQueryEvent>((_, @event) =>
@@ -57,7 +59,7 @@ public partial class BotService(
                 BotQrCodeQueryEvent.TransEmpState.Canceled or BotQrCodeQueryEvent.TransEmpState.CodeExpired => LogLevel.Error,
                 _ => LogLevel.Debug
             };
-            Log.QrCodeState(logger, level, @event.State);
+            Log.QrCodeState(_logger, level, @event.State);
         });
         
         context.EventInvoker.RegisterEvent<BotRefreshKeystoreEvent>(async (_, @event) =>
@@ -80,7 +82,7 @@ public partial class BotService(
                 string? code = Console.ReadLine();
                 if (string.IsNullOrEmpty(code))
                 {
-                    logger.LogCritical("SMS code is empty, process would exit in 10 seconds");
+                    _logger.LogCritical("SMS code is empty, process would exit in 10 seconds");
                     Environment.Exit(-1);
                 }
                 
@@ -90,7 +92,7 @@ public partial class BotService(
         
         context.EventInvoker.RegisterEvent<BotNewDeviceVerifyEvent>((_, @event) =>
         {
-            Log.NewDeviceVerify(logger, context.BotUin);
+            Log.NewDeviceVerify(_logger, context.BotUin);
             bool compatibilityMode = config.GetValue<bool>("QrCode:ConsoleCompatibilityMode");
             QrCodeHelper.Output(@event.Url, compatibilityMode);
         });
@@ -98,7 +100,7 @@ public partial class BotService(
         bool result = await context.Login(options.Value.Uin, options.Value.Password ?? string.Empty, cancellationToken);
         if (!result)
         {
-            logger.LogCritical("Login failed, process would exit in 10 seconds");
+            _logger.LogCritical("Login failed, process would exit in 10 seconds");
             await Task.Delay(TimeSpan.FromSeconds(10), cancellationToken);
             Environment.Exit(-1);
         }
@@ -107,6 +109,20 @@ public partial class BotService(
     public async Task StopAsync(CancellationToken cancellationToken)
     {
         await context.Logout();
+    }
+
+    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "It does not matter")]
+    private static string InferFullName(string tag)
+    {
+        foreach (var type in typeof(BotContext).Assembly.GetTypes())
+        {
+            if (type.Name == tag)
+            {
+                return type.FullName ?? type.Name;
+            }
+        }
+        
+        return tag;
     }
 
     private static partial class Log
