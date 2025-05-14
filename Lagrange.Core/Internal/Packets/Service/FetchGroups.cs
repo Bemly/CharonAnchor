@@ -155,7 +155,9 @@ internal partial class FetchGroupsResponseGroupInfo
 [ProtoPackable]
 internal partial class FetchGroupsResponseCustomInfo
 {
-    [ProtoMember(2)] public string Uid { get; set; }
+    [ProtoMember(1)] public long LastSpeakTime { get; set; }
+    
+    [ProtoMember(5)] public uint LastestSeq { get; set; }
 }
 
 [ProtoPackable]
