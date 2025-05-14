@@ -24,8 +24,8 @@ internal class SsoUnregisterService : BaseService<SsoUnregisterEventReq, SsoUnre
 
     protected override ValueTask<SsoUnregisterEventResp> Parse(ReadOnlyMemory<byte> input, BotContext context)
     {
-        var packet = ProtoHelper.Deserialize<SsoSyncInfoResponse>(input.Span);
+        var packet = ProtoHelper.Deserialize<RegisterResponse>(input.Span);
 
-        return ValueTask.FromResult(new SsoUnregisterEventResp(packet.RegisterResponse?.Msg ?? "failed"));
+        return ValueTask.FromResult(new SsoUnregisterEventResp(packet.Msg));
     }
 }
