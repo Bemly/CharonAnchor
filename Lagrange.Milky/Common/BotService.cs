@@ -47,7 +47,7 @@ public partial class BotService(
         context.EventInvoker.RegisterEvent<BotQrCodeEvent>(async (_, @event) =>
         {
             await File.WriteAllBytesAsync("qrcode.png", @event.Image, cancellationToken);
-            bool compatibilityMode = config.GetValue<bool>("QrCode:ConsoleCompatibilityMode");
+            bool compatibilityMode = config.GetValue<bool>("Login:QrCodeConsoleCompatibilityMode");
             QrCodeHelper.Output(@event.Url, compatibilityMode);
             Log.QrCodeSuccess(_logger, 120, @event.Url);
         });

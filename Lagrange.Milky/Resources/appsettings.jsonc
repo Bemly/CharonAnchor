@@ -58,10 +58,10 @@
 
     // Login configuration
     "Login": {
-        // Whether to use console compatibility mode.
+        // Whether to use console compatibility mode to display QR codes.
         // If the default display method does not work properly,
         // try turning on this option.
-        "ConsoleCompatibilityMode": false,
+        "QrCodeConsoleCompatibilityMode": false,
 
         // Whether to use automatic captcha resolution.
         // This option is only effective when `Protocol` is set to
