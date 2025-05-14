@@ -22,7 +22,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		README.md = README.md
 		Proto.md = Proto.md
-		Milky.md = Milky.md
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lagrange.Proto.Test", "Lagrange.Proto.Test\Lagrange.Proto.Test.csproj", "{68CE6B62-AE63-4A25-AA40-779FD38C58A4}"
