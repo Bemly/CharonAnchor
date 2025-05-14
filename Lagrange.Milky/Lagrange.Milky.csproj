@@ -29,7 +29,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Include="Resources\appsettings.jsonc" />
+      <EmbeddedResource Include="Resources\appsettings.jsonc" />
     </ItemGroup>
 
 </Project>
