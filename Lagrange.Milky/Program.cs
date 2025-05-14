@@ -26,6 +26,7 @@ internal static class Program
         
         var host = Host.CreateApplicationBuilder(args)
             .UseJsonFileWithComments(Constants.ConfigFileName)
+            .ConfigureCore()
             .Build();
 
         await host.RunAsync();
