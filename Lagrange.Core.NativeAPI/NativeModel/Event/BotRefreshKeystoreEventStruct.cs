@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 using Lagrange.Core.Events.EventArgs;
-using Lagrange.Core.NativeAPI.NativeModel.Context;
+using Lagrange.Core.NativeAPI.NativeModel.Common;
 
 namespace Lagrange.Core.NativeAPI.NativeModel.Event
 {

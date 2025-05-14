@@ -1,7 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 using Lagrange.Core.Common.Interface;
-using Lagrange.Core.NativeAPI.NativeModel;
-using Lagrange.Core.NativeAPI.NativeModel.Context;
+using Lagrange.Core.NativeAPI.NativeModel.Common;
 
 namespace Lagrange.Core.NativeAPI;
 

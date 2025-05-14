@@ -1,8 +1,7 @@
 using System.Text;
 using Lagrange.Core.Common;
-using Lagrange.Core.NativeAPI.NativeModel.Common;
 
-namespace Lagrange.Core.NativeAPI.NativeModel.Context
+namespace Lagrange.Core.NativeAPI.NativeModel.Common
 {
     public struct BotKeystoreStruct
     {

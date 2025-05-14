@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using Lagrange.Core.Common;
 
-namespace Lagrange.Core.NativeAPI.NativeModel.Context
+namespace Lagrange.Core.NativeAPI.NativeModel.Common
 {
     [StructLayout(LayoutKind.Sequential)]
     public struct BotConfigStruct

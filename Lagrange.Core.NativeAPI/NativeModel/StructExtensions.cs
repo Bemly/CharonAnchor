@@ -7,7 +7,6 @@ using Lagrange.Core.Events.EventArgs;
 using Lagrange.Core.Message;
 using Lagrange.Core.Message.Entities;
 using Lagrange.Core.NativeAPI.NativeModel.Common;
-using Lagrange.Core.NativeAPI.NativeModel.Context;
 using Lagrange.Core.NativeAPI.NativeModel.Event;
 using Lagrange.Core.NativeAPI.NativeModel.Message;
 using Lagrange.Core.NativeAPI.NativeModel.Message.Entity;
