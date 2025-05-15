@@ -1,5 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using Lagrange.Core;
 using Lagrange.Core.Common.Interface;
@@ -94,7 +93,7 @@ public partial class BotService(
         context.EventInvoker.RegisterEvent<BotNewDeviceVerifyEvent>((_, @event) =>
         {
             Log.NewDeviceVerify(_logger, context.BotUin);
-            bool compatibilityMode = config.GetValue<bool>("QrCode:ConsoleCompatibilityMode");
+            bool compatibilityMode = config.GetValue<bool>("Login:QrCodeConsoleCompatibilityMode");
             QrCodeHelper.Output(@event.Url, compatibilityMode);
         });
 
