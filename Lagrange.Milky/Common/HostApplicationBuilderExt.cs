@@ -3,7 +3,6 @@ using System.Text.Json;
 using Lagrange.Core;
 using Lagrange.Core.Common;
 using Lagrange.Core.Common.Interface;
-using Lagrange.Milky.Common.Config;
 using Lagrange.Milky.Utility;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

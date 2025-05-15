@@ -3,7 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 using Lagrange.Core;
 using Lagrange.Core.Common.Interface;
 using Lagrange.Core.Events.EventArgs;
-using Lagrange.Milky.Common.Config;
 using Lagrange.Milky.Utility;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;

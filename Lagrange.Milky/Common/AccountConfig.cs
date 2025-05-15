@@ -1,6 +1,6 @@
 using Lagrange.Core.Common;
 
-namespace Lagrange.Milky.Common.Config;
+namespace Lagrange.Milky.Common;
 
 public class AccountConfig
 {
