@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using Lagrange.Core.Common;
 using Lagrange.Core.Common.Interface;
 using Lagrange.Core.NativeAPI.NativeModel.Common;
 

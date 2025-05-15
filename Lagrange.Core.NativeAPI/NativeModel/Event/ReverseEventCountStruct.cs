@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 namespace Lagrange.Core.NativeAPI.NativeModel.Event
 {
     [StructLayout(LayoutKind.Sequential)]
-    public class ReverseEventCountStruct
+    public struct ReverseEventCountStruct
     {
         public ReverseEventCountStruct() { }
 
