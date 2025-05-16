@@ -10,11 +10,20 @@
 
 A pure-C# implementation of NTQQ Protocol with user-friendly interface and extreme efficiency.
 
-## Lagrange.Milky
+## How To Use
 
-An implementation of [Milky](https://milky.ntqqrev.org/) protocol based on Lagrange.Core.
+Integrate Lagrange.Core via C# or [Lagrange.Core.NativeAPI](https://lagrangedev.github.io/Lagrange.Doc/v2/Lagrange.Core.NativeAPI/) via any language. We provide C ABI wrapper containing 64-bit native lib.  
+Also you can select a project from the Integration Projects below.  
+Check [Lagrange.Doc](https://lagrangedev.github.io/Lagrange.Doc/v2/) for more information.
 
-For more information about Milky, follow the link above.
+## Integration Projects
+
+<table>
+<tr>
+  <td><a href="https://lagrangedev.github.io/Lagrange.Doc/v2/Lagrange.Milky/">Lagrange.Milky</a></td>
+  <td>An implementation of <a href="https://milky.ntqqrev.org">Milky</a>  protocol based on Lagrange.Core.</td>
+</tr>
+</table>
 
 ## Appendix
 
