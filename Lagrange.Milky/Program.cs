@@ -1,8 +1,8 @@
 ﻿using System.Reflection;
 using System.Text;
-using Lagrange.Milky.Core.Extensions;
-using Lagrange.Milky.Extensions;
-using Lagrange.Milky.Implementation.Extensions;
+using Lagrange.Milky.Core.Extension;
+using Lagrange.Milky.Extension;
+using Lagrange.Milky.Implementation.Extension;
 using Microsoft.Extensions.Hosting;
 
 namespace Lagrange.Milky;

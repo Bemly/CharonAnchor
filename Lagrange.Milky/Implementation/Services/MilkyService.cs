@@ -1,8 +1,8 @@
 using System.Net;
-using Lagrange.Milky.Implementation.Apis;
-using Lagrange.Milky.Implementation.Configurations;
+using Lagrange.Milky.Implementation.Api;
+using Lagrange.Milky.Implementation.Configuration;
 using Lagrange.Milky.Implementation.Events;
-using Lagrange.Milky.Implementation.Extensions;
+using Lagrange.Milky.Implementation.Extension;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;

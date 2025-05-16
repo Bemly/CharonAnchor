@@ -1,5 +1,5 @@
 using System.Net;
-using Lagrange.Milky.Implementation.Configurations;
+using Lagrange.Milky.Implementation.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 

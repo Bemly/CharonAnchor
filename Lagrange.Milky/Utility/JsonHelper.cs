@@ -3,11 +3,11 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Lagrange.Core.Common;
 using Lagrange.Core.Common.Response;
-using Lagrange.Milky.Core.Signers;
-using Lagrange.Milky.Implementation.Apis.Params;
-using Lagrange.Milky.Implementation.Apis.Results;
-using Lagrange.Milky.Implementation.Apis.System;
-using Lagrange.Milky.Implementation.Entities;
+using Lagrange.Milky.Core;
+using Lagrange.Milky.Implementation.Api.Params;
+using Lagrange.Milky.Implementation.Api.Results;
+using Lagrange.Milky.Implementation.Api.System;
+using Lagrange.Milky.Implementation.Entity;
 
 namespace Lagrange.Milky.Utility;
 

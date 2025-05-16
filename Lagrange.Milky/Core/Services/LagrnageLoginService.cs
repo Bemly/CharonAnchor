@@ -1,7 +1,7 @@
 ﻿using Lagrange.Core;
 using Lagrange.Core.Common.Interface;
 using Lagrange.Core.Events.EventArgs;
-using Lagrange.Milky.Core.Configurations;
+using Lagrange.Milky.Core.Configuration;
 using Lagrange.Milky.Utility;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
