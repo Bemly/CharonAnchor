@@ -7,10 +7,4 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
-    <ItemGroup>
-        <None Include="..\Lagrange.Core.NativeAPI\bin\Release\net9.0\win-x64\publish\Lagrange.Core.NativeAPI.dll">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-    </ItemGroup>
-
 </Project>
