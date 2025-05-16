@@ -1,6 +1,6 @@
-namespace Lagrange.Milky.Network;
+namespace Lagrange.Milky.Implementation.Configurations;
 
-public class NetworkConfig
+public class MilkyConfiguration
 {
     public string Host { get; set; } = "127.0.0.1";
 
@@ -9,4 +9,8 @@ public class NetworkConfig
     public string CommonPrefix { get; set; } = "/";
 
     public string? AccessToken { get; set; } = null;
+
+    public bool IgnoreSelfMessages { get; set; } = false;
+
+    public string? MusicSignServerUrl { get; set; }
 }

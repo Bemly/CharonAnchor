@@ -24,7 +24,7 @@ public class ManualCaptchaResolver : ICaptchaResolver
     }
 }
 
-public partial class OnlineCaptchaResolver(ILogger<OnlineCaptchaResolver> logger, BotContext context) : ICaptchaResolver
+public partial class OnlineCaptchaResolver(ILogger<OnlineCaptchaResolver> logger, BotContext bot) : ICaptchaResolver
 {
     private readonly HttpClient _client = new();
 
@@ -34,7 +34,7 @@ public partial class OnlineCaptchaResolver(ILogger<OnlineCaptchaResolver> logger
 
     public async Task<(string, string)> ResolveCaptchaAsync(string url, CancellationToken token)
     {
-        string solveUrl = string.Format(Url, url.Split('?')[1].Replace("uin=0", $"uin={context.BotUin}"));
+        string solveUrl = string.Format(Url, url.Split('?')[1].Replace("uin=0", $"uin={bot.BotUin}"));
         QrCodeHelper.Output(solveUrl, false);
         Log.Captcha(logger, solveUrl);
 
@@ -45,7 +45,7 @@ public partial class OnlineCaptchaResolver(ILogger<OnlineCaptchaResolver> logger
 
             try
             {
-                string queryUrl = string.Format(QueryUrl, context.BotUin);
+                string queryUrl = string.Format(QueryUrl, bot.BotUin);
                 var response = await _client.GetAsync(queryUrl, token);
                 if (response.StatusCode == HttpStatusCode.OK)
                 {

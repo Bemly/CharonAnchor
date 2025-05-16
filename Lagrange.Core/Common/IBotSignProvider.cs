@@ -8,7 +8,7 @@ namespace Lagrange.Core.Common;
 
 public interface IBotSignProvider
 {
-    internal bool IsWhiteListCommand(string cmd);
+    bool IsWhiteListCommand(string cmd);
 
     Task<SsoSecureInfo?> GetSecSign(long uin, string cmd, int seq, ReadOnlyMemory<byte> body);
 }

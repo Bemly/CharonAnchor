@@ -1,92 +1,86 @@
 {
-    // Logging configuration
     "Logging": {
-        // LogLevel settings for different categories
         "LogLevel": {
             // Default log level for all categories
             "Default": "Information",
+        },
+    },
+    "Lagrange": {
+        "Protocol": {
+            // The protocol used for the account.
+            // Supported protocols:
+            // Linux, Windows, MacOs, AndroidPhone, AndroidPad
+            "Protocol": "Linux",
+            
+            // Whether to use the most optimal server.
+            // "GetOptimumServer": true,
 
-            // Log level for specific categories
-            "Microsoft": "Warning",
-            "Microsoft.Hosting.Lifetime": "Information"
-        }
+            // Whether to use IPv6 network.
+            // Warning: The IPv6 implementation is with known issues.
+            // "UseIPv6Network": false,
+
+            // Device identifier
+            // Valid for first login
+            // "DeviceIdentifier": "LGR-Milky"
+
+            "Signer": {
+                // The URL of sign server.
+                // This is essential for Lagrange to function properly.
+                "Url": "https://sign.lagrangecore.org/api/sign/30366",
+
+                // The URL of sign proxy server.
+                // Specify this if you cannot use the sign server directly.
+                // Only HTTP/HTTPS proxy is supported.
+                // "ProxyUrl": null,
+            },
+        },
+
+        // "Login": {
+            // Account credentials.
+            // These options are only effective when the Signer provides the `AndroidPhone` or `AndroidPad` protocol.
+            // "Uin": null,
+            // "Password": null,
+
+            // Whether to reconnect automatically.
+            // "AutoReconnect": true,
+
+            // Whether to re-login automatically.
+            // "AutoReLogin": true,
+
+            // Whether to use console compatibility mode to display QR codes.
+            // If the default display method does not work properly,
+            // try turning on this option.
+            // "QrCodeConsoleCompatibilityMode": false,
+
+            // Whether to use automatic captcha resolution.
+            // This option is only effective when `Protocol` is set to
+            // `AndroidPhone` or `AndroidPad`.
+            // "UseAutoCaptchaResolver": true,
+        // },
     },
 
-    // The URL of sign server.
-    // This is essential for Lagrange to function properly.
-    "SignServerUrl": "",
-
-    // The URL of sign proxy server.
-    // Specify this if you cannot use the sign server directly.
-    // Only HTTP/HTTPS proxy is supported.
-    "SignProxyUrl": "",
-
-    // The URL of music sign server.
-    // You need to specify this if you want to send music cards.
-    "MusicSignServerUrl": "",
-
-    // Account configuration
-    "Account": {
-        // The protocol used for the account.
-        // Supported protocols:
-        // Linux, Windows, MacOs, AndroidPhone, AndroidPad
-        "Protocol": "Linux",
-
-        // The credentials for the account.
-        // These options are effective only when `Protocol` is set to
-        // `AndroidPhone` or `AndroidPad`.
-        "Uin": 0,
-        "Password": "",
-
-        // Whether to reconnect automatically.
-        "AutoReconnect": true,
-
-        // Whether to use the most optimal server.
-        "GetOptimumServer": true,
-
-        // Whether to use IPv6 network.
-        // Warning: The IPv6 implementation is with known issues.
-        "UseIPv6Network": false,
-
-        // Whether to re-login automatically.
-        "AutoReLogin": true
-    },
-
-    // Whether to ignore messages sent by the bot itself.
-    // In other words, messages that satisfy `user_id == self_id`.
-    "IgnoreSelfMessages": true,
-
-    // Login configuration
-    "Login": {
-        // Whether to use console compatibility mode to display QR codes.
-        // If the default display method does not work properly,
-        // try turning on this option.
-        "QrCodeConsoleCompatibilityMode": false,
-
-        // Whether to use automatic captcha resolution.
-        // This option is only effective when `Protocol` is set to
-        // `AndroidPhone` or `AndroidPad`.
-        "UseAutoCaptchaResolver": true
-    },
-
-    // Network configuration
-    // This section is used to configure the way the application exposes
-    // its services to the outside network.
-    // Refer to https://milky.ntqqrev.org/guide/communication.html for more details.
-    "Network": {
-        // The host address of the service.
+    "Milky": {
+        // The host address of Milky.
         "Host": "127.0.0.1",
 
-        // The port number of the service.
+        // The port number of Milky.
         "Port": 8080,
 
         // The common prefix of `/api` and `/event` endpoints.
         // Useful when you are running Lagrange.Milky under a reverse proxy.
         // For example, if you expose Lagrange.Milky under `https://example.com/lagrange/`
         // using reverse proxy, you should set this to `/lagrange/`.
-        "CommonPrefix": "/",
+        // "CommonPrefix": null,
 
         // The AccessToken for the service.
-        "AccessToken": ""
-    }
+        // "AccessToken": null,
+
+        // Whether to ignore messages sent by the bot itself.
+        // In other words, messages that satisfy `user_id == self_id`.
+        // "IgnoreSelfMessages": true,
+
+        // The URL of music sign server.
+        // You need to specify this if you want to send music cards.
+        // "MusicSignServerUrl": null,
+    },
 }
