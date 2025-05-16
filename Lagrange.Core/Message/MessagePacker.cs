@@ -34,7 +34,7 @@ internal class MessagePacker
     }
 
     /// <summary>
-    /// For the use of MessageService in OneBot
+    /// For the use of MessageService in Milky
     /// </summary>
     public async Task<BotMessage> Parse(ReadOnlyMemory<byte> src) => await Parse(ProtoHelper.Deserialize<MsgPush>(src.Span));
 
