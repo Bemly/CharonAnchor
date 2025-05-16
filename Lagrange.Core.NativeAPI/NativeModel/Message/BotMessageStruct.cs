@@ -36,17 +36,17 @@ namespace Lagrange.Core.NativeAPI.NativeModel.Message
                 case MessageType.Group:
                     type = (int)MessageType.Group;
                     contact = Marshal.AllocHGlobal(Marshal.SizeOf<BotGroupMemberStruct>());
-                    Marshal.StructureToPtr((BotGroupMemberStruct)message.Contact, contact, false);
+                    Marshal.StructureToPtr((BotGroupMemberStruct)(BotGroupMember)message.Contact, contact, false);
                     break;
                 case MessageType.Private:
                     type = (int)MessageType.Private;
                     contact = Marshal.AllocHGlobal(Marshal.SizeOf<BotFriendStruct>());
-                    Marshal.StructureToPtr((BotFriendStruct)message.Contact, contact, false);
+                    Marshal.StructureToPtr((BotFriendStruct)(BotFriend)message.Contact, contact, false);
                     break;
                 case MessageType.Temp:
                     type = (int)MessageType.Temp;
                     contact = Marshal.AllocHGlobal(Marshal.SizeOf<BotStrangerStruct>());
-                    Marshal.StructureToPtr((BotStrangerStruct)message.Contact, contact, false);
+                    Marshal.StructureToPtr((BotStrangerStruct)(BotStranger)message.Contact, contact, false);
                     break;
             }
 
