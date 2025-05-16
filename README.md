@@ -6,24 +6,23 @@
 
 </div>
 
-## Lagrange.Core
+## Usage
 
-A pure-C# implementation of NTQQ Protocol with user-friendly interface and extreme efficiency.
+### Integrating into .NET projects
 
-## How To Use
+Add the [NuGet package](https://www.nuget.org/packages/Lagrange.Core/) to the project.
 
-Integrate Lagrange.Core via C# or [Lagrange.Core.NativeAPI](https://lagrangedev.github.io/Lagrange.Doc/v2/Lagrange.Core.NativeAPI/) via any language. We provide C ABI wrapper containing 64-bit native lib.  
-Also you can select a project from the Integration Projects below.  
+For more library usage, please refer to the [documentation](https://lagrangedev.github.io/Lagrange.Doc/v2/Lagrange.Core) of Lagrange.Core.
+
+### Integrating into projects of other languages
+
+If you are using other languages, the module [Lagrange.Core.NativeAPI](https://lagrangedev.github.io/Lagrange.Doc/v2/Lagrange.Core.NativeAPI/) provides a C ABI-compatible wrapper for 64-bit native libraries.
+
+### Providing web service to bot applications
+
+The project [Lagrange.Milky](https://lagrangedev.github.io/Lagrange.Doc/v2/Lagrange.Milky) implements [Milky](https://milky.ntqqrev.org/) protocol. You can use it to provide web service to bot applications ~~like NoneBot and Saltify~~.
+
 Check [Lagrange.Doc](https://lagrangedev.github.io/Lagrange.Doc/v2/) for more information.
-
-## Integration Projects
-
-<table>
-<tr>
-  <td><a href="https://lagrangedev.github.io/Lagrange.Doc/v2/Lagrange.Milky/">Lagrange.Milky</a></td>
-  <td>An implementation of <a href="https://milky.ntqqrev.org">Milky</a>  protocol based on Lagrange.Core.</td>
-</tr>
-</table>
 
 ## Appendix
 
