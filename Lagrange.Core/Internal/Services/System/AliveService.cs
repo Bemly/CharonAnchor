@@ -6,7 +6,7 @@ using Lagrange.Core.Internal.Packets.Struct;
 namespace Lagrange.Core.Internal.Services.System;
 
 [EventSubscribe<AliveEvent>(Protocols.All)]
-[Service("Heartbeat.Alive", RequestType.Simple, EncryptType.NoEncrypt)]
+[Service("Heartbeat.Alive", RequestType.Simple, EncryptType.NoEncrypt, DisableLog = true)]
 internal class AliveService : BaseService<AliveEvent, AliveEvent>
 {
     private static readonly byte[] Buffer = [0x00, 0x00, 0x00, 0x04];

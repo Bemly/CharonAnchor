@@ -13,4 +13,6 @@ internal class ServiceAttribute(
     public RequestType RequestType { get; } = requestType;
     
     public EncryptType EncryptType { get; } = encryptType;
+    
+    public bool DisableLog { get; init; } = false;
 }

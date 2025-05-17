@@ -16,6 +16,7 @@ internal class ServiceContext
 
     private int _sequence = Random.Shared.Next(5000000, 9900000);
 
+    private readonly HashSet<string> _disabledLog = [];
     private readonly FrozenDictionary<string, IService> _services;
     private readonly FrozenDictionary<Type, (ServiceAttribute Attribute, IService Instance)> _servicesEventType;
 
@@ -43,6 +44,7 @@ internal class ServiceContext
                     {
                         service = (IService?)Activator.CreateInstance(type) ?? throw new InvalidOperationException("Failed to create service instance");
                         services[attr.Command] = service;
+                        if (attr.DisableLog) _disabledLog.Add(attr.Command);
                     }
 
                     servicesEventType[attribute.EventType] = !servicesEventType.ContainsKey(attribute.EventType)
@@ -58,15 +60,9 @@ internal class ServiceContext
 
     public ValueTask<ProtocolEvent> Resolve(SsoPacket ssoPacket)
     {
-        if (!_services.TryGetValue(ssoPacket.Command, out var service))
-        {
-            throw new ServiceNotFoundException(ssoPacket.Command);
-        }
+        if (!_services.TryGetValue(ssoPacket.Command, out var service)) throw new ServiceNotFoundException(ssoPacket.Command);
 
-        if (ssoPacket.Command != "Heartbeat.Alive")
-        {
-            _context.LogDebug(Tag, "Incoming SSOFrame: {0}", ssoPacket.Command);
-        }
+        if (!_disabledLog.Contains(ssoPacket.Command)) _context.LogDebug(Tag, "Incoming SSOFrame: {0}", ssoPacket.Command);
         return service.Parse(ssoPacket.Data, _context);
     }
 
@@ -75,10 +71,7 @@ internal class ServiceContext
         if (!_servicesEventType.TryGetValue(@event.GetType(), out var handler)) return default;
 
         var (attr, service) = handler;
-        if (handler.Attribute.Command != "Heartbeat.Alive")
-        {
-            _context.LogDebug(Tag, "Outgoing SSOFrame: {0}", handler.Attribute.Command);
-        }
+        if (!handler.Attribute.DisableLog) _context.LogDebug(Tag, "Outgoing SSOFrame: {0}", handler.Attribute.Command);
 
         return (new SsoPacket(attr.Command, await service.Build(@event, _context), GetNewSequence()), attr);
     }
