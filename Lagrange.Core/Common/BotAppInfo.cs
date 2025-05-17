@@ -4,33 +4,29 @@ namespace Lagrange.Core.Common;
 
 public class BotAppInfo
 {
-    public string Os { get; set; }
+    public string Os { get; init; }
     
-    public string VendorOs { get; set; }
+    public string VendorOs { get; init; }
     
-    public string Kernel { get; set; }
+    public string Kernel { get; init; }
 
-    public string CurrentVersion { get; set; }
+    public string CurrentVersion { get; init; }
     
-    public string PtVersion { get; set; }
+    public string PtVersion { get; init; }
     
-    public int SsoVersion { get; set; }
+    public int SsoVersion { get; init; }
     
-    public string PackageName { get; set; }
+    public string PackageName { get; init; }
     
-    public byte[] ApkSignatureMd5 { get; set; }
+    public byte[] ApkSignatureMd5 { get; init; }
     
-    public WtLoginSdkInfo SdkInfo { get; set; }
+    public WtLoginSdkInfo SdkInfo { get; init; }
     
-    public int AppId { get; set; }
+    public int AppId { get; init; }
     
-    public int SubAppId { get; set; }
-    
-    public int AppIdQrCode { get; set; }
-    
-    public ushort AppClientVersion { get; set; }
-    
-    public ushort NTLoginType { get; set; }
+    public int SubAppId { get; init; }
+
+    public ushort AppClientVersion { get; init; }
 
     private static readonly BotAppInfo Linux = new()
     {
@@ -48,14 +44,11 @@ public class BotAppInfo
             SdkVersion = "nt.wtlogin.0.0.1",
             MiscBitMap = 12058620,
             SubSigMap = 0,
-            MainSigMap = (SigType)169742560
+            MainSigMap = Sig.WLOGIN_STWEB | Sig.WLOGIN_A2 | Sig.WLOGIN_ST | Sig.WLOGIN_SKEY | Sig.WLOGIN_VKEY | Sig.WLOGIN_D2 | Sig.WLOGIN_SID | Sig.WLOGIN_PSKEY | Sig.WLOGIN_DA2 | Sig.WLOGIN_PT4Token
         },
         AppId = 1600001615,
         SubAppId = 537258424,
-        AppIdQrCode = 13697054,
-        AppClientVersion = 30366,
-        
-        NTLoginType = 1
+        AppClientVersion = 30366
     };
     
     private static readonly BotAppInfo MacOs = new()
@@ -74,14 +67,11 @@ public class BotAppInfo
             SdkVersion = "nt.wtlogin.0.0.1",
             MiscBitMap = 12058620,
             SubSigMap = 0,
-            MainSigMap = (SigType)169742560
+            MainSigMap = Sig.WLOGIN_STWEB | Sig.WLOGIN_A2 | Sig.WLOGIN_ST | Sig.WLOGIN_SKEY | Sig.WLOGIN_VKEY | Sig.WLOGIN_D2 | Sig.WLOGIN_SID | Sig.WLOGIN_PSKEY | Sig.WLOGIN_DA2 | Sig.WLOGIN_PT4Token
         },
         AppId = 1600001602,
         SubAppId = 537200848,
-        AppIdQrCode = 537200848,
-        AppClientVersion = 13172,
-        
-        NTLoginType = 5
+        AppClientVersion = 13172
     };
     
     private static readonly BotAppInfo Windows = new()
@@ -100,14 +90,11 @@ public class BotAppInfo
             SdkVersion = "nt.wtlogin.0.0.1",
             MiscBitMap = 12058620,
             SubSigMap = 0,
-            MainSigMap = (SigType)169742560,
+            MainSigMap = Sig.WLOGIN_STWEB | Sig.WLOGIN_A2 | Sig.WLOGIN_ST | Sig.WLOGIN_SKEY | Sig.WLOGIN_VKEY | Sig.WLOGIN_D2 | Sig.WLOGIN_SID | Sig.WLOGIN_PSKEY | Sig.WLOGIN_DA2 | Sig.WLOGIN_PT4Token
         },
         AppId = 1600001604,
         SubAppId = 537291048,
-        AppIdQrCode = 537291048,
-        AppClientVersion = 35184,
-        
-        NTLoginType = 5
+        AppClientVersion = 35184
     };
 
     private static readonly BotAppInfo AndroidPhone = new()
@@ -126,7 +113,7 @@ public class BotAppInfo
             SdkVersion = "6.0.0.2568",
             MiscBitMap = 150470524,
             SubSigMap = 66560,
-            MainSigMap = (SigType)16724722
+            MainSigMap = Sig.WLOGIN_A5 | Sig.WLOGIN_RESERVED | Sig.WLOGIN_STWEB | Sig.WLOGIN_A2 | Sig.WLOGIN_ST | Sig.WLOGIN_LSKEY | Sig.WLOGIN_SKEY | Sig.WLOGIN_SIG64 | Sig.WLOGIN_VKEY | Sig.WLOGIN_D2 | Sig.WLOGIN_SID | Sig.WLOGIN_PSKEY | Sig.WLOGIN_AQSIG | Sig.WLOGIN_LHSIG | Sig.WLOGIN_PAYTOKEN | (Sig)65536
         },
         AppClientVersion = 0
     };
@@ -147,7 +134,7 @@ public class BotAppInfo
             SdkVersion = "6.0.0.2568",
             MiscBitMap = 150470524,
             SubSigMap = 66560,
-            MainSigMap = (SigType)16724722,
+            MainSigMap = Sig.WLOGIN_A5 | Sig.WLOGIN_RESERVED | Sig.WLOGIN_STWEB | Sig.WLOGIN_A2 | Sig.WLOGIN_ST | Sig.WLOGIN_LSKEY | Sig.WLOGIN_SKEY | Sig.WLOGIN_SIG64 | Sig.WLOGIN_VKEY | Sig.WLOGIN_D2 | Sig.WLOGIN_SID | Sig.WLOGIN_PSKEY | Sig.WLOGIN_AQSIG | Sig.WLOGIN_LHSIG | Sig.WLOGIN_PAYTOKEN | (Sig)65536
         },
         AppClientVersion = 0
     };
@@ -164,19 +151,19 @@ public class BotAppInfo
 
 public class WtLoginSdkInfo
 {
-    public uint SdkBuildTime { get; set; }
+    public uint SdkBuildTime { get; init; }
     
-    public string SdkVersion { get; set; }
+    public string SdkVersion { get; init; }
     
-    public uint MiscBitMap { get; set; }
+    public uint MiscBitMap { get; init; }
     
-    public uint SubSigMap { get; set; }
+    public uint SubSigMap { get; init; }
     
-    public SigType MainSigMap { get; set; }
+    public Sig MainSigMap { get; init; }
 }
 
 [Flags]
-public enum SigType
+public enum Sig
 {
     WLOGIN_A5 = 1 << 1,
     WLOGIN_RESERVED = 1 << 4,
