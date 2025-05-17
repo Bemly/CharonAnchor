@@ -111,32 +111,29 @@ internal class WtExchangeLogic : ILogic, IDisposable
             if (!await KeyExchange()) return false;
             
             var result = await _context.EventContext.SendEvent<EasyLoginEventResp>(new EasyLoginEventReq());
-            while (true)
+            _token?.ThrowIfCancellationRequested();
+            
+            switch (result.State)
             {
-                _token?.ThrowIfCancellationRequested();
-                
-                switch (result.State)
-                {
-                    case NTLoginRetCode.SUCCESS_UNSPECIFIED:
-                        _context.EventInvoker.PostEvent(new BotLoginEvent(0, null));
-                        _context.EventInvoker.PostEvent(new BotRefreshKeystoreEvent(_context.Keystore));
-                        return await Online();
-                    case NTLoginRetCode.ERR_NEED_VERIFY_UNUSUAL_DEVICE when result.UnusualSigs is { } sig:
-                        _context.LogInfo(Tag, "Unusual device detected, waiting for confirmation");
+                case NTLoginRetCode.SUCCESS_UNSPECIFIED:
+                    _context.EventInvoker.PostEvent(new BotLoginEvent(0, null));
+                    _context.EventInvoker.PostEvent(new BotRefreshKeystoreEvent(_context.Keystore));
+                    return await Online();
+                case NTLoginRetCode.ERR_NEED_VERIFY_UNUSUAL_DEVICE when result.UnusualSigs is { } sig:
+                    _context.LogInfo(Tag, "Unusual device detected, waiting for confirmation");
 
-                        var transEmp31 = await _context.EventContext.SendEvent<TransEmp31EventResp>(new TransEmp31EventReq(sig));
+                    var transEmp31 = await _context.EventContext.SendEvent<TransEmp31EventResp>(new TransEmp31EventReq(sig));
 
-                        _context.Keystore.State.QrSig = transEmp31.QrSig;
-                        _transEmpSource = new TaskCompletionSource<bool>();
-                        await _timers[QueryStateTag].DisposeAsync();
-                        _timers[QueryStateTag] = new Timer(OnQueryState, true, 0, 2000);
-                        if (await _transEmpSource.Task) return await Online();
-                        break;
-                    default:
-                        _context.LogError(Tag, "Login failed: {0} | Message: {1}", result.State, result.Tips);
-                        _context.EventInvoker.PostEvent(new BotLoginEvent((int)result.State, result.Tips));
-                        break;
-                }
+                    _context.Keystore.State.QrSig = transEmp31.QrSig;
+                    _transEmpSource = new TaskCompletionSource<bool>();
+                    await _timers[QueryStateTag].DisposeAsync();
+                    _timers[QueryStateTag] = new Timer(OnQueryState, true, 0, 2000);
+                    if (await _transEmpSource.Task) return await Online();
+                    break;
+                default:
+                    _context.LogError(Tag, "Login failed: {0} | Message: {1}", result.State, result.Tips);
+                    _context.EventInvoker.PostEvent(new BotLoginEvent((int)result.State, result.Tips));
+                    break;
             }
         }
         
