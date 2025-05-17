@@ -6,7 +6,7 @@ using Lagrange.Core.Internal.Packets.Service;
 
 namespace Lagrange.Core.Internal.Services.System;
 
-[EventSubscribe<FetchGroupsEventReq>(Protocols.Linux)]
+[EventSubscribe<FetchGroupsEventReq>(Protocols.All)]
 [Service("OidbSvcTrpcTcp.0xfe5_2")]
 internal class FetchGroupsService : OidbService<FetchGroupsEventReq, FetchGroupsEventResp, FetchGroupsRequest, FetchGroupsResponse>
 {
