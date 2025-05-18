@@ -11,6 +11,12 @@ public static class OperationExt
     
     public static Task<(bool Success, string Message)> CloseQrCode(this BotContext context, byte[] k, bool confirm) =>
         context.EventContext.GetLogic<WtExchangeLogic>().CloseQrCode(k, confirm);
+    
+    public static Task<Dictionary<string, string>> FetchCookies(this BotContext context, params List<string> domains) =>
+        context.EventContext.GetLogic<OperationLogic>().FetchCookies(domains);
+    
+    public static Task<(string Key, uint Expiration)> FetchClientKey(this BotContext context) =>
+        context.EventContext.GetLogic<OperationLogic>().FetchClientKey();
 
     public static Task<List<BotFriend>> FetchFriends(this BotContext context, bool refresh = false) =>
         context.CacheContext.GetFriendList(refresh);

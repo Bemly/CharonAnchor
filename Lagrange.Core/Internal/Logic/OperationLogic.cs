@@ -11,6 +11,16 @@ namespace Lagrange.Core.Internal.Logic;
 
 internal class OperationLogic(BotContext context) : ILogic
 {
+    private const string Tag = nameof(OperationLogic);
+
+    public async Task<Dictionary<string, string>> FetchCookies(List<string> domains) => (await context.EventContext.SendEvent<FetchCookiesEventResp>(new FetchCookiesEventReq(domains))).Cookies;
+    
+    public async Task<(string, uint)> FetchClientKey()
+    {
+        var result = await context.EventContext.SendEvent<FetchClientKeyEventResp>(new FetchClientKeyEventReq());
+        return (result.ClientKey, result.Expiration);
+    }
+
     public async Task<bool> SendFriendFile(long targetUin, Stream fileStream, string? fileName)
     {
         if (fileName == null)
