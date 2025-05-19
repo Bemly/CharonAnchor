@@ -5,13 +5,13 @@ namespace Lagrange.Core.Internal.Packets.Service;
 #pragma warning disable CS8618
 
 [ProtoPackable]
-internal partial class C102AReqBody
+internal partial class D102AReqBody
 {
     [ProtoMember(1)] public List<string> Domain { get; set; }
 }
 
 [ProtoPackable]
-internal partial class C102ARspBody
+internal partial class D102ARspBody
 {
     [ProtoMember(1)] public Dictionary<string, string> PsKeys { get; set; }
     
