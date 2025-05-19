@@ -184,4 +184,9 @@ internal class MessagePacker
         };
         return ProtoHelper.Serialize(proto);
     }
+
+    public static Task<MsgPush> BuildFake(BotMessage msg)
+    {
+        throw new NotImplementedException();
+    }
 }
