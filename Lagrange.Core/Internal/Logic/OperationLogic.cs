@@ -21,9 +21,9 @@ internal class OperationLogic(BotContext context) : ILogic
         return (result.ClientKey, result.Expiration);
     }
 
-    public async Task<bool> SendPoke(bool isGroup, long peerUin, long targetUin)
+    public async Task<bool> SendNudge(bool isGroup, long peerUin, long targetUin)
     { 
-        await context.EventContext.SendEvent<PokeEventResp>(new PokeEventReq(isGroup, peerUin, targetUin));
+        await context.EventContext.SendEvent<NudgeEventResp>(new NudgeEventReq(isGroup, peerUin, targetUin));
         return true;
     }
 

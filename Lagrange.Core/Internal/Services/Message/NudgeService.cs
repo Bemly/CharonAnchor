@@ -5,15 +5,15 @@ using Lagrange.Core.Internal.Packets.Service;
 
 namespace Lagrange.Core.Internal.Services.Message;
 
-[EventSubscribe<PokeEventReq>(Protocols.All)]
+[EventSubscribe<NudgeEventReq>(Protocols.All)]
 [Service("OidbSvcTrpcTcp.0xed3_1")]
-internal class PokeService : OidbService<PokeEventReq, PokeEventResp, DED3ReqBody, DED3RspBody>
+internal class NudgeService : OidbService<NudgeEventReq, NudgeEventResp, DED3ReqBody, DED3RspBody>
 {
     private protected override uint Command => 0xed3;
 
     private protected override uint Service => 1;
     
-    private protected override Task<DED3ReqBody> ProcessRequest(PokeEventReq request, BotContext context)
+    private protected override Task<DED3ReqBody> ProcessRequest(NudgeEventReq request, BotContext context)
     {
         return Task.FromResult(new DED3ReqBody
         {
@@ -23,8 +23,8 @@ internal class PokeService : OidbService<PokeEventReq, PokeEventResp, DED3ReqBod
         });
     }
 
-    private protected override Task<PokeEventResp> ProcessResponse(DED3RspBody response, BotContext context)
+    private protected override Task<NudgeEventResp> ProcessResponse(DED3RspBody response, BotContext context)
     {
-        return Task.FromResult(new PokeEventResp());
+        return Task.FromResult(new NudgeEventResp());
     }
 }
