@@ -21,6 +21,12 @@ internal class OperationLogic(BotContext context) : ILogic
         return (result.ClientKey, result.Expiration);
     }
 
+    public async Task<bool> SendPoke(bool isGroup, long peerUin, long targetUin)
+    { 
+        await context.EventContext.SendEvent<PokeEventResp>(new PokeEventReq(isGroup, peerUin, targetUin));
+        return true;
+    }
+
     public async Task<bool> SendFriendFile(long targetUin, Stream fileStream, string? fileName)
     {
         if (fileName == null)
