@@ -115,11 +115,11 @@ internal class WtExchangeLogic : ILogic, IDisposable
             
             switch (result.State)
             {
-                case NTLoginRetCode.SUCCESS_UNSPECIFIED:
+                case NTLoginRetCode.LOGIN_SUCCESS:
                     _context.EventInvoker.PostEvent(new BotLoginEvent(0, null));
                     _context.EventInvoker.PostEvent(new BotRefreshKeystoreEvent(_context.Keystore));
                     return await Online();
-                case NTLoginRetCode.ERR_NEED_VERIFY_UNUSUAL_DEVICE when result.UnusualSigs is { } sig:
+                case NTLoginRetCode.LOGIN_ERROR_UNUSUAL_DEVICE when result.UnusualSigs is { } sig:
                     _context.LogInfo(Tag, "Unusual device detected, waiting for confirmation");
 
                     var transEmp31 = await _context.EventContext.SendEvent<TransEmp31EventResp>(new TransEmp31EventReq(sig));
@@ -256,11 +256,11 @@ internal class WtExchangeLogic : ILogic, IDisposable
                     
                     switch (result.State)
                     {
-                        case NTLoginRetCode.SUCCESS_UNSPECIFIED:
+                        case NTLoginRetCode.LOGIN_SUCCESS:
                             _context.EventInvoker.PostEvent(new BotLoginEvent(0, null));
                             _context.EventInvoker.PostEvent(new BotRefreshKeystoreEvent(_context.Keystore));
                             return await Online();
-                        case NTLoginRetCode.ERR_NEED_VERIFY_WATERPROOF_WALL:
+                        case NTLoginRetCode.LOGIN_ERROR_PROOF_WATER:
                             _context.LogInfo(Tag, "Captcha required, URL: {0}", result.JumpingUrl);
                             
                             _context.EventInvoker.PostEvent(new BotCaptchaEvent(result.JumpingUrl));
@@ -270,7 +270,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
                             var (ticket, randStr) = await _captchaSource.Task;
                             result = await _context.EventContext.SendEvent<PasswordLoginEventResp>(new PasswordLoginEventReq(password, (ticket, randStr, sid)));
                             break;
-                        case NTLoginRetCode.ERR_NEED_VERIFY_NEW_DEVICE:
+                        case NTLoginRetCode.LOGIN_ERROR_NEW_DEVICE:
                             _context.LogInfo(Tag, "New device login required");
                             
                             var parsed = HttpUtility.ParseQueryString(result.JumpingUrl);
@@ -425,7 +425,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
                 {
                     var result = await _context.EventContext.SendEvent<UnusualEasyLoginEventResp>(new UnusualEasyLoginEventReq());
 
-                    if (result.State == NTLoginRetCode.SUCCESS_UNSPECIFIED)
+                    if (result.State == NTLoginRetCode.LOGIN_SUCCESS)
                     {
                         _context.EventInvoker.PostEvent(new BotRefreshKeystoreEvent(_context.Keystore));
                         _transEmpSource.TrySetResult(true);
@@ -495,7 +495,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
 
             _context.EventInvoker.PostEvent(new BotLoginEvent((int)result.State, result.Tips));
             
-            if (result.State == NTLoginRetCode.SUCCESS_UNSPECIFIED)
+            if (result.State == NTLoginRetCode.LOGIN_SUCCESS)
             {
                 _context.EventInvoker.PostEvent(new BotRefreshKeystoreEvent(_context.Keystore));
                 _transEmpSource.TrySetResult(true);

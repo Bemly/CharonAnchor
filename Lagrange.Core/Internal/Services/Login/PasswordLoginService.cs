@@ -61,12 +61,12 @@ internal class PasswordLoginService : BaseService<PasswordLoginEventReq, Passwor
     protected override ValueTask<PasswordLoginEventResp> Parse(ReadOnlyMemory<byte> input, BotContext context)
     {
         var state = NTLoginCommon.Decode<NTLoginPasswordLoginRspBody>(context, input, out var info, out var resp);
-        if (state == NTLoginRetCode.SUCCESS_UNSPECIFIED) NTLoginCommon.SaveTicket(context, resp.Tickets);
+        if (state == NTLoginRetCode.LOGIN_SUCCESS) NTLoginCommon.SaveTicket(context, resp.Tickets);
         
         return new ValueTask<PasswordLoginEventResp>(state switch
         {
-            NTLoginRetCode.SUCCESS_UNSPECIFIED => new PasswordLoginEventResp(state, null, null),
-            NTLoginRetCode.ERR_NEED_VERIFY_WATERPROOF_WALL => new PasswordLoginEventResp(state, null, resp.SecCheck.IframeUrl),
+            NTLoginRetCode.LOGIN_SUCCESS => new PasswordLoginEventResp(state, null, null),
+            NTLoginRetCode.LOGIN_ERROR_PROOF_WATER => new PasswordLoginEventResp(state, null, resp.SecCheck.IframeUrl),
             _ when info is not null => new PasswordLoginEventResp(state, (info.StrTipsTitle, info.StrTipsContent), info.StrJumpUrl),
             _ => new PasswordLoginEventResp(state, null, null)
         });

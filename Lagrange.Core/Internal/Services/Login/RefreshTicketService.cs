@@ -20,11 +20,11 @@ internal class RefreshTicketService : BaseService<RefreshTicketEventReq, Refresh
     protected override ValueTask<RefreshTicketEventResp> Parse(ReadOnlyMemory<byte> input, BotContext context)
     {
         var state = NTLoginCommon.Decode<NTLoginRefreshTicketRspBody>(context, input, out var info, out var resp);
-        if (state == NTLoginRetCode.SUCCESS_UNSPECIFIED) NTLoginCommon.SaveTicket(context, resp.Tickets);
+        if (state == NTLoginRetCode.LOGIN_SUCCESS) NTLoginCommon.SaveTicket(context, resp.Tickets);
 
         return new ValueTask<RefreshTicketEventResp>(state switch
         {
-            NTLoginRetCode.SUCCESS_UNSPECIFIED => new RefreshTicketEventResp(state, null),
+            NTLoginRetCode.LOGIN_SUCCESS => new RefreshTicketEventResp(state, null),
             _ when info is not null => new RefreshTicketEventResp(state, (info.StrTipsTitle, info.StrTipsContent)),
             _ => new RefreshTicketEventResp(state, null)
         });

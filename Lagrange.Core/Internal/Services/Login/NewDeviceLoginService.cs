@@ -20,11 +20,11 @@ internal class NewDeviceLoginService : BaseService<NewDeviceLoginEventReq, NewDe
     protected override ValueTask<NewDeviceLoginEventResp> Parse(ReadOnlyMemory<byte> input, BotContext context)
     {
         var state = NTLoginCommon.Decode<NTLoginPasswordLoginNewDeviceRspBody>(context, input, out var info, out var resp);
-        if (state == NTLoginRetCode.SUCCESS_UNSPECIFIED) NTLoginCommon.SaveTicket(context, resp.Tickets);
+        if (state == NTLoginRetCode.LOGIN_SUCCESS) NTLoginCommon.SaveTicket(context, resp.Tickets);
     
         return new ValueTask<NewDeviceLoginEventResp>(state switch
         {
-            NTLoginRetCode.SUCCESS_UNSPECIFIED => new NewDeviceLoginEventResp(state, null),
+            NTLoginRetCode.LOGIN_SUCCESS => new NewDeviceLoginEventResp(state, null),
             _ when info is not null => new NewDeviceLoginEventResp(state, (info.StrTipsTitle, info.StrTipsContent)),
             _ => new NewDeviceLoginEventResp(state, null)
         });

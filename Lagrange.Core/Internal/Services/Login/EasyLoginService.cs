@@ -22,12 +22,12 @@ internal class EasyLoginService : BaseService<EasyLoginEventReq, EasyLoginEventR
     protected override ValueTask<EasyLoginEventResp> Parse(ReadOnlyMemory<byte> input, BotContext context)
     {
         var state = NTLoginCommon.Decode<NTLoginEasyLoginRspBody>(context, input, out var info, out var resp);
-        if (state == NTLoginRetCode.SUCCESS_UNSPECIFIED) NTLoginCommon.SaveTicket(context, resp.Tickets);
+        if (state == NTLoginRetCode.LOGIN_SUCCESS) NTLoginCommon.SaveTicket(context, resp.Tickets);
         
         return new ValueTask<EasyLoginEventResp>(state switch
         {
-            NTLoginRetCode.SUCCESS_UNSPECIFIED => new EasyLoginEventResp(state, null, null),
-            NTLoginRetCode.ERR_NEED_VERIFY_UNUSUAL_DEVICE => new EasyLoginEventResp(state, null, resp.SecProtect.UnusualDeviceCheckSig),
+            NTLoginRetCode.LOGIN_SUCCESS => new EasyLoginEventResp(state, null, null),
+            NTLoginRetCode.LOGIN_ERROR_UNUSUAL_DEVICE => new EasyLoginEventResp(state, null, resp.SecProtect.UnusualDeviceCheckSig),
             _ when info is not null => new EasyLoginEventResp(state, (info.StrTipsTitle, info.StrTipsContent), null),
             _ => new EasyLoginEventResp(state, null, null)
         });

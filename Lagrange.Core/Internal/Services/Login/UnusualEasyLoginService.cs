@@ -21,11 +21,11 @@ internal class UnusualEasyLoginService : BaseService<UnusualEasyLoginEventReq, U
     protected override ValueTask<UnusualEasyLoginEventResp> Parse(ReadOnlyMemory<byte> input, BotContext context)
     {
         var state = NTLoginCommon.Decode<NTLoginEasyLoginUnusualDeviceRspBody>(context, input, out var info, out var resp);
-        if (state == NTLoginRetCode.SUCCESS_UNSPECIFIED) NTLoginCommon.SaveTicket(context, resp.Tickets);
+        if (state == NTLoginRetCode.LOGIN_SUCCESS) NTLoginCommon.SaveTicket(context, resp.Tickets);
     
         return new ValueTask<UnusualEasyLoginEventResp>(state switch
         {
-            NTLoginRetCode.SUCCESS_UNSPECIFIED => new UnusualEasyLoginEventResp(state, null),
+            NTLoginRetCode.LOGIN_SUCCESS => new UnusualEasyLoginEventResp(state, null),
             _ when info is not null => new UnusualEasyLoginEventResp(state, (info.StrTipsTitle, info.StrTipsContent)),
             _ => new UnusualEasyLoginEventResp(state, null)
         });

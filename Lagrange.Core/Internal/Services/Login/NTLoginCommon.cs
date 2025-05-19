@@ -80,7 +80,7 @@ internal static class NTLoginCommon
 
         info = null;
         resp = ProtoHelper.Deserialize<T>(login.Body.Span);
-        return NTLoginRetCode.SUCCESS_UNSPECIFIED;
+        return NTLoginRetCode.LOGIN_SUCCESS;
     }
 
     public static void SaveTicket(BotContext context, NTLoginTickets tickets)

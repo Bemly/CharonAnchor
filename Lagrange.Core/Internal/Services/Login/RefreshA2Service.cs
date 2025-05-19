@@ -23,11 +23,11 @@ internal class RefreshA2Service : BaseService<RefreshA2EventReq, RefreshA2EventR
     protected override ValueTask<RefreshA2EventResp> Parse(ReadOnlyMemory<byte> input, BotContext context)
     {
         var state = NTLoginCommon.Decode<NTLoginRefreshA2RspBody>(context, input, out var info, out var resp);
-        if (state == NTLoginRetCode.SUCCESS_UNSPECIFIED) NTLoginCommon.SaveTicket(context, resp.Tickets);
+        if (state == NTLoginRetCode.LOGIN_SUCCESS) NTLoginCommon.SaveTicket(context, resp.Tickets);
 
         return new ValueTask<RefreshA2EventResp>(state switch
         {
-            NTLoginRetCode.SUCCESS_UNSPECIFIED => new RefreshA2EventResp(state, null),
+            NTLoginRetCode.LOGIN_SUCCESS => new RefreshA2EventResp(state, null),
             _ when info is not null => new RefreshA2EventResp(state, (info.StrTipsTitle, info.StrTipsContent)),
             _ => new RefreshA2EventResp(state, null)
         });
