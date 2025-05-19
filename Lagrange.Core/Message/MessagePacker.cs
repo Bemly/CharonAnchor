@@ -187,6 +187,66 @@ internal class MessagePacker
 
     public static Task<MsgPush> BuildFake(BotMessage msg)
     {
-        throw new NotImplementedException();
+        var messageBody = new MessageBody();
+        foreach (var entity in msg.Entities)
+        {
+            if (entity.Build() is not { } elem) continue;
+            messageBody.RichText.Elems.AddRange(elem);
+        }
+        
+        var proto = new MsgPush
+        {
+            CommonMessage = new CommonMessage
+            {
+                RoutingHead = msg.Contact switch
+                {
+                    BotGroupMember member => new RoutingHead
+                    {
+                        Group = new CommonGroup
+                        {
+                            GroupCode = member.Group.GroupUin,
+                            GroupCard = member.MemberCard ?? member.Uin.ToString(),
+                            GroupCardType = 2
+                        }
+                    },
+                    BotFriend => new RoutingHead(),
+                    BotStranger => new RoutingHead
+                    {
+                        CommonC2C = new CommonC2C()
+                    },
+                    _ => throw new ArgumentOutOfRangeException(nameof(msg.Contact))
+                },
+                ContentHead = new ContentHead
+                {
+                    Type = msg.Contact switch 
+                    { 
+                        BotGroupMember _ => 82,
+                        BotFriend _ => 166,
+                        BotStranger _ => 141,
+                        _ => throw new ArgumentOutOfRangeException(nameof(msg.Contact))
+                    },
+                    Random = msg.Random,
+                    Sequence = msg.Sequence,
+                    Time = new DateTimeOffset(msg.Time).ToUnixTimeSeconds(),
+                    ClientSequence = msg.ClientSequence,
+                    MsgUid = msg.MessageId,
+                },
+                MessageBody = new MessageBody
+                {
+                    RichText = new RichText { Elems = [] }
+                }
+            }
+        };
+        
+        proto.CommonMessage.RoutingHead.FromUin = msg.Contact.Uin;
+        proto.CommonMessage.RoutingHead.FromUid = msg.Contact.Uid;
+
+        foreach (var entity in msg.Entities)
+        {
+            if (entity.Build() is not { } elem) continue;
+            messageBody.RichText.Elems.AddRange(elem);
+        }
+
+        return Task.FromResult(proto);
     }
 }
