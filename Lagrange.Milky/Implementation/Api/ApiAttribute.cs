@@ -1,7 +1,7 @@
 namespace Lagrange.Milky.Implementation.Api;
 
 [AttributeUsage(AttributeTargets.Class)]
-public class ApiAttribute(string api) : Attribute
+public class ApiAttribute(string name) : Attribute
 {
-    public string Api { get; } = api;
+    public string Name { get; } = name;
 }

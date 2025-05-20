@@ -52,35 +52,35 @@ public class BotContext : IDisposable
 
     public void LogError(string tag, [StringSyntax(StringSyntaxAttribute.CompositeFormat)] string text, params object?[] args)
     {
-        if (Config.LogLevel < LogLevel.Error) return;
+        if (Config.LogLevel >= LogLevel.Error) return;
         
         EventInvoker.PostEvent(new BotLogEvent(tag, LogLevel.Error, string.Format(text, args)));
     }
 
     public void LogWarning(string tag, [StringSyntax(StringSyntaxAttribute.CompositeFormat)] string text, params object?[] args)
     {
-        if (Config.LogLevel < LogLevel.Warning) return;
+        if (Config.LogLevel >= LogLevel.Warning) return;
         
         EventInvoker.PostEvent(new BotLogEvent(tag, LogLevel.Warning, string.Format(text, args)));
     }
 
     public void LogInfo(string tag, [StringSyntax(StringSyntaxAttribute.CompositeFormat)] string text, params object?[] args)
     {
-        if (Config.LogLevel < LogLevel.Information) return;
+        if (Config.LogLevel >= LogLevel.Information) return;
         
         EventInvoker.PostEvent(new BotLogEvent(tag, LogLevel.Information, string.Format(text, args)));
     }
 
     public void LogDebug(string tag, [StringSyntax(StringSyntaxAttribute.CompositeFormat)] string text, params object?[] args)
     {
-        if (Config.LogLevel < LogLevel.Debug) return;
+        if (Config.LogLevel >= LogLevel.Debug) return;
         
         EventInvoker.PostEvent(new BotLogEvent(tag, LogLevel.Debug, string.Format(text, args)));
     }
 
     public void LogTrace(string tag, [StringSyntax(StringSyntaxAttribute.CompositeFormat)] string text, params object?[] args)
     {
-        if (Config.LogLevel < LogLevel.Trace) return;
+        if (Config.LogLevel >= LogLevel.Trace) return;
         
         EventInvoker.PostEvent(new BotLogEvent(tag, LogLevel.Trace, string.Format(text, args)));
     }

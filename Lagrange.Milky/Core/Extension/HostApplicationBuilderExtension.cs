@@ -1,92 +1,130 @@
-using System.Text.Json;
+using Lagrange.Core;
 using Lagrange.Core.Common;
 using Lagrange.Core.Common.Interface;
 using Lagrange.Milky.Core.Configuration;
-using Lagrange.Milky.Core.Services;
+using Lagrange.Milky.Core.Service;
+using Lagrange.Milky.Core.Utility;
+using Lagrange.Milky.Extension;
 using Lagrange.Milky.Utility;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using CoreLogLevel = Lagrange.Core.Events.EventArgs.LogLevel;
+
 
 namespace Lagrange.Milky.Core.Extension;
 
 public static class HostApplicationBuilderExtension
 {
-    public static HostApplicationBuilder AddCore(this HostApplicationBuilder builder)
-    {
-        builder.Services.Configure<LagrangeConfiguration>(builder.Configuration.GetSection("Lagrange"));
-        builder.Services.AddSingleton(services =>
-        {
-            var config = services.GetRequiredService<IOptions<LagrangeConfiguration>>().Value;
-            var logger = services.GetRequiredService<ILogger<UrlSignProvider>>();
+    public static HostApplicationBuilder ConfigureCore(this HostApplicationBuilder builder) => builder
+        .ConfigureServices(services => services
+            .Configure<CoreConfiguration>(builder.Configuration.GetSection("Core"))
 
-            return new UrlSignProvider(
-                logger,
-                services,
-                config.Protocol.Protocol ?? throw new Exception("Protocol cannot be null"),
-                config.Protocol.Signer.Url ?? throw new Exception("Signer url cannot be null"),
-                config.Protocol.Signer.ProxyUrl
-            );
-        });
-        builder.Services.AddSingleton(services =>
-        {
-            var config = services.GetRequiredService<IOptions<LagrangeConfiguration>>().Value;
-            var signer = services.GetRequiredService<UrlSignProvider>();
-
-            return new BotConfig
+            .AddSingleton(services => ActivatorUtilities.CreateInstance<Signer>(services,
+                new Lazy<BotContext>(services.GetRequiredService<BotContext>)
+            ))
+            // BotConfig
+            .AddSingleton(services =>
             {
-                Protocol = config.Protocol.Protocol ?? throw new Exception("Protocol cannot be null"),
-                AutoReconnect = config.Login.AutoReconnect,
-                UseIPv6Network = config.Protocol.UseIPv6Network,
-                GetOptimumServer = config.Protocol.GetOptimumServer,
-                AutoReLogin = config.Login.AutoReLogin,
-                SignProvider = signer,
-            };
-        });
-        builder.Services.AddSingleton(services =>
-        {
-            var config = services.GetRequiredService<IOptions<LagrangeConfiguration>>().Value;
+                var loggerConfiguration = services.GetRequiredService<IOptions<LoggerFilterOptions>>().Value;
+                var coreConfiguration = services.GetRequiredService<IOptions<CoreConfiguration>>().Value;
+                var signer = services.GetRequiredService<Signer>();
 
-            string path = $"{config.Login.Uin}.keystore";
+                var platform = coreConfiguration.Protocol.Platform;
+                if (!platform.HasValue) throw new Exception("Core.Protocol.Platform cannot be null");
 
-            if (File.Exists(path))
-            {
-                if (JsonSerializer.Deserialize(
-                        File.ReadAllText(path),
-                        typeof(BotKeystore),
-                        CoreJsonContext.Default) is not BotKeystore keystore)
+                // Perform simple verification
+                // Since AndroidPhone and AndroidPad cannot be recognized
+                // So the platform provided by signer is not used directly
+                // TODO /appinfo_v2
+                // var verified = signer.GetAppInfo().Result.Os switch
+                // {
+                //     "Linux" => platform == Protocols.Linux,
+                //     "Mac" => platform == Protocols.MacOs,
+                //     "Windows" => platform == Protocols.Windows,
+                //     "Android" => platform == Protocols.AndroidPhone,
+                //     _ => false,
+                // };
+                // if (verified) throw new Exception(
+                //     "The protocol used to generate the signature does not match the configured protocol."
+                // );
+
+                return new BotConfig
                 {
-                    throw new Exception($"Keystore is null, please delete the '{config.Login.Uin}.keystore' file and try again");
-                }
-                return keystore;
-            }
-            else
+                    Protocol = platform.Value,
+                    LogLevel = (CoreLogLevel)loggerConfiguration.GetDefaultLogLevel(),
+                    AutoReconnect = coreConfiguration.Server.AutoReconnect,
+                    UseIPv6Network = coreConfiguration.Server.UseIPv6Network,
+                    GetOptimumServer = coreConfiguration.Server.GetOptimumServer,
+                    AutoReLogin = coreConfiguration.Login.AutoReLogin,
+                    SignProvider = signer,
+                };
+            })
+            // BotKeystore
+            .AddSingleton(services =>
             {
-                var keystore = BotKeystore.CreateEmpty();
-                keystore.DeviceName = config.Protocol.DeviceIdentifier;
+                var configuration = services.GetRequiredService<IOptions<CoreConfiguration>>().Value;
+
+                if (!configuration.Login.Uin.HasValue) throw new Exception("Core.Login.Uin cannot be null");
+                var path = $"{configuration.Login.Uin.Value}.keystore";
+
+                BotKeystore keystore;
+                if (File.Exists(path))
+                {
+                    var keystoreNullable = CoreJsonUtility.Deserialize<BotKeystore>(File.ReadAllBytes(path));
+                    if (keystoreNullable == null) throw new Exception(
+                        $"Invalid keystore detected. Please remove the '{path}' file and re-authenticate."
+                    );
+
+                    keystore = keystoreNullable;
+                }
+                else
+                {
+                    keystore = BotKeystore.CreateEmpty();
+                }
+
+                keystore.DeviceName = configuration.Login.DeviceName;
                 return keystore;
-            }
-        });
-        builder.Services.AddSingleton(services =>
-        {
-            BotConfig config = services.GetRequiredService<BotConfig>();
-            BotKeystore keystore = services.GetRequiredService<BotKeystore>();
+            })
+            // BotAppInfo
+            // TODO /appinfo_v2
+            // .AddSingleton(services => services.GetRequiredService<Signer>().GetAppInfo().Result)
+            .AddSingleton(services =>
+            {
+                var configuration = services.GetRequiredService<IOptions<CoreConfiguration>>().Value;
 
-            return BotFactory.Create(config, keystore);
-        });
+                var platform = configuration.Protocol.Platform;
+                if (!platform.HasValue) throw new Exception("Core.Protocol.Platform cannot be null");
 
-        builder.Services.AddSingleton<ICaptchaResolver, OnlineCaptchaResolver>();
+                return BotAppInfo.ProtocolToAppInfo[platform.Value];
+            })
+            // BotContext
+            .AddSingleton(services =>
+            {
+                var config = services.GetRequiredService<BotConfig>();
+                var keystore = services.GetRequiredService<BotKeystore>();
+                var info = services.GetRequiredService<BotAppInfo>();
 
-        builder.Services.AddHostedService<BotLoggerService>();
+                return BotFactory.Create(config, keystore, info);
+            })
 
-        return builder;
-    }
+            // CaptchaResolver
+            .AddSingleton<ICaptchaResolver>(services =>
+            {
+                var configuration = services.GetRequiredService<IOptions<CoreConfiguration>>().Value;
 
-    public static HostApplicationBuilder AddCoreLoginService(this HostApplicationBuilder builder)
-    {
-        builder.Services.AddHostedService<BotLoginService>();
+                return configuration.Login.UseOnlineCaptchaResolver
+                    ? ActivatorUtilities.CreateInstance<OnlineCaptchaResolver>(services)
+                    : ActivatorUtilities.CreateInstance<ManualCaptchaResolver>(services);
+            })
 
-        return builder;
-    }
+            // CoreLoggerService
+            .AddHostedService<CoreLoggerService>()
+        );
+
+    public static HostApplicationBuilder ConfigureCoreLogin(this HostApplicationBuilder builder) => builder
+        .ConfigureServices(services => services
+            .AddHostedService<CoreLoginService>()
+        );
 }

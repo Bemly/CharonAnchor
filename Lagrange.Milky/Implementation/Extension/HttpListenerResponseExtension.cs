@@ -4,33 +4,16 @@ namespace Lagrange.Milky.Implementation.Extension;
 
 public static class HttpListenerResponseExtension
 {
-    public static void SendInternalServerError(this HttpListenerResponse response)
+    public static void Send(this HttpListenerResponse response, HttpStatusCode status)
     {
-        response.StatusCode = 500;
+        response.StatusCode = (int)status;
         response.Close();
     }
 
-    public static void SendBadRequest(this HttpListenerResponse response)
+    public static async Task SendJsonAsync(this HttpListenerResponse response, byte[] body, CancellationToken token)
     {
-        response.StatusCode = 400;
-        response.Close();
-    }
-
-    public static void SendForbidden(this HttpListenerResponse response)
-    {
-        response.StatusCode = 403;
-        response.Close();
-    }
-
-    public static void SendNotFound(this HttpListenerResponse response)
-    {
-        response.StatusCode = 404;
-        response.Close();
-    }
-
-    public static void SendUnsupportedMediaType(this HttpListenerResponse response)
-    {
-        response.StatusCode = 415;
+        response.ContentType = "application/json; charset=utf-8";
+        await response.OutputStream.WriteAsync(body, token);
         response.Close();
     }
 }

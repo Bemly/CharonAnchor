@@ -1,27 +1,20 @@
-using Lagrange.Milky.Implementation.Common.Api.Params;
-using Lagrange.Milky.Implementation.Common.Api.Results;
-
 namespace Lagrange.Milky.Implementation.Api;
 
 public interface IApiHandler
 {
-    Type ParamType { get; }
+    Type ParameterType { get; }
 
-    ValueTask<IApiResult> HandleAsync(object param, CancellationToken token);
+    Task<IApiResult> HandleAsync(object parameter, CancellationToken token);
 }
 
-public interface IApiHandler<in T> : IApiHandler
+public interface IApiHandler<TParameter> : IApiHandler
 {
-    Type IApiHandler.ParamType => typeof(T);
+    Type IApiHandler.ParameterType => typeof(TParameter);
 
-    ValueTask<IApiResult> IApiHandler.HandleAsync(object param, CancellationToken token) => HandleAsync((T)param, token);
+    Task<IApiResult> IApiHandler.HandleAsync(object parameter, CancellationToken token)
+    {
+        return HandleAsync((TParameter)parameter, token);
+    }
 
-    ValueTask<IApiResult> HandleAsync(T param, CancellationToken token);
-}
-
-public interface IEmptyParamApiHandler : IApiHandler<EmptyParam>
-{
-    ValueTask<IApiResult> IApiHandler<EmptyParam>.HandleAsync(EmptyParam param, CancellationToken token) => HandleAsync(token);
-
-    ValueTask<IApiResult> HandleAsync(CancellationToken token);
+    Task<IApiResult> HandleAsync(TParameter parameter, CancellationToken token);
 }
