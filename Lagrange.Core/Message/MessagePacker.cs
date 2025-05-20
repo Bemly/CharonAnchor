@@ -33,16 +33,11 @@ internal class MessagePacker
         }
     }
 
-    /// <summary>
-    /// For the use of MessageService in Milky
-    /// </summary>
-    public async Task<BotMessage> Parse(ReadOnlyMemory<byte> src) => await Parse(ProtoHelper.Deserialize<MsgPush>(src.Span));
-
-    public async Task<BotMessage> Parse(MsgPush msgPush)
+    public async Task<BotMessage> Parse(CommonMessage msg)
     {
-        var contentHead = msgPush.CommonMessage.ContentHead;
-        var routingHead = msgPush.CommonMessage.RoutingHead;
-        var elems = msgPush.CommonMessage.MessageBody.RichText.Elems;
+        var contentHead = msg.ContentHead;
+        var routingHead = msg.RoutingHead;
+        var elems = msg.MessageBody.RichText.Elems;
 
         var contact = await ResolveContact(contentHead.Type, routingHead);
         var message = new BotMessage(contact, (contact as BotGroupMember)?.Group)
@@ -185,7 +180,7 @@ internal class MessagePacker
         return ProtoHelper.Serialize(proto);
     }
 
-    public static Task<MsgPush> BuildFake(BotMessage msg)
+    public static Task<CommonMessage> BuildFake(BotMessage msg)
     {
         var messageBody = new MessageBody();
         foreach (var entity in msg.Entities)
@@ -193,53 +188,44 @@ internal class MessagePacker
             if (entity.Build() is not { } elem) continue;
             messageBody.RichText.Elems.AddRange(elem);
         }
-        
-        var proto = new MsgPush
+
+        var proto = new CommonMessage
         {
-            CommonMessage = new CommonMessage
+            RoutingHead = msg.Contact switch
             {
-                RoutingHead = msg.Contact switch
+                BotGroupMember member => new RoutingHead
                 {
-                    BotGroupMember member => new RoutingHead
+                    Group = new CommonGroup
                     {
-                        Group = new CommonGroup
-                        {
-                            GroupCode = member.Group.GroupUin,
-                            GroupCard = member.MemberCard ?? member.Uin.ToString(),
-                            GroupCardType = 2
-                        }
-                    },
-                    BotFriend => new RoutingHead(),
-                    BotStranger => new RoutingHead
-                    {
-                        CommonC2C = new CommonC2C()
-                    },
+                        GroupCode = member.Group.GroupUin,
+                        GroupCard = member.MemberCard ?? member.Uin.ToString(),
+                        GroupCardType = 2
+                    }
+                },
+                BotFriend => new RoutingHead(),
+                BotStranger => new RoutingHead { CommonC2C = new CommonC2C() },
+                _ => throw new ArgumentOutOfRangeException(nameof(msg.Contact))
+            },
+            ContentHead = new ContentHead
+            {
+                Type = msg.Contact switch
+                {
+                    BotGroupMember _ => 82,
+                    BotFriend _ => 166,
+                    BotStranger _ => 141,
                     _ => throw new ArgumentOutOfRangeException(nameof(msg.Contact))
                 },
-                ContentHead = new ContentHead
-                {
-                    Type = msg.Contact switch 
-                    { 
-                        BotGroupMember _ => 82,
-                        BotFriend _ => 166,
-                        BotStranger _ => 141,
-                        _ => throw new ArgumentOutOfRangeException(nameof(msg.Contact))
-                    },
-                    Random = msg.Random,
-                    Sequence = msg.Sequence,
-                    Time = new DateTimeOffset(msg.Time).ToUnixTimeSeconds(),
-                    ClientSequence = msg.ClientSequence,
-                    MsgUid = msg.MessageId,
-                },
-                MessageBody = new MessageBody
-                {
-                    RichText = new RichText { Elems = [] }
-                }
-            }
+                Random = msg.Random,
+                Sequence = msg.Sequence,
+                Time = new DateTimeOffset(msg.Time).ToUnixTimeSeconds(),
+                ClientSequence = msg.ClientSequence,
+                MsgUid = msg.MessageId,
+            },
+            MessageBody = new MessageBody { RichText = new RichText { Elems = [] } }
         };
         
-        proto.CommonMessage.RoutingHead.FromUin = msg.Contact.Uin;
-        proto.CommonMessage.RoutingHead.FromUid = msg.Contact.Uid;
+        proto.RoutingHead.FromUin = msg.Contact.Uin;
+        proto.RoutingHead.FromUid = msg.Contact.Uid;
 
         foreach (var entity in msg.Entities)
         {

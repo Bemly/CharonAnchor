@@ -5,23 +5,25 @@ namespace Lagrange.Core.Internal.Packets.Message;
 #pragma warning disable CS8618
 
 [ProtoPackable]
-internal partial class LongMsgContent
+internal partial class PbMultiMsgTransmit
 {
-    [ProtoMember(2)] public List<LongMsgItem> Items { get; set; }
+    [ProtoMember(1)] public List<CommonMessage> Messages { get; set; }
+    
+    [ProtoMember(2)] public List<PbMultiMsgItem> Items { get; set; }
 }
 
 [ProtoPackable]
-internal partial class LongMsgItem
+internal partial class PbMultiMsgItem
 {
     [ProtoMember(1)] public string FileName { get; set; }
     
-    [ProtoMember(2)] public PbMultiMsgNew FileData { get; set; }
+    [ProtoMember(2)] public PbMultiMsgNew Buffer { get; set; }
 }
 
 [ProtoPackable]
 internal partial class PbMultiMsgNew
 {
-    [ProtoMember(1)] public List<MsgPush> Msg { get; set; }
+    [ProtoMember(1)] public List<CommonMessage> Msg { get; set; }
 }
 
 [ProtoPackable]

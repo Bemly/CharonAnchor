@@ -63,8 +63,8 @@ internal class LongMsgRecvService : BaseService<LongMsgRecvEventReq, LongMsgRecv
         var decompressedContent = dest.ToArray();
 
         var logic = context.EventContext.GetLogic<MessagingLogic>();
-        var content = ProtoHelper.Deserialize<LongMsgContent>(decompressedContent.AsSpan());
-        var multiMsg = content.Items.First(x => x.FileName == "MultiMsg").FileData.Msg;
+        var content = ProtoHelper.Deserialize<PbMultiMsgTransmit>(decompressedContent.AsSpan());
+        var multiMsg = content.Items.First(x => x.FileName == "MultiMsg").Buffer.Msg;
         
         var messages = new List<BotMessage>(multiMsg.Count);
         foreach (var msg in multiMsg)

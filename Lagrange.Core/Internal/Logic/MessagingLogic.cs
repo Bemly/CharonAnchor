@@ -10,9 +10,7 @@ internal class MessagingLogic(BotContext context) : ILogic
 {
     private readonly MessagePacker _packer = new(context);
     
-    public Task<BotMessage> Parse(byte[] data) => _packer.Parse(data);
-    
-    public Task<BotMessage> Parse(MsgPush msg) => _packer.Parse(msg);
+    public Task<BotMessage> Parse(CommonMessage msg) => _packer.Parse(msg);
     
     public async Task<BotMessage> SendGroupMessage(MessageChain chain, long groupUin)
     {

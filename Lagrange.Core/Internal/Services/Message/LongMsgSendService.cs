@@ -15,7 +15,7 @@ internal class LongMsgSendService : BaseService<LongMsgSendEventReq, LongMsgSend
 {
     protected override async ValueTask<ReadOnlyMemory<byte>> Build(LongMsgSendEventReq input, BotContext context)
     {
-        var messages = new List<MsgPush>(input.Messages.Count);
+        var messages = new List<CommonMessage>(input.Messages.Count);
 
         foreach (var msg in input.Messages)
         {
@@ -23,14 +23,14 @@ internal class LongMsgSendService : BaseService<LongMsgSendEventReq, LongMsgSend
             messages.Add(fakeMsg);
         }
         
-        var content = new LongMsgContent
+        var content = new PbMultiMsgTransmit
         {
             Items =
             [
-                new LongMsgItem
+                new PbMultiMsgItem
                 {
                     FileName = "MultiMsg", 
-                    FileData = new PbMultiMsgNew { Msg = messages }
+                    Buffer = new PbMultiMsgNew { Msg = messages }
                 }
             ]
         };
