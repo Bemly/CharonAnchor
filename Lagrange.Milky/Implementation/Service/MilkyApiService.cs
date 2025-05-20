@@ -72,7 +72,7 @@ public class MilkyApiService(ILogger<MilkyApiService> logger, IOptions<MilkyConf
         {
             _logger.LogDeserializeApiParameterFailed(identifier, e);
 
-            var result = IApiResult.Failed(400, "Parameter serialize failed");
+            var result = IApiResult.Failed(-400, "Parameter serialize failed");
             byte[] body = MilkyJsonUtility.SerializeToUtf8Bytes(typeof(ApiFailedResult), result);
             await response.SendJsonAsync(body, token);
             return;
