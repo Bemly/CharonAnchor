@@ -74,6 +74,8 @@ internal partial class CommonC2C
     [ProtoMember(4)] public long FromTinyId { get; set; }
     
     [ProtoMember(5)] public long ToTinyId { get; set; }
+
+    [ProtoMember(6)] public string Name { get; set; }
 }
 
 [ProtoPackable]

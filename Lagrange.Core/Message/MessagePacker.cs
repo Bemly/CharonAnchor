@@ -182,13 +182,6 @@ internal class MessagePacker
 
     public static Task<CommonMessage> BuildFake(BotMessage msg)
     {
-        var messageBody = new MessageBody();
-        foreach (var entity in msg.Entities)
-        {
-            if (entity.Build() is not { } elem) continue;
-            messageBody.RichText.Elems.AddRange(elem);
-        }
-
         var proto = new CommonMessage
         {
             RoutingHead = msg.Contact switch
@@ -202,17 +195,17 @@ internal class MessagePacker
                         GroupCardType = 2
                     }
                 },
-                BotFriend => new RoutingHead(),
-                BotStranger => new RoutingHead { CommonC2C = new CommonC2C() },
+                BotFriend friend => new RoutingHead { CommonC2C = new CommonC2C { Name = friend.Nickname } },
+                BotStranger stranger => new RoutingHead { CommonC2C = new CommonC2C { Name = stranger.Nickname } },
                 _ => throw new ArgumentOutOfRangeException(nameof(msg.Contact))
             },
             ContentHead = new ContentHead
             {
                 Type = msg.Contact switch
                 {
-                    BotGroupMember _ => 82,
-                    BotFriend _ => 166,
-                    BotStranger _ => 141,
+                    BotGroupMember => 82,
+                    BotFriend => 166,
+                    BotStranger => 141,
                     _ => throw new ArgumentOutOfRangeException(nameof(msg.Contact))
                 },
                 Random = msg.Random,
@@ -230,7 +223,7 @@ internal class MessagePacker
         foreach (var entity in msg.Entities)
         {
             if (entity.Build() is not { } elem) continue;
-            messageBody.RichText.Elems.AddRange(elem);
+            proto.MessageBody.RichText.Elems.AddRange(elem);
         }
 
         return Task.FromResult(proto);
