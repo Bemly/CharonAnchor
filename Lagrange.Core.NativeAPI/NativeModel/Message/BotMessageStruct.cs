@@ -117,7 +117,8 @@ namespace Lagrange.Core.NativeAPI.NativeModel.Message
             return new BotMessageStruct()
             {
                 Contact = contact,
-                Group = message.Group ?? new BotGroupStruct(),
+                // Group = message.Group ?? new BotGroupStruct(),
+                // TODO: Receiver
                 Type = type,
                 Time = Encoding.UTF8.GetBytes(message.Time.ToString("O")),
                 Entities = entitiesPtr,

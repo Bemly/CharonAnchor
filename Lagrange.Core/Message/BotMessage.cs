@@ -4,22 +4,22 @@ namespace Lagrange.Core.Message;
 
 public partial class BotMessage
 {
-    internal BotMessage(BotContact contact, BotGroup? group = null)
+    internal BotMessage(BotContact contact, BotContact receiver)
     {
         Contact = contact;
-        Group = group;
+        Receiver = receiver;
     }
     
-    internal BotMessage(MessageChain chain, BotContact contact, BotGroup? group = null)
+    internal BotMessage(MessageChain chain, BotContact contact, BotContact receiver)
     {
         Entities = chain;
         Contact = contact;
-        Group = group;
+        Receiver = receiver;
     }
     
     public BotContact Contact { get; }
     
-    public BotGroup? Group { get; }
+    public BotContact Receiver { get; }
     
     public MessageType Type => Contact switch
     {

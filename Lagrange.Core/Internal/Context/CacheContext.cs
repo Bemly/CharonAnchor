@@ -10,10 +10,12 @@ internal class CacheContext(BotContext context)
 
     private List<BotGroup>? _groups;
 
+    private readonly ConcurrentDictionary<long, string> _uinToUid = new();
+
     private readonly ConcurrentDictionary<long, List<BotGroupMember>> _members = new();
 
     private readonly Dictionary<int, BotFriendCategory> _categories = new();
-
+    
     public async Task<List<BotFriend>> GetFriendList(bool refresh = false)
     {
         if (refresh || _friends == null) Interlocked.Exchange(ref _friends, await FetchFriends());
@@ -89,6 +91,8 @@ internal class CacheContext(BotContext context)
         return group;
     }
 
+    public string? ResolveCachedUid(long uin) => _uinToUid.GetValueOrDefault(uin);
+
     /// <summary>
     /// Fetches the friends list from the server.
     /// </summary>
@@ -104,6 +108,7 @@ internal class CacheContext(BotContext context)
 
             friends.AddRange(result.Friends);
             foreach (var category in result.Category) _categories[category.Id] = category;
+            foreach (var friend in friends) _uinToUid[friend.Uin] = friend.Uid;
         } while (cookie != null);
 
         return friends;
@@ -126,6 +131,7 @@ internal class CacheContext(BotContext context)
             cookie = result.Cookie;
 
             members.AddRange(result.GroupMembers);
+            foreach (var member in result.GroupMembers) _uinToUid[member.Uin] = member.Uid;
         } while (cookie != null);
 
         return members;

@@ -12,10 +12,12 @@ internal class MessagingLogic(BotContext context) : ILogic
     
     public Task<BotMessage> Parse(CommonMessage msg) => _packer.Parse(msg);
     
+    public Task<CommonMessage> BuildFake(BotMessage msg) => _packer.BuildFake(msg);
+    
     public async Task<BotMessage> SendGroupMessage(MessageChain chain, long groupUin)
     {
-        var (group, member) = await context.CacheContext.ResolveMember(groupUin, context.BotUin) ?? throw new InvalidTargetException(context.BotUin, groupUin);
-        var message = await BuildMessage(chain, member, group);
+        var (group, self) = await context.CacheContext.ResolveMember(groupUin, context.BotUin) ?? throw new InvalidTargetException(context.BotUin, groupUin);
+        var message = await BuildMessage(chain, self, group);
         var result = await context.EventContext.SendEvent<SendMessageEventResp>(new SendMessageEventReq(message));
         
         if (result == null) throw new InvalidOperationException();
@@ -30,7 +32,8 @@ internal class MessagingLogic(BotContext context) : ILogic
     public async Task<BotMessage> SendFriendMessage(MessageChain chain, long friendUin)
     {
         var friend = await context.CacheContext.ResolveFriend(friendUin) ?? throw new InvalidTargetException(friendUin);
-        var message = await BuildMessage(chain, friend, null);
+        var self = await context.CacheContext.ResolveFriend(context.BotUin) ?? throw new InvalidTargetException(context.BotUin);
+        var message = await BuildMessage(chain, self, friend);
         var result = await context.EventContext.SendEvent<SendMessageEventResp>(new SendMessageEventReq(message));
 
         if (result == null) throw new InvalidOperationException();
@@ -42,10 +45,10 @@ internal class MessagingLogic(BotContext context) : ILogic
         return message;
     }
 
-    private async Task<BotMessage> BuildMessage(MessageChain chain, BotContact contact, BotGroup? group)
+    private async Task<BotMessage> BuildMessage(MessageChain chain, BotContact contact, BotContact receiver)
     {
         uint random = (uint)Random.Shared.Next();
-        var message = new BotMessage(chain, contact, group)
+        var message = new BotMessage(chain, contact, receiver)
         {
             Random = random,
             MessageId = (0x10000000ul << 32) | random

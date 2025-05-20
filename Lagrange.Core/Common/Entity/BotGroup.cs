@@ -8,7 +8,7 @@ public class BotGroup(
     long createTime,
     string? description,
     string? question,
-    string? announcement)
+    string? announcement) : BotContact
 {
     public long GroupUin { get; } = groupUin;
 
@@ -25,4 +25,10 @@ public class BotGroup(
     public string? Question { get; } = question;
 
     public string? Announcement { get; } = announcement;
+    
+    public override long Uin => GroupUin;
+
+    public override string Nickname => GroupName;
+
+    public override string Uid => GroupUin.ToString();
 }

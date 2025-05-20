@@ -40,7 +40,8 @@ internal class MessagePacker
         var elems = msg.MessageBody.RichText.Elems;
 
         var contact = await ResolveContact(contentHead.Type, routingHead);
-        var message = new BotMessage(contact, (contact as BotGroupMember)?.Group)
+        var receiver = await ResolveReceiver(contentHead.Type, routingHead);
+        var message = new BotMessage(contact, receiver)
         {
             MessageId = contentHead.MsgUid, // MsgUid & 0xFFFFFFFF are the same to random
             Time = DateTimeOffset.FromUnixTimeSeconds(contentHead.Time).DateTime,
@@ -74,9 +75,8 @@ internal class MessagePacker
         {
             case 166:
                 var friend = await _context.CacheContext.ResolveFriend(routingHead.FromUin);
-                if (friend == null) throw new InvalidTargetException(routingHead.FromUin);
+                return friend ?? new BotFriend(routingHead.FromUin, routingHead.FromUid, string.Empty, string.Empty, string.Empty, string.Empty, null!);
 
-                return friend;
             case 141:
                 return new BotStranger(routingHead.FromUin, "", routingHead.FromUid)
                 {
@@ -84,7 +84,40 @@ internal class MessagePacker
                 };
             case 82:
                 var items = await _context.CacheContext.ResolveMember(routingHead.Group.GroupCode, routingHead.FromUin);
-                if (items == null) throw new InvalidTargetException(routingHead.Group.GroupCode, routingHead.FromUin);
+                if (items != null) return items.Value.Item2;
+
+                var dummyGroup = new BotGroup(routingHead.Group.GroupCode, routingHead.Group.GroupName, 0, 0, 0, null, null, null);
+                return new BotGroupMember(dummyGroup, routingHead.FromUin, routingHead.FromUid, routingHead.Group.GroupCard, GroupMemberPermission.Member, 0, routingHead.Group.GroupCard, null, DateTime.Now, DateTime.Now, DateTime.Now);
+
+            default:
+                throw new NotImplementedException();
+        }
+    }
+    
+    private async Task<BotContact> ResolveReceiver(int type, RoutingHead routingHead)
+    {
+        switch (type)
+        {
+            case 166:
+                var friend = await _context.CacheContext.ResolveFriend(routingHead.ToUin);
+                if (friend == null)
+                {
+                    return new BotFriend(routingHead.ToUin, routingHead.ToUid, string.Empty, string.Empty, string.Empty, string.Empty, null!);
+                }
+
+                return friend;
+            case 141:
+                return new BotStranger(routingHead.ToUin, "", routingHead.ToUid)
+                {
+                    Source = routingHead.CommonC2C.FromTinyId
+                };
+            case 82:
+                var items = await _context.CacheContext.ResolveMember(routingHead.Group.GroupCode, routingHead.ToUin);
+                if (items == null)
+                {
+                    var dummyGroup = new BotGroup(routingHead.Group.GroupCode, routingHead.Group.GroupName, 0, 0, 0, null, null, null);
+                    return new BotGroupMember(dummyGroup, routingHead.ToUin, routingHead.ToUid, routingHead.Group.GroupCard, GroupMemberPermission.Member, 0, routingHead.Group.GroupCard, null, DateTime.Now, DateTime.Now, DateTime.Now);
+                }
 
                 return items.Value.Item2;
             default:
@@ -105,9 +138,9 @@ internal class MessagePacker
                 throw new InvalidOperationException();
         }
         
-        if (message.Group != null)
+        if (message.Receiver is BotGroup group)
         {
-            routingHead.Group = new Grp { GroupUin = message.Group.GroupUin };
+            routingHead.Group = new Grp { GroupUin = group.GroupUin };
         }
 
         var messageBody = new MessageBody();
@@ -180,7 +213,7 @@ internal class MessagePacker
         return ProtoHelper.Serialize(proto);
     }
 
-    public static Task<CommonMessage> BuildFake(BotMessage msg)
+    public Task<CommonMessage> BuildFake(BotMessage msg)
     {
         var proto = new CommonMessage
         {
@@ -218,7 +251,12 @@ internal class MessagePacker
         };
         
         proto.RoutingHead.FromUin = msg.Contact.Uin;
-        proto.RoutingHead.FromUid = msg.Contact.Uid;
+        proto.RoutingHead.FromUid = _context.CacheContext.ResolveCachedUid(msg.Contact.Uin) ?? "";
+        if (msg.Receiver is BotFriend f)
+        {
+            proto.RoutingHead.ToUin = f.Uin;
+            proto.RoutingHead.ToUid = _context.CacheContext.ResolveCachedUid(f.Uin) ?? "";
+        }
 
         foreach (var entity in msg.Entities)
         {

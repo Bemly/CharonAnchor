@@ -2,8 +2,8 @@ using System.IO.Compression;
 using Lagrange.Core.Common;
 using Lagrange.Core.Internal.Events;
 using Lagrange.Core.Internal.Events.Message;
+using Lagrange.Core.Internal.Logic;
 using Lagrange.Core.Internal.Packets.Message;
-using Lagrange.Core.Message;
 using Lagrange.Core.Utility;
 using Lagrange.Core.Utility.Extension;
 
@@ -19,7 +19,7 @@ internal class LongMsgSendService : BaseService<LongMsgSendEventReq, LongMsgSend
 
         foreach (var msg in input.Messages)
         {
-            var fakeMsg = await MessagePacker.BuildFake(msg);
+            var fakeMsg = await context.EventContext.GetLogic<MessagingLogic>().BuildFake(msg);
             messages.Add(fakeMsg);
         }
         
