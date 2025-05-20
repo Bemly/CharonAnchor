@@ -46,8 +46,8 @@ public class MilkyApiService(ILogger<MilkyApiService> logger, IOptions<MilkyConf
 
         if (!ValidateAccessToken(httpContext))
         {
-            response.Send(HttpStatusCode.Forbidden);
-            _logger.LogSend(identifier, HttpStatusCode.Forbidden);
+            response.Send(HttpStatusCode.Unauthorized);
+            _logger.LogSend(identifier, HttpStatusCode.Unauthorized);
             return;
         }
 
@@ -72,15 +72,18 @@ public class MilkyApiService(ILogger<MilkyApiService> logger, IOptions<MilkyConf
         {
             _logger.LogDeserializeApiParameterFailed(identifier, e);
 
-            response.Send(HttpStatusCode.BadRequest);
-            _logger.LogSend(identifier, HttpStatusCode.BadRequest);
+            var result = IApiResult.Failed(400, "Parameter serialize failed");
+            byte[] body = MilkyJsonUtility.SerializeToUtf8Bytes(typeof(ApiFailedResult), result);
+            await response.SendJsonAsync(body, token);
             return;
         }
 
-        IApiResult result;
         try
         {
-            result = await handler.HandleAsync(parameter, token);
+            IApiResult result = await handler.HandleAsync(parameter, token);
+            byte[] body = MilkyJsonUtility.SerializeToUtf8Bytes(result.GetType(), result);
+            await response.SendJsonAsync(body, token);
+            _logger.LogSend(identifier, body);
         }
         catch (Exception e)
         {
@@ -90,10 +93,6 @@ public class MilkyApiService(ILogger<MilkyApiService> logger, IOptions<MilkyConf
             _logger.LogSend(identifier, HttpStatusCode.InternalServerError);
             return;
         }
-
-        byte[] body = MilkyJsonUtility.SerializeToUtf8Bytes(result.GetType(), result);
-        await response.SendJsonAsync(body, token);
-        _logger.LogSend(identifier, body);
     }
 
     private bool ValidateAccessToken(HttpListenerContext httpContext)
