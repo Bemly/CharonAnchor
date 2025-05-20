@@ -5,6 +5,7 @@ using Lagrange.Core.Common;
 using Lagrange.Core.Common.Response;
 using Lagrange.Core.Events.EventArgs;
 using Lagrange.Core.Exceptions;
+using Lagrange.Core.Internal.Events;
 using Lagrange.Core.Internal.Events.Login;
 using Lagrange.Core.Internal.Events.System;
 using Lagrange.Core.Internal.Packets.Login;
@@ -16,6 +17,7 @@ using Lagrange.Core.Utility.Extension;
 
 namespace Lagrange.Core.Internal.Logic;
 
+[EventSubscribe<KickEvent>(Protocols.All)]
 internal class WtExchangeLogic : ILogic, IDisposable
 {
     private const string Tag = nameof(WtExchangeLogic);
@@ -48,6 +50,23 @@ internal class WtExchangeLogic : ILogic, IDisposable
         _timers[SsoHeartBeatTag] = new Timer(OnSsoHeartBeat);
         _timers[QueryStateTag] = new Timer(OnQueryState, null, Timeout.Infinite, 2000);
         _timers[ExchangeEmpTag] = new Timer(OnExchangeEmp);
+    }
+
+    public ValueTask Incoming(ProtocolEvent e)
+    {
+        switch (e)
+        {
+            case KickEvent kick:
+            {
+                _context.LogError(Tag, "Kicked by server: {0} | {1}", kick.TipsTitle, kick.TipsInfo);
+                _context.EventInvoker.PostEvent(new BotOfflineEvent(BotOfflineEvent.Reasons.Kicked, (kick.TipsTitle, kick.TipsInfo)));
+                _context.IsOnline = false;
+                _timers[SsoHeartBeatTag].Change(Timeout.Infinite, Timeout.Infinite);
+                break;
+            }
+        }
+        
+        return ValueTask.CompletedTask;
     }
 
     public async Task<bool> Login(long uin, string? password, CancellationToken token)
