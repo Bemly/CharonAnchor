@@ -6,6 +6,7 @@ using Lagrange.Core.Internal.Events.System;
 using Lagrange.Core.Internal.Packets.Service;
 using Lagrange.Core.Utility;
 using Lagrange.Core.Utility.Cryptography;
+using Lagrange.Core.Utility.Extension;
 
 namespace Lagrange.Core.Internal.Logic;
 
@@ -29,19 +30,7 @@ internal class OperationLogic(BotContext context) : ILogic
 
     public async Task<bool> SendFriendFile(long targetUin, Stream fileStream, string? fileName)
     {
-        if (fileName == null)
-        {
-            if (fileStream is FileStream file)
-            {
-                fileName = Path.GetFileName(file.Name);
-            }
-            else
-            {
-                Span<byte> bytes = stackalloc byte[16];
-                Random.Shared.NextBytes(bytes);
-                fileName = Convert.ToHexString(bytes);
-            }
-        }
+        fileName = ResolveFileName(fileStream, fileName);
 
         var friend = await context.CacheContext.ResolveFriend(targetUin) ?? throw new InvalidTargetException(targetUin);
         var request = new FileUploadEventReq(friend.Uid, fileStream, fileName);
@@ -103,5 +92,95 @@ internal class OperationLogic(BotContext context) : ILogic
         if (sendResult.Result != 0) throw new OperationException(sendResult.Result);
 
         return true;
+    }
+
+    private static string ResolveFileName(Stream fileStream, string? fileName)
+    {
+        if (fileName == null)
+        {
+            if (fileStream is FileStream file)
+            {
+                fileName = Path.GetFileName(file.Name);
+            }
+            else
+            {
+                Span<byte> bytes = stackalloc byte[16];
+                Random.Shared.NextBytes(bytes);
+                fileName = Convert.ToHexString(bytes);
+            }
+        }
+
+        return fileName;
+    }
+
+    public async Task<bool> SendGroupFile(long groupUin, Stream fileStream, string? fileName, string parentDirectory)
+    {
+        fileName = ResolveFileName(fileStream, fileName);
+
+        var md5 = fileStream.Md5();
+        var request = new GroupFSUploadEventReq(groupUin, fileName, fileStream, parentDirectory, md5);
+        var uploadResp = await context.EventContext.SendEvent<GroupFSUploadEventResp>(request);
+        
+        var buffer = ArrayPool<byte>.Shared.Rent(10 * 1024 * 1024);
+        int payload = fileStream.Read(buffer);
+        var md510m = MD5.HashData(buffer[..payload]);
+        ArrayPool<byte>.Shared.Return(buffer);
+        fileStream.Seek(0, SeekOrigin.Begin);
+        
+        if (!uploadResp.FileExist)
+        {
+            var ext = new FileUploadExt
+            {
+                Unknown1 = 100,
+                Unknown2 = 1,
+                Entry = new FileUploadEntry
+                {
+                    BusiBuff = new ExcitingBusiInfo
+                    {
+                        SenderUin = context.Keystore.Uin, 
+                        ReceiverUin = groupUin,
+                        GroupCode = groupUin
+                    },
+                    FileEntry = new ExcitingFileEntry
+                    {
+                        FileSize = fileStream.Length,
+                        Md5 = md5,
+                        CheckKey = uploadResp.CheckKey,
+                        Md510M = md510m,
+                        FileId = uploadResp.FileId,
+                        UploadKey = uploadResp.FileKey
+                    },
+                    ClientInfo = new ExcitingClientInfo
+                    {
+                        ClientType = 3,
+                        AppId = "100",
+                        TerminalType = 3,
+                        ClientVer = "1.1.1",
+                        Unknown = 4
+                    },
+                    FileNameInfo = new ExcitingFileNameInfo { FileName = fileName },
+                    Host = new ExcitingHostConfig
+                    {
+                        Hosts =
+                        [
+                            new ExcitingHostInfo
+                            {
+                                Url = new ExcitingUrlInfo { Unknown = 1, Host = uploadResp.Addr.ip },
+                                Port = uploadResp.Addr.uploadPort
+                            }
+                        ]
+                    }
+                }
+            };
+            
+            bool success = await context.HighwayContext.UploadFile(fileStream, 95, ProtoHelper.Serialize(ext));
+            if (!success) return false;
+        }
+        
+        uint random = (uint)Random.Shared.Next();
+        var feedResult = await context.EventContext.SendEvent<GroupFileSendEventResp>(new GroupFileSendEventReq(groupUin, uploadResp.FileId, random));
+        if (feedResult.RetCode != 0) throw new OperationException(feedResult.RetCode, feedResult.RetMsg);
+
+        return true; // TODO: Random
     }
 }

@@ -13,6 +13,9 @@ public static class MessageExt
 
     public static Task<bool> SendFriendFile(this BotContext context, long targetUin, Stream fileStream, string? fileName = null)
         => context.EventContext.GetLogic<OperationLogic>().SendFriendFile(targetUin, fileStream, fileName);
+
+    public static Task<bool> SendGroupFile(this BotContext context, long groupUin, Stream fileStream, string? fileName = null, string parentDirectory = "/")
+        => context.EventContext.GetLogic<OperationLogic>().SendGroupFile(groupUin, fileStream, fileName, parentDirectory);
     
     public static Task SendFriendNudge(this BotContext context, long peerUin, long? targetUin = null)
         => context.EventContext.GetLogic<OperationLogic>().SendNudge(false, peerUin, targetUin ?? context.BotUin);
