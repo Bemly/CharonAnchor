@@ -20,7 +20,7 @@ If you are using other languages, the module [Lagrange.Core.NativeAPI](https://l
 
 ### Providing web service to bot applications
 
-The project [Lagrange.Milky](https://lagrangedev.github.io/Lagrange.Doc/v2/Lagrange.Milky) implements [Milky](https://milky.ntqqrev.org/) protocol. You can use it to provide web service to bot applications ~~like NoneBot and Saltify~~.
+The project [Lagrange.Milky](https://lagrangedev.github.io/Lagrange.Doc/v2/Lagrange.Milky) implements [Milky](https://milky.ntqqrev.org/) protocol. You can use it to provide web service to bot applications like NoneBot ~~and Saltify~~.
 
 Check [Lagrange.Doc](https://lagrangedev.github.io/Lagrange.Doc/v2/) for more information.
 
