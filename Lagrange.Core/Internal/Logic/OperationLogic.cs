@@ -27,6 +27,17 @@ internal class OperationLogic(BotContext context) : ILogic
         await context.EventContext.SendEvent<NudgeEventResp>(new NudgeEventReq(isGroup, peerUin, targetUin));
         return true;
     }
+    
+    public async Task<string> GroupFSDownload(long groupUin, string fileId)
+    {
+        var request = new GroupFSDownloadEventReq(groupUin, fileId);
+        var response = await context.EventContext.SendEvent<GroupFSDownloadEventResp>(request);
+        return response.FileUrl;
+    }
+    
+    public async Task GroupFSMove(long groupUin, string fileId, string parentDirectory, string targetDirectory) => await context.EventContext.SendEvent<GroupFSMoveEventResp>(new GroupFSMoveEventReq(groupUin, fileId, parentDirectory, targetDirectory));
+
+    public async Task GroupFSDelete(long groupUin, string fileId) => await context.EventContext.SendEvent<GroupFSDeleteEventResp>(new GroupFSDeleteEventReq(groupUin, fileId));
 
     public async Task<bool> SendFriendFile(long targetUin, Stream fileStream, string? fileName)
     {

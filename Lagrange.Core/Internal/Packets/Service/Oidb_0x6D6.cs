@@ -63,7 +63,7 @@ internal partial class DownloadFileRspBody
     
     [ProtoMember(4)] public string StrDownloadIp { get; set; }
     
-    [ProtoMember(5)] public byte[] StrDownloadDns { get; set; }
+    [ProtoMember(5)] public string StrDownloadDns { get; set; }
     
     [ProtoMember(6)] public byte[] BytesDownloadUrl { get; set; }
     

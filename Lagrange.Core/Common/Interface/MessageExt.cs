@@ -17,6 +17,15 @@ public static class MessageExt
     public static Task<bool> SendGroupFile(this BotContext context, long groupUin, Stream fileStream, string? fileName = null, string parentDirectory = "/")
         => context.EventContext.GetLogic<OperationLogic>().SendGroupFile(groupUin, fileStream, fileName, parentDirectory);
     
+    public static Task<string> GroupFSDownload(this BotContext context, long groupUin, string fileId)
+        => context.EventContext.GetLogic<OperationLogic>().GroupFSDownload(groupUin, fileId);
+
+    public static Task GroupFSDelete(this BotContext context, long groupUin, string fileId)
+        => context.EventContext.GetLogic<OperationLogic>().GroupFSDelete(groupUin, fileId);
+
+    public static Task GroupFSMove(this BotContext context, long groupUin, string fileId, string targetDirectory, string parentDirectory)
+        => context.EventContext.GetLogic<OperationLogic>().GroupFSMove(groupUin, fileId, targetDirectory, parentDirectory);
+    
     public static Task SendFriendNudge(this BotContext context, long peerUin, long? targetUin = null)
         => context.EventContext.GetLogic<OperationLogic>().SendNudge(false, peerUin, targetUin ?? context.BotUin);
 
