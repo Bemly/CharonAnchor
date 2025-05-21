@@ -251,9 +251,9 @@ internal partial class UploadFileRspBody
     
     [ProtoMember(10)] public bool BoolFileExist { get; set; }
     
-    [ProtoMember(11)] public List<string> StrUploadIpLanV4 { get; set; }
+    [ProtoMember(12)] public List<string> StrUploadIpLanV4 { get; set; }
     
-    [ProtoMember(12)] public List<string> StrUploadIpLanV6 { get; set; }
+    [ProtoMember(13)] public List<string> StrUploadIpLanV6 { get; set; }
     
-    [ProtoMember(13)] public uint Uint32UploadPort { get; set; }
+    [ProtoMember(14)] public uint Uint32UploadPort { get; set; }
 }

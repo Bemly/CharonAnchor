@@ -37,7 +37,7 @@ internal class OperationLogic(BotContext context) : ILogic
         var result = await context.EventContext.SendEvent<FileUploadEventResp>(request);
 
         var buffer = ArrayPool<byte>.Shared.Rent(10 * 1024 * 1024);
-        int payload = request.FileStream.Read(buffer);
+        int payload = await fileStream.ReadAsync(buffer.AsMemory(0, 10 * 1024 * 1024));
         var md510m = MD5.HashData(buffer[..payload]);
         ArrayPool<byte>.Shared.Return(buffer);
         request.FileStream.Seek(0, SeekOrigin.Begin);
@@ -122,7 +122,7 @@ internal class OperationLogic(BotContext context) : ILogic
         var uploadResp = await context.EventContext.SendEvent<GroupFSUploadEventResp>(request);
         
         var buffer = ArrayPool<byte>.Shared.Rent(10 * 1024 * 1024);
-        int payload = fileStream.Read(buffer);
+        int payload = await fileStream.ReadAsync(buffer.AsMemory(0, 10 * 1024 * 1024));
         var md510m = MD5.HashData(buffer[..payload]);
         ArrayPool<byte>.Shared.Return(buffer);
         fileStream.Seek(0, SeekOrigin.Begin);
@@ -173,7 +173,7 @@ internal class OperationLogic(BotContext context) : ILogic
                 }
             };
             
-            bool success = await context.HighwayContext.UploadFile(fileStream, 95, ProtoHelper.Serialize(ext));
+            bool success = await context.HighwayContext.UploadFile(fileStream, 71, ProtoHelper.Serialize(ext));
             if (!success) return false;
         }
         
