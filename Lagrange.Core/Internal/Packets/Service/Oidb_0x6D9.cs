@@ -116,7 +116,7 @@ internal partial class FeedsRspBody
 }
 
 [ProtoPackable]
-internal partial class ReqBody
+internal partial class D6D9ReqBody
 {
     [ProtoMember(1)] public TransFileReqBody TransFileReq { get; set; }
     
@@ -128,7 +128,7 @@ internal partial class ReqBody
 }
 
 [ProtoPackable]
-internal partial class RspBody
+internal partial class D6D9RspBody
 {
     [ProtoMember(1)] public TransFileRspBody TransFileRsp { get; set; }
     

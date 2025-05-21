@@ -145,10 +145,10 @@ internal class OperationLogic(BotContext context) : ILogic
                     {
                         FileSize = fileStream.Length,
                         Md5 = md5,
-                        CheckKey = uploadResp.CheckKey,
+                        CheckKey = uploadResp.FileKey,
                         Md510M = md510m,
                         FileId = uploadResp.FileId,
-                        UploadKey = uploadResp.FileKey
+                        UploadKey = uploadResp.CheckKey
                     },
                     ClientInfo = new ExcitingClientInfo
                     {
