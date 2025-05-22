@@ -16,6 +16,7 @@ namespace Lagrange.Core.NativeAPI.NativeModel.Message
         
         //需要手动释放
         public IntPtr Contact = IntPtr.Zero;
+        public IntPtr Receiver = IntPtr.Zero;
         
         public BotGroupStruct Group = new();
         
@@ -31,22 +32,29 @@ namespace Lagrange.Core.NativeAPI.NativeModel.Message
         {
             int type = 0;
             IntPtr contact = IntPtr.Zero;
+            IntPtr receiver = IntPtr.Zero;
             switch (message.Type)
             {
                 case MessageType.Group:
                     type = (int)MessageType.Group;
                     contact = Marshal.AllocHGlobal(Marshal.SizeOf<BotGroupMemberStruct>());
                     Marshal.StructureToPtr((BotGroupMemberStruct)(BotGroupMember)message.Contact, contact, false);
+                    receiver = Marshal.AllocHGlobal(Marshal.SizeOf<BotGroupMemberStruct>());
+                    Marshal.StructureToPtr((BotGroupMemberStruct)(BotGroupMember)message.Receiver, receiver, false);
                     break;
                 case MessageType.Private:
                     type = (int)MessageType.Private;
                     contact = Marshal.AllocHGlobal(Marshal.SizeOf<BotFriendStruct>());
                     Marshal.StructureToPtr((BotFriendStruct)(BotFriend)message.Contact, contact, false);
+                    receiver = Marshal.AllocHGlobal(Marshal.SizeOf<BotFriendStruct>());
+                    Marshal.StructureToPtr((BotFriendStruct)(BotFriend)message.Receiver, receiver, false);
                     break;
                 case MessageType.Temp:
                     type = (int)MessageType.Temp;
                     contact = Marshal.AllocHGlobal(Marshal.SizeOf<BotStrangerStruct>());
                     Marshal.StructureToPtr((BotStrangerStruct)(BotStranger)message.Contact, contact, false);
+                    receiver = Marshal.AllocHGlobal(Marshal.SizeOf<BotStrangerStruct>());
+                    Marshal.StructureToPtr((BotStrangerStruct)(BotStranger)message.Receiver, receiver, false);
                     break;
             }
 
@@ -117,8 +125,8 @@ namespace Lagrange.Core.NativeAPI.NativeModel.Message
             return new BotMessageStruct()
             {
                 Contact = contact,
+                Receiver = receiver,
                 // Group = message.Group ?? new BotGroupStruct(),
-                // TODO: Receiver
                 Type = type,
                 Time = Encoding.UTF8.GetBytes(message.Time.ToString("O")),
                 Entities = entitiesPtr,
