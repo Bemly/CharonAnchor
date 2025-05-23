@@ -23,7 +23,7 @@ public static class QrCodeUtility
                     (true, true) => compatible ? '@' : '█',
                     (true, false) => compatible ? '^' : '▀',
                     (false, true) => compatible ? '.' : '▄',
-                    (false, false) => compatible ? ' ' : ' ',
+                    (false, false) => ' ',
                 });
             }
             if (y < qrcode.Size) result.Append('\n');
