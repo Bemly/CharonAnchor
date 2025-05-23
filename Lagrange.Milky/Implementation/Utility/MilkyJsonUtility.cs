@@ -1,21 +1,23 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Lagrange.Milky.Implementation.Api;
-using Lagrange.Milky.Implementation.Api.System;
-using Lagrange.Milky.Implementation.Entity;
+using Lagrange.Milky.Implementation.Api.Parameter;
+using Lagrange.Milky.Implementation.Api.Result;
+using Lagrange.Milky.Implementation.Event;
 
 namespace Lagrange.Milky.Implementation.Utility;
 
-public partial class MilkyJsonUtility
+public static partial class MilkyJsonUtility
 {
-    [JsonSerializable(typeof(object))]
-    // 
-    [JsonSerializable(typeof(ApiFailedResult))]
-    // get_login_list
-    [JsonSerializable(typeof(ApiOkResult<GetLoginInfoResult>))]
-    // get_friend_list
-    [JsonSerializable(typeof(GetFriendListApiParameter))]
-    [JsonSerializable(typeof(ApiOkResult<IEnumerable<Friend>>))]
+    // === entity ===
+    // incoming segment
+    // [JsonSerializable(typeof())]
+
+    // === api === 
+    [JsonSerializable(typeof(IApiParameter))]
+    [JsonSerializable(typeof(IApiResult))]
+
+    // === event ===
+    [JsonSerializable(typeof(IEvent))]
     private partial class MilkyJsonContext : JsonSerializerContext;
 
     public static byte[] SerializeToUtf8Bytes(Type type, object? value)

@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Lagrange.Milky.Implementation.Api;
+namespace Lagrange.Milky.Implementation.Api.Result;
 
 public class ApiOkResult<TData> : IApiResult
 {

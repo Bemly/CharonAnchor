@@ -2,6 +2,7 @@ using Lagrange.Milky.Extension;
 using Lagrange.Milky.Implementation.Configuration;
 using Lagrange.Milky.Implementation.Service;
 using Lagrange.Milky.Implementation.Utility;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -17,10 +18,20 @@ public static class HostApplicationBuilderExtension
             .AddSingleton<EntityConvert>()
 
             // Api
-            .AddSingleton<MilkyApiService>()
             .AddApiHandlers()
 
-            // Milky
-            .AddHostedService<MilkyService>()
-        );
+            // Event
+            .AddSingleton<EventConvert>()
+            .AddSingleton<EventService>()
+            .AddHostedService(ServiceProviderServiceExtensions.GetRequiredService<EventService>)
+        )
+        .ConfigureServices(services =>
+        {
+            // WebSocket
+            var configuration = builder.Configuration.GetSection("Milky").Get<MilkyConfiguration>();
+            if (configuration?.WebSocket != null)
+            {
+                services.AddHostedService<WebSocketService>();
+            }
+        });
 }

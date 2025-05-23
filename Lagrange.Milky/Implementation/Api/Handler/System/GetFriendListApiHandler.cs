@@ -1,9 +1,10 @@
-using System.Text.Json.Serialization;
 using Lagrange.Core;
 using Lagrange.Core.Common.Interface;
+using Lagrange.Milky.Implementation.Api.Parameter;
+using Lagrange.Milky.Implementation.Api.Result;
 using Lagrange.Milky.Implementation.Utility;
 
-namespace Lagrange.Milky.Implementation.Api.System;
+namespace Lagrange.Milky.Implementation.Api.Handler.System;
 
 [Api("get_friend_list")]
 public class GetFriendListApiHandler(BotContext bot, EntityConvert convert) : IApiHandler<GetFriendListApiParameter>
@@ -15,10 +16,4 @@ public class GetFriendListApiHandler(BotContext bot, EntityConvert convert) : IA
     {
         return IApiResult.Ok((await _bot.FetchFriends(parameter.NoCache)).Select(_convert.Friend));
     }
-}
-
-public class GetFriendListApiParameter
-{
-    [JsonPropertyName("no_cache")]
-    public bool NoCache { get; init; } = false;
 }

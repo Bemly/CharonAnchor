@@ -46,7 +46,7 @@ public partial class CoreLoggerService(ILogger<CoreLoggerService> logger, IOptio
 
     public Task StopAsync(CancellationToken token)
     {
-        // TODO:
+        // TODO: unregister
         // _bot.EventInvoker.RegisterEvent<BotLogEvent>(HandleLog);
 
         _levelChangeHandlerDisposable?.Dispose();

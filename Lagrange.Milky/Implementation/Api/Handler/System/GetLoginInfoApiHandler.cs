@@ -1,7 +1,9 @@
 
 using Lagrange.Core;
+using Lagrange.Milky.Implementation.Api.Result;
+using Lagrange.Milky.Implementation.Api.Result.Data;
 
-namespace Lagrange.Milky.Implementation.Api.System;
+namespace Lagrange.Milky.Implementation.Api.Handler.System;
 
 [Api("get_login_info")]
 public class GetLoginInfoApiHandler(BotContext bot) : IEmptyApiHandler
@@ -12,16 +14,10 @@ public class GetLoginInfoApiHandler(BotContext bot) : IEmptyApiHandler
     {
         if (_bot.BotInfo == null) return Task.FromResult(IApiResult.Failed(-1, "login info cannot be obtained"));
 
-        return Task.FromResult(IApiResult.Ok(new GetLoginInfoResult
+        return Task.FromResult(IApiResult.Ok(new GetLoginInfoData
         {
             Uin = _bot.BotUin,
             Nickname = _bot.BotInfo.Name,
         }));
     }
-}
-
-public class GetLoginInfoResult
-{
-    public required long Uin { get; init; }
-    public required string Nickname { get; init; }
 }

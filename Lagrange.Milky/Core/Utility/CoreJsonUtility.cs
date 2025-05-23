@@ -4,7 +4,7 @@ using Lagrange.Core.Common;
 
 namespace Lagrange.Milky.Core.Utility;
 
-public partial class CoreJsonUtility
+public static partial class CoreJsonUtility
 {
     // BotContext
     [JsonSerializable(typeof(BotKeystore))]
