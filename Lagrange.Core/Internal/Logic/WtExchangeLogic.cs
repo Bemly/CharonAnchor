@@ -491,7 +491,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
         if (result.RetCode == 0)
         {
             ReadWLoginSigs(result.Tlvs);
-            await Online();
+            if (!_context.IsOnline) await Online();
             _context.EventInvoker.PostEvent(new BotRefreshKeystoreEvent(_context.Keystore));
         }
     });
