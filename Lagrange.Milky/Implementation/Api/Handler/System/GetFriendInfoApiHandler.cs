@@ -14,7 +14,8 @@ public class GetFriendInfoApiHandler(BotContext bot, EntityConvert convert) : IA
 
     public async Task<IApiResult> HandleAsync(GetFriendInfoApiParameter parameter, CancellationToken token)
     {
-        var friend = (await _bot.FetchFriends(parameter.NoCache ?? false)).FirstOrDefault();
+        var friend = (await _bot.FetchFriends(parameter.NoCache ?? false))
+            .FirstOrDefault(friend => friend.Uin == parameter.UserId);
         if (friend == null) return IApiResult.Failed(-1, "friend not found");
 
         return IApiResult.Ok(_convert.Friend(friend));

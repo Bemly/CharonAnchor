@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Lagrange.Milky.Implementation.Api.Parameter;
 using Lagrange.Milky.Implementation.Api.Result.Data;
 using Lagrange.Milky.Implementation.Entity;
 
@@ -13,6 +14,14 @@ namespace Lagrange.Milky.Implementation.Api.Result;
 [JsonDerivedType(typeof(ApiOkResult<IEnumerable<Friend>>))]
 // get_friend_info
 [JsonDerivedType(typeof(ApiOkResult<Friend>))]
+// get_group_list
+[JsonDerivedType(typeof(ApiOkResult<IEnumerable<Group>>))]
+// get_group_info
+[JsonDerivedType(typeof(ApiOkResult<Group>))]
+// get_group_member_list
+[JsonDerivedType(typeof(ApiOkResult<IEnumerable<GroupMember>>))]
+// get_group_member_info
+[JsonDerivedType(typeof(ApiOkResult<GroupMember>))]
 
 // === message ===
 // send_private_message
