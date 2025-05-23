@@ -5,7 +5,7 @@ namespace Lagrange.Milky.Implementation.Api;
 
 public interface IEmptyApiHandler : IApiHandler
 {
-    Type IApiHandler.ParameterType => typeof(object);
+    Type IApiHandler.ParameterType => typeof(EmptyApiParameter);
 
     Task<IApiResult> IApiHandler.HandleAsync(IApiParameter parameter, CancellationToken token)
     {

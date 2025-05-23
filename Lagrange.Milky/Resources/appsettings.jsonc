@@ -1,9 +1,8 @@
 {
-    // TODO: Custom Schema
     "$schema": "https://json.schemastore.org/appsettings.json",
     "Logging": {
         "LogLevel": {
-            "Default": "Information",
+            "Default": "Trace",
         },
     },
     "Core": {
@@ -29,7 +28,9 @@
         },
     },
     "Milky": {
-        "Host": "127.0.0.1",
-        "Port": 3000
+        "WebSocket": {
+            "Host": "127.0.0.1",
+            "Port": 3000,
+        },
     },
 }

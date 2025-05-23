@@ -17,7 +17,7 @@ internal static class Program
 
         BotContext? bot = null;
 
-        var sign = new Signer(new Lazy<BotContext>(() => bot!), "http://106.54.14.24:8084/api/sign/30366");
+        var sign = new Signer(new Lazy<BotContext>(() => bot!), "https://sign.lagrangecore.org/api/sign/30366");
 
         if (File.Exists("keystore.json"))
         {
@@ -63,13 +63,13 @@ internal static class Program
 
         using (var stream = File.OpenRead(@"E:\Code\CSharp\Lagrange\LagrangeV2\Lagrange.Core.Runner\Program.cs"))
         {
-            if (!await bot.SendGroupFile(907925148, stream, "Program.cs", "/"))
+            if (!await bot.SendGroupFile(0, stream, "Program.cs", "/"))
             {
                 Console.WriteLine("Send group file failed");
             }
             else Console.WriteLine("Send group file succeed");
 
-            if (!await bot.SendFriendFile(1224702603, stream, "Program.cs"))
+            if (!await bot.SendFriendFile(0, stream, "Program.cs"))
             {
                 Console.WriteLine("Send friend file failed");
             }

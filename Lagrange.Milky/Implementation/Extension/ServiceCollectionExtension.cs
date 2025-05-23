@@ -9,6 +9,7 @@ public static class ServiceCollectionExtension
 {
     [UnconditionalSuppressMessage("Trimming", "IL2026")]
     [UnconditionalSuppressMessage("Trimming", "IL2072")]
+    [UnconditionalSuppressMessage("Trimming", "IL2062")]
     public static TServiceCollection AddApiHandlers<TServiceCollection>(this TServiceCollection services) where TServiceCollection : IServiceCollection
     {
         foreach (var type in typeof(ServiceCollectionExtension).Assembly.GetTypes())

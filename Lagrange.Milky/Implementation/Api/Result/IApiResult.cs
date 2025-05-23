@@ -1,12 +1,15 @@
 using System.Text.Json.Serialization;
 using Lagrange.Milky.Implementation.Api.Result.Data;
+using Lagrange.Milky.Implementation.Entity;
 
 namespace Lagrange.Milky.Implementation.Api.Result;
 
 // get_login_info
 [JsonDerivedType(typeof(ApiOkResult<GetLoginInfoData>))]
 // get_friend_list
-[JsonDerivedType(typeof(ApiOkResult<IEnumerable<Entity.Friend>>))]
+[JsonDerivedType(typeof(ApiOkResult<IEnumerable<Friend>>))]
+// get_friend_info
+[JsonDerivedType(typeof(ApiOkResult<Friend>))]
 
 [JsonDerivedType(typeof(ApiFailedResult))]
 public interface IApiResult

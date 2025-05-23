@@ -14,6 +14,6 @@ public class GetFriendListApiHandler(BotContext bot, EntityConvert convert) : IA
 
     public async Task<IApiResult> HandleAsync(GetFriendListApiParameter parameter, CancellationToken token)
     {
-        return IApiResult.Ok((await _bot.FetchFriends(parameter.NoCache)).Select(_convert.Friend));
+        return IApiResult.Ok((await _bot.FetchFriends(parameter.NoCache ?? false)).Select(_convert.Friend));
     }
 }

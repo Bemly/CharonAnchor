@@ -95,7 +95,8 @@ public class WebSocketService : BackgroundService
                 token.ThrowIfCancellationRequested();
             }
         }
-        catch (Exception e) when (e is not OperationCanceledException)
+        catch (OperationCanceledException) { }
+        catch (Exception e)
         {
             _logger.LogGetHttpContextFailed(e);
         }
