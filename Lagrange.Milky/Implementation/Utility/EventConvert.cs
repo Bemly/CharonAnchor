@@ -1,7 +1,7 @@
 using Lagrange.Core;
 using Lagrange.Core.Events;
 using Lagrange.Core.Events.EventArgs;
-using Lagrange.Milky.Implementation.Entity.Incoming.Message;
+using Lagrange.Milky.Implementation.Entity.Message.Incoming;
 using Lagrange.Milky.Implementation.Event;
 
 namespace Lagrange.Milky.Implementation.Utility;

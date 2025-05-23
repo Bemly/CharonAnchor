@@ -1,5 +1,5 @@
 using System.Text.Json.Serialization;
-using Lagrange.Milky.Implementation.Entity.Incoming.Message;
+using Lagrange.Milky.Implementation.Entity.Message.Incoming;
 
 namespace Lagrange.Milky.Implementation.Event;
 

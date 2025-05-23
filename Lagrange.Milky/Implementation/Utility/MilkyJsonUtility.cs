@@ -8,10 +8,6 @@ namespace Lagrange.Milky.Implementation.Utility;
 
 public static partial class MilkyJsonUtility
 {
-    // === entity ===
-    // incoming segment
-    // [JsonSerializable(typeof())]
-
     // === api === 
     [JsonSerializable(typeof(IApiParameter))]
     [JsonSerializable(typeof(IApiResult))]

@@ -4,14 +4,21 @@ using Lagrange.Milky.Implementation.Entity;
 
 namespace Lagrange.Milky.Implementation.Api.Result;
 
+[JsonDerivedType(typeof(ApiFailedResult))]
+
+// === system ===
 // get_login_info
-[JsonDerivedType(typeof(ApiOkResult<GetLoginInfoData>))]
+[JsonDerivedType(typeof(ApiOkResult<GetLoginInfoResultData>))]
 // get_friend_list
 [JsonDerivedType(typeof(ApiOkResult<IEnumerable<Friend>>))]
 // get_friend_info
 [JsonDerivedType(typeof(ApiOkResult<Friend>))]
 
-[JsonDerivedType(typeof(ApiFailedResult))]
+// === message ===
+// send_private_message
+[JsonDerivedType(typeof(ApiOkResult<SendPrivateMessageResultData>))]
+// send_group_message
+[JsonDerivedType(typeof(ApiOkResult<SendGroupMessageResultData>))]
 public interface IApiResult
 {
     public string Status { get; }
