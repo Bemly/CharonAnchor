@@ -168,6 +168,7 @@ public class EntityConvert(ILogger<EntityConvert> logger)
             image.Data.SubType switch
             {
                 "normal" => 0,
+                "sticker" => 1,
                 _ => throw new NotSupportedException(),
             }
         ),
