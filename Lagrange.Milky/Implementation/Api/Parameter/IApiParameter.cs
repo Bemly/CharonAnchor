@@ -24,4 +24,4 @@ namespace Lagrange.Milky.Implementation.Api.Parameter;
 [JsonDerivedType(typeof(SendPrivateMessageApiParameter))]
 // send_group_message
 [JsonDerivedType(typeof(SendGroupMessageApiParameter))]
-public class IApiParameter { }
+public interface IApiParameter { }

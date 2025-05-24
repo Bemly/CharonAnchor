@@ -349,15 +349,13 @@ public class Signer : IAndroidBotSignProvider, IDisposable
 
     private async Task<TResponse> GetSign<TRequest, TResponse>(string url, TRequest requestJson) where TRequest : class where TResponse : class
     {
-        using var request = new HttpRequestMessage
-        {
-            Method = HttpMethod.Post,
-            RequestUri = new Uri(url),
-            Content = new StringContent(
-                CoreJsonUtility.Serialize(requestJson),
-                new MediaTypeHeaderValue(MediaTypeNames.Application.Json)
-            )
-        };
+        using var request = new HttpRequestMessage();
+        request.Method = HttpMethod.Post;
+        request.RequestUri = new Uri(url);
+        request.Content = new StringContent(
+            CoreJsonUtility.Serialize(requestJson),
+            new MediaTypeHeaderValue(MediaTypeNames.Application.Json)
+        );
         using var response = await _client.SendAsync(request);
         if (!response.IsSuccessStatusCode) throw new Exception($"Unexpected http status code({response.StatusCode})");
 
@@ -375,11 +373,9 @@ public class Signer : IAndroidBotSignProvider, IDisposable
         {
             if (_info != null) return _info;
 
-            using var request = new HttpRequestMessage
-            {
-                Method = HttpMethod.Get,
-                RequestUri = new Uri($"{_url}/app_info_v2"),
-            };
+            using var request = new HttpRequestMessage();
+            request.Method = HttpMethod.Get;
+            request.RequestUri = new Uri($"{_url}/app_info_v2");
 
             using var response = await _client.SendAsync(request);
             if (!response.IsSuccessStatusCode) throw new Exception($"Unexpected http status code({response.StatusCode})");

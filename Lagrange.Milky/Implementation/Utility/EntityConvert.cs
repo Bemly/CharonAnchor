@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using Lagrange.Core.Common;
 using Lagrange.Core.Common.Entity;
 using Lagrange.Core.Message;
@@ -8,7 +7,6 @@ using Lagrange.Milky.Implementation.Entity.Message.Incoming;
 using Lagrange.Milky.Implementation.Entity.Segment.Common.Data;
 using Lagrange.Milky.Implementation.Entity.Segment.Incoming;
 using Lagrange.Milky.Implementation.Entity.Segment.Outgoing;
-using Lagrange.Milky.Utility;
 using Microsoft.Extensions.Logging;
 
 namespace Lagrange.Milky.Implementation.Utility;
@@ -97,7 +95,7 @@ public class EntityConvert(ILogger<EntityConvert> logger)
         GroupMember = GroupMember((BotGroupMember)message.Contact)
     };
 
-    public TempIncomingMessage ToTempIncomingMessage(BotMessage message) => new TempIncomingMessage()
+    public TempIncomingMessage ToTempIncomingMessage(BotMessage message) => new()
     {
         PeerId = message.Contact.Uin,
         MessageSeq = message.Sequence,
@@ -126,22 +124,22 @@ public class EntityConvert(ILogger<EntityConvert> logger)
     public IIncomingSegment ToIncomingSegment(IMessageEntity entity) => entity switch
     {
         // TODO: Need file id
-        ImageEntity image => throw new NotImplementedException(),
-        MentionEntity mention when mention.Uin != 0 => new IncomingMentionSegment
+        ImageEntity => throw new NotImplementedException(),
+        MentionEntity { Uin: not 0 } mention => new IncomingMentionSegment
         {
             Data = new MentionData
             {
                 UserId = mention.Uin,
             },
         },
-        MentionEntity mention when mention.Uin == 0 => new IncomingMentionAllSegment { Data = new MentionAllData { } },
+        MentionEntity { Uin: 0 } => new IncomingMentionAllSegment { Data = new MentionAllData { } },
         // TODO: Need file id
-        RecordEntity record => throw new NotImplementedException(),
+        RecordEntity => throw new NotImplementedException(),
         // TODO: Core not implemented
-        ReplyEntity reply => throw new NotImplementedException(),
+        ReplyEntity => throw new NotImplementedException(),
         TextEntity text => new IncomingTextSegment { Data = new TextData { Text = text.Text } },
         // TODO: Need file id
-        VideoEntity video => throw new NotImplementedException(),
+        VideoEntity => throw new NotImplementedException(),
         _ => throw new NotSupportedException(),
     };
 

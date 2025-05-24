@@ -1,4 +1,4 @@
-namespace Lagrange.Milky.Utility;
+namespace Lagrange.Milky.Core.Utility.CaptchaResolver;
 
 public class ManualCaptchaResolver : ICaptchaResolver
 {

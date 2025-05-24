@@ -10,7 +10,7 @@ public interface IApiHandler
     Task<IApiResult> HandleAsync(IApiParameter parameter, CancellationToken token);
 }
 
-public interface IApiHandler<TParameter> : IApiHandler where TParameter : IApiParameter
+public interface IApiHandler<in TParameter> : IApiHandler where TParameter : IApiParameter
 {
     Type IApiHandler.ParameterType => typeof(TParameter);
 

@@ -4,8 +4,8 @@ using Lagrange.Core.Common.Interface;
 using Lagrange.Milky.Core.Configuration;
 using Lagrange.Milky.Core.Service;
 using Lagrange.Milky.Core.Utility;
+using Lagrange.Milky.Core.Utility.CaptchaResolver;
 using Lagrange.Milky.Extension;
-using Lagrange.Milky.Utility;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -62,34 +62,32 @@ public static class HostApplicationBuilderExtension
                 };
             })
             // BotKeystore
-            .AddSingleton(services =>
-            {
-                var configuration = services.GetRequiredService<IOptions<CoreConfiguration>>().Value;
+            // .AddSingleton(services =>
+            // {
+            //     var configuration = services.GetRequiredService<IOptions<CoreConfiguration>>().Value;
 
-                if (!configuration.Login.Uin.HasValue) throw new Exception("Core.Login.Uin cannot be null");
-                var path = $"{configuration.Login.Uin.Value}.keystore";
+            //     if (!configuration.Login.Uin.HasValue) throw new Exception("Core.Login.Uin cannot be null");
+            //     var path = $"{configuration.Login.Uin.Value}.keystore";
 
-                BotKeystore keystore;
-                if (File.Exists(path))
-                {
-                    var keystoreNullable = CoreJsonUtility.Deserialize<BotKeystore>(File.ReadAllBytes(path));
-                    if (keystoreNullable == null) throw new Exception(
-                        $"Invalid keystore detected. Please remove the '{path}' file and re-authenticate."
-                    );
+            //     BotKeystore keystore;
+            //     if (File.Exists(path))
+            //     {
+            //         var keystoreNullable = CoreJsonUtility.Deserialize<BotKeystore>(File.ReadAllBytes(path));
+            //         keystore = keystoreNullable ?? throw new Exception(
+            //             $"Invalid keystore detected. Please remove the '{path}' file and re-authenticate."
+            //         );
+            //     }
+            //     else
+            //     {
+            //         keystore = BotKeystore.CreateEmpty();
+            //     }
 
-                    keystore = keystoreNullable;
-                }
-                else
-                {
-                    keystore = BotKeystore.CreateEmpty();
-                }
-
-                keystore.DeviceName = configuration.Login.DeviceName;
-                return keystore;
-            })
+            //     keystore.DeviceName = configuration.Login.DeviceName;
+            //     return keystore;
+            // })
             // BotAppInfo
             // TODO /appinfo_v2
-            // .AddSingleton(services => services.GetRequiredService<Signer>().GetAppInfo().Result)
+            .AddSingleton(services => services.GetRequiredService<Signer>().GetAppInfo().Result)
             .AddSingleton(services =>
             {
                 var configuration = services.GetRequiredService<IOptions<CoreConfiguration>>().Value;

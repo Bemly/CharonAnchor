@@ -1,14 +1,14 @@
-namespace Lagrange.Milky.Utility;
+namespace Lagrange.Milky.Implementation.Utility;
 
 public static class UriUtility
 {
-    private static readonly HttpClient _client = new();
+    private static readonly HttpClient Client = new();
 
     public static async Task<MemoryStream> ToMemoryStreamAsync(string uri, CancellationToken token)
     {
-        return uri[..uri.IndexOf("://")] switch
+        return uri[..uri.IndexOf("://", StringComparison.Ordinal)] switch
         {
-            "file" => new MemoryStream(File.ReadAllBytes(uri[8..])),
+            "file" => new MemoryStream(await File.ReadAllBytesAsync(uri[8..], token)),
             "http" or "https" => await HttpUriToMemoryStreamAsync(uri, token),
             "base64" => new MemoryStream(Convert.FromBase64String(uri[9..])),
             _ => throw new NotSupportedException(),
@@ -22,7 +22,7 @@ public static class UriUtility
             Method = HttpMethod.Get,
             RequestUri = new Uri(url),
         };
-        var response = await _client.SendAsync(request, token);
+        var response = await Client.SendAsync(request, token);
         if (!response.IsSuccessStatusCode) throw new Exception($"Unexpected HTTP status code({response.StatusCode})");
 
         var output = new MemoryStream();

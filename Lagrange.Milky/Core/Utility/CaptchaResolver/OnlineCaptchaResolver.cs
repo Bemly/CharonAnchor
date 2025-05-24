@@ -2,13 +2,12 @@ using System.Net;
 using System.Text.Json.Nodes;
 using Lagrange.Core;
 using Lagrange.Milky.Core.Configuration;
-using Lagrange.Milky.Core.Utility;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Lagrange.Milky.Utility;
+namespace Lagrange.Milky.Core.Utility.CaptchaResolver;
 
-public partial class OnlineCaptchaResolver(ILogger<OnlineCaptchaResolver> logger, IOptions<CoreConfiguration> options, BotContext bot) : ICaptchaResolver
+public class OnlineCaptchaResolver(ILogger<OnlineCaptchaResolver> logger, IOptions<CoreConfiguration> options, BotContext bot) : ICaptchaResolver
 {
     private const string Url = "https://captcha.lagrangecore.org/?{0}";
     private const string QueryUrl = "https://backend.captcha.lagrangecore.org/get_captcha?uin={0}";

@@ -3,7 +3,7 @@ using Lagrange.Core.Common.Interface;
 using Lagrange.Core.Events.EventArgs;
 using Lagrange.Milky.Core.Configuration;
 using Lagrange.Milky.Core.Utility;
-using Lagrange.Milky.Utility;
+using Lagrange.Milky.Core.Utility.CaptchaResolver;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -12,12 +12,11 @@ using MSLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace Lagrange.Milky.Core.Service;
 
-public class CoreLoginService(ILogger<CoreLoginService> logger, IOptions<CoreConfiguration> options, IHost host, IHostApplicationLifetime lifetime, BotContext bot, ICaptchaResolver captchaResolver) : IHostedService
+public class CoreLoginService(ILogger<CoreLoginService> logger, IOptions<CoreConfiguration> options, IHost host, BotContext bot, ICaptchaResolver captchaResolver) : IHostedService
 {
     private readonly ILogger<CoreLoginService> _logger = logger;
     private readonly CoreConfiguration _configuration = options.Value;
     private readonly IHost _host = host;
-    private readonly IHostApplicationLifetime _lifetime = lifetime;
     private readonly BotContext _bot = bot;
     private readonly ICaptchaResolver _captchaResolver = captchaResolver;
 
@@ -31,7 +30,7 @@ public class CoreLoginService(ILogger<CoreLoginService> logger, IOptions<CoreCon
         _bot.EventInvoker.RegisterEvent<BotQrCodeQueryEvent>(HandleQrCodeQuery);
         _bot.EventInvoker.RegisterEvent<BotRefreshKeystoreEvent>(HandleRefreshKeystore);
         _bot.EventInvoker.RegisterEvent<BotCaptchaEvent>(HandleCaptcha);
-        _bot.EventInvoker.RegisterEvent<BotSMSEvent>(HandleSMS);
+        _bot.EventInvoker.RegisterEvent<BotSMSEvent>(HandleSms);
         _bot.EventInvoker.RegisterEvent<BotNewDeviceVerifyEvent>(HandleNewDeviceVerify);
 
         uint uin = _configuration.Login.Uin ?? 0;
@@ -50,7 +49,7 @@ public class CoreLoginService(ILogger<CoreLoginService> logger, IOptions<CoreCon
         _logger.LogNewDeviceVerify(_bot.BotUin);
     }
 
-    private async Task HandleSMS(BotContext bot, BotSMSEvent @event)
+    private async Task HandleSms(BotContext bot, BotSMSEvent @event)
     {
         // Allow interrupt input
         await Task.Run(() =>
@@ -59,7 +58,7 @@ public class CoreLoginService(ILogger<CoreLoginService> logger, IOptions<CoreCon
             string? code = Console.ReadLine();
             if (string.IsNullOrEmpty(code))
             {
-                _logger.LogSMSCodeEmpty();
+                _logger.LogSmsCodeEmpty();
                 _host.StopAsync();
                 return;
             }
@@ -136,5 +135,5 @@ public static partial class CoreLoginServiceLoggerExtension
     public static partial void LogLoginFailed(this ILogger<CoreLoginService> logger);
 
     [LoggerMessage(EventId = 999, Level = MSLogLevel.Critical, Message = "SMS code is empty")]
-    public static partial void LogSMSCodeEmpty(this ILogger<CoreLoginService> logger);
+    public static partial void LogSmsCodeEmpty(this ILogger<CoreLoginService> logger);
 }

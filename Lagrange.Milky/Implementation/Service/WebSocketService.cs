@@ -173,7 +173,7 @@ public class WebSocketService : BackgroundService
             return;
         }
 
-        string? api = request.Url?.LocalPath?[_apiPrefix.Length..];
+        string? api = request.Url?.LocalPath[_apiPrefix.Length..];
         if (api == null) throw new Exception("The path should not be null here");
 
         var handler = _services.GetKeyedService<IApiHandler>(api);
@@ -213,7 +213,6 @@ public class WebSocketService : BackgroundService
 
             response.Send(HttpStatusCode.InternalServerError);
             _logger.LogSend(identifier, HttpStatusCode.InternalServerError);
-            return;
         }
     }
 

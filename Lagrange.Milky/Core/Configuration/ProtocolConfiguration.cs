@@ -6,5 +6,5 @@ public class ProtocolConfiguration
 {
     public Protocols? Platform { get; set; }
 
-    public SignerConfiguration Signer { get; set; } = new SignerConfiguration();
+    public SignerConfiguration Signer { get; set; } = new();
 }
