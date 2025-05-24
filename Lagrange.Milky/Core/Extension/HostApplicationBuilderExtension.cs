@@ -31,28 +31,18 @@ public static class HostApplicationBuilderExtension
                 var coreConfiguration = services.GetRequiredService<IOptions<CoreConfiguration>>().Value;
                 var signer = services.GetRequiredService<Signer>();
 
-                var platform = coreConfiguration.Protocol.Platform;
-                if (!platform.HasValue) throw new Exception("Core.Protocol.Platform cannot be null");
-
-                // Perform simple verification
-                // Since AndroidPhone and AndroidPad cannot be recognized
-                // So the platform provided by signer is not used directly
-                // TODO /appinfo_v2
-                // var verified = signer.GetAppInfo().Result.Os switch
-                // {
-                //     "Linux" => platform == Protocols.Linux,
-                //     "Mac" => platform == Protocols.MacOs,
-                //     "Windows" => platform == Protocols.Windows,
-                //     "Android" => platform == Protocols.AndroidPhone,
-                //     _ => false,
-                // };
-                // if (verified) throw new Exception(
-                //     "The protocol used to generate the signature does not match the configured protocol."
-                // );
+                var platform = signer.GetAppInfo().Result.Os switch
+                {
+                    "Linux" => Protocols.Linux,
+                    "Mac" => Protocols.MacOs,
+                    "Windows" => Protocols.Windows,
+                    "Android" => Protocols.AndroidPhone,
+                    _ => throw new NotSupportedException(),
+                };
 
                 return new BotConfig
                 {
-                    Protocol = platform.Value,
+                    Protocol = platform,
                     LogLevel = (CoreLogLevel)loggerConfiguration.GetDefaultLogLevel(),
                     AutoReconnect = coreConfiguration.Server.AutoReconnect,
                     UseIPv6Network = coreConfiguration.Server.UseIPv6Network,
@@ -62,41 +52,31 @@ public static class HostApplicationBuilderExtension
                 };
             })
             // BotKeystore
-            // .AddSingleton(services =>
-            // {
-            //     var configuration = services.GetRequiredService<IOptions<CoreConfiguration>>().Value;
-
-            //     if (!configuration.Login.Uin.HasValue) throw new Exception("Core.Login.Uin cannot be null");
-            //     var path = $"{configuration.Login.Uin.Value}.keystore";
-
-            //     BotKeystore keystore;
-            //     if (File.Exists(path))
-            //     {
-            //         var keystoreNullable = CoreJsonUtility.Deserialize<BotKeystore>(File.ReadAllBytes(path));
-            //         keystore = keystoreNullable ?? throw new Exception(
-            //             $"Invalid keystore detected. Please remove the '{path}' file and re-authenticate."
-            //         );
-            //     }
-            //     else
-            //     {
-            //         keystore = BotKeystore.CreateEmpty();
-            //     }
-
-            //     keystore.DeviceName = configuration.Login.DeviceName;
-            //     return keystore;
-            // })
-            // BotAppInfo
-            // TODO /appinfo_v2
-            .AddSingleton(services => services.GetRequiredService<Signer>().GetAppInfo().Result)
             .AddSingleton(services =>
             {
                 var configuration = services.GetRequiredService<IOptions<CoreConfiguration>>().Value;
 
-                var platform = configuration.Protocol.Platform;
-                if (!platform.HasValue) throw new Exception("Core.Protocol.Platform cannot be null");
+                if (!configuration.Login.Uin.HasValue) throw new Exception("Core.Login.Uin cannot be null");
+                var path = $"{configuration.Login.Uin.Value}.keystore";
 
-                return BotAppInfo.ProtocolToAppInfo[platform.Value];
+                BotKeystore keystore;
+                if (File.Exists(path))
+                {
+                    var keystoreNullable = CoreJsonUtility.Deserialize<BotKeystore>(File.ReadAllBytes(path));
+                    keystore = keystoreNullable ?? throw new Exception(
+                        $"Invalid keystore detected. Please remove the '{path}' file and re-authenticate."
+                    );
+                }
+                else
+                {
+                    keystore = BotKeystore.CreateEmpty();
+                }
+
+                keystore.DeviceName = configuration.Login.DeviceName;
+                return keystore;
             })
+            // BotAppInfo
+            .AddSingleton(services => services.GetRequiredService<Signer>().GetAppInfo().Result)
             // BotContext
             .AddSingleton(services =>
             {

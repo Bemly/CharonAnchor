@@ -195,7 +195,8 @@ public class Signer : IAndroidBotSignProvider, IDisposable
 
     private readonly ILogger<Signer> _logger;
 
-    private readonly string _url;
+    private readonly string _base;
+    private readonly string _version;
     private readonly HttpClient _client;
 
     private readonly Lazy<BotContext> _bot;
@@ -207,13 +208,14 @@ public class Signer : IAndroidBotSignProvider, IDisposable
     {
         _logger = logger;
 
-        var signerConfiguration = options.Value.Protocol.Signer;
-        _url = signerConfiguration.Url ?? throw new Exception("Core.Protocol.Signer.Url cannot be null");
+        var signerConfiguration = options.Value.Signer;
+        _base = signerConfiguration.Base ?? throw new Exception("Core.Signer.Base cannot be null");
+        _version = signerConfiguration.Version ?? throw new Exception("Core.Signer.Version connot be null");
         _client = new HttpClient(new HttpClientHandler
         {
             Proxy = signerConfiguration.ProxyUrl == null ? null : new WebProxy
             {
-                Address = new Uri(signerConfiguration.Url),
+                Address = new Uri(signerConfiguration.Base),
                 BypassProxyOnLocal = false,
                 UseDefaultCredentials = false,
             }
@@ -258,7 +260,7 @@ public class Signer : IAndroidBotSignProvider, IDisposable
     private async Task<SsoSecureInfo> GetPcSecSign(string cmd, int seq, ReadOnlyMemory<byte> body)
     {
         var response = await GetSign<PcSecSignRequest, PcSecSignResponse>(
-            _url,
+            $"{_base}/{_version}",
             new PcSecSignRequest
             {
                 Cmd = cmd,
@@ -278,7 +280,7 @@ public class Signer : IAndroidBotSignProvider, IDisposable
     private async Task<SsoSecureInfo> GetAndroidSecSign(long uin, string cmd, int seq, ReadOnlyMemory<byte> body)
     {
         var response = await GetSign<AndroidSecSignRequest, AndroidSignerResponse<AndroidSecSignResponseData>>(
-            _url,
+            $"{_base}/sign",
             new AndroidSecSignRequest
             {
                 Uin = uin,
@@ -303,7 +305,7 @@ public class Signer : IAndroidBotSignProvider, IDisposable
         try
         {
             var response = await GetSign<AndroidEnergyRequest, AndroidSignerResponse<string>>(
-                _url,
+                $"{_base}/energy",
                 new AndroidEnergyRequest
                 {
                     Uin = uin,
@@ -328,7 +330,7 @@ public class Signer : IAndroidBotSignProvider, IDisposable
         try
         {
             var response = await GetSign<AndroidDebugXwidRequest, AndroidSignerResponse<string>>(
-                _url,
+                $"{_base}/get_tlv553",
                 new AndroidDebugXwidRequest
                 {
                     Uin = uin,
@@ -375,7 +377,7 @@ public class Signer : IAndroidBotSignProvider, IDisposable
 
             using var request = new HttpRequestMessage();
             request.Method = HttpMethod.Get;
-            request.RequestUri = new Uri($"{_url}/app_info_v2");
+            request.RequestUri = new Uri($"{_base}/{_version}/appinfo_v2");
 
             using var response = await _client.SendAsync(request);
             if (!response.IsSuccessStatusCode) throw new Exception($"Unexpected http status code({response.StatusCode})");

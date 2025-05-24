@@ -2,7 +2,9 @@ namespace Lagrange.Milky.Core.Configuration;
 
 public class SignerConfiguration
 {
-    public string? Url { get; set; }
+    public string? Base { get; set; }
+
+    public string? Version { get; set; }
 
     public string? ProxyUrl { get; set; }
 }

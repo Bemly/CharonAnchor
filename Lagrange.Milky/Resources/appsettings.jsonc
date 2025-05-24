@@ -11,12 +11,10 @@
             // "UseIPv6Network": false,
             // "GetOptimumServer": true,
         },
-        "Protocol": {
-            "Platform": "Linux",
-            "Signer": {
-                "Url": "https://sign.lagrangecore.org/api/sign/30366",
-                // "ProxyUrl": null,
-            },
+        "Signer": {
+            "Base": "https://sign.lagrangecore.org/api/sign",
+            "Version": "30366",
+            // "ProxyUrl": null,
         },
         "Login": {
             "Uin": 0,

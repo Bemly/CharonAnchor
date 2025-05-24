@@ -43,6 +43,6 @@ public class BotGroupMember(
 public enum GroupMemberPermission
 {
     Member,
+    Owner,
     Admin,
-    Owner
 }

@@ -8,5 +8,5 @@ public class IncomingRecordData
     public required string ResourceId { get; init; }
 
     [JsonPropertyName("duration")]
-    public required int Summary { get; init; }
+    public required int Duration { get; init; }
 }

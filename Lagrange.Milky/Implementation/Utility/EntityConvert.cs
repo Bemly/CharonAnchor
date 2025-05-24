@@ -6,6 +6,7 @@ using Lagrange.Milky.Implementation.Entity;
 using Lagrange.Milky.Implementation.Entity.Message.Incoming;
 using Lagrange.Milky.Implementation.Entity.Segment.Common.Data;
 using Lagrange.Milky.Implementation.Entity.Segment.Incoming;
+using Lagrange.Milky.Implementation.Entity.Segment.Incoming.Data;
 using Lagrange.Milky.Implementation.Entity.Segment.Outgoing;
 using Microsoft.Extensions.Logging;
 
@@ -57,8 +58,8 @@ public class EntityConvert(ILogger<EntityConvert> logger)
         Role = member.Permission switch
         {
             GroupMemberPermission.Member => "member",
-            GroupMemberPermission.Admin => "admin",
             GroupMemberPermission.Owner => "owner",
+            GroupMemberPermission.Admin => "admin",
             _ => throw new NotImplementedException(),
         },
         JoinTime = new DateTimeOffset(member.JoinTime).ToUnixTimeSeconds(),
@@ -123,8 +124,20 @@ public class EntityConvert(ILogger<EntityConvert> logger)
 
     public IIncomingSegment ToIncomingSegment(IMessageEntity entity) => entity switch
     {
-        // TODO: Need file id
-        ImageEntity => throw new NotImplementedException(),
+        ImageEntity image => new IncomingImageSegment
+        {
+            Data = new IncomingImageData
+            {
+                ResourceId = image.FileUuid,
+                Summary = image.Summary,
+                SubType = image.SubType switch
+                {
+                    0 => "normal",
+                    1 => "sticker",
+                    _ => throw new NotSupportedException(),
+                }
+            }
+        },
         MentionEntity { Uin: not 0 } mention => new IncomingMentionSegment
         {
             Data = new MentionData
@@ -133,13 +146,24 @@ public class EntityConvert(ILogger<EntityConvert> logger)
             },
         },
         MentionEntity { Uin: 0 } => new IncomingMentionAllSegment { Data = new MentionAllData { } },
-        // TODO: Need file id
-        RecordEntity => throw new NotImplementedException(),
+        RecordEntity record => new IncomingRecordSegment
+        {
+            Data = new IncomingRecordData
+            {
+                ResourceId = record.FileUuid,
+                Duration = (int)record.RecordLength,
+            }
+        },
         // TODO: Core not implemented
         ReplyEntity => throw new NotImplementedException(),
         TextEntity text => new IncomingTextSegment { Data = new TextData { Text = text.Text } },
-        // TODO: Need file id
-        VideoEntity => throw new NotImplementedException(),
+        VideoEntity video => new IncomingVideoSegment
+        {
+            Data = new IncomingVideoData
+            {
+                ResourceId = video.FileUuid,
+            }
+        },
         _ => throw new NotSupportedException(),
     };
 
@@ -156,8 +180,12 @@ public class EntityConvert(ILogger<EntityConvert> logger)
     public async Task<IMessageEntity> ToMessageEntityAsync(IOutgoingSegment segment, CancellationToken token) => segment switch
     {
         OutgoingTextSegment text => new TextEntity(text.Data.Text),
-        OutgoingMentionSegment mention => new MentionEntity(mention.Data.UserId, string.Empty),
-        OutgoingMentionAllSegment => new MentionEntity(0, string.Empty),
+        // TODO: Core not implemented
+        // OutgoingMentionSegment mention => new MentionEntity(mention.Data.UserId, string.Empty),
+        OutgoingMentionSegment => throw new NotImplementedException(),
+        // TODO: Core not implemented
+        // OutgoingMentionAllSegment => new MentionEntity(0, string.Empty),
+        OutgoingMentionAllSegment => throw new NotImplementedException(),
         // TODO: Core not implemented
         OutgoingFaceSegment => throw new NotImplementedException(),
         // TODO: Core not implemented

@@ -20,6 +20,7 @@ public abstract class RichMediaEntityBase : IMessageEntity
             Debug.Assert(value != null);
             
             var fileInfo = value.MsgInfoBody[0].Index.Info;
+            FileUuid = value.MsgInfoBody[0].Index.FileUuid;
             FileMd5 = fileInfo.FileHash;
             FileSha1 = fileInfo.FileSha1;
             FileSize = fileInfo.FileSize;
@@ -29,6 +30,8 @@ public abstract class RichMediaEntityBase : IMessageEntity
     }
     
     internal abstract Lazy<Stream>? Stream { get; }
+
+    public string FileUuid { get; internal set; } = string.Empty;
     
     public string FileUrl { get; internal set; } = string.Empty;
 
