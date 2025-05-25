@@ -8,15 +8,15 @@ using Lagrange.Milky.Implementation.Utility;
 namespace Lagrange.Milky.Implementation.Api.Handler.Message;
 
 [Api("send_group_message")]
-public class SendGroupMessageApiHandler(BotContext bot, EntityConvert entity) : IApiHandler<SendGroupMessageApiParameter>
+public class SendGroupMessageApiHandler(BotContext bot, EntityConvert convert) : IApiHandler<SendGroupMessageApiParameter>
 {
     private readonly BotContext _bot = bot;
-    private readonly EntityConvert _entity = entity;
+    private readonly EntityConvert _convert = convert;
 
     public async Task<IApiResult> HandleAsync(SendGroupMessageApiParameter parameter, CancellationToken token)
     {
         var result = await _bot.SendGroupMessage(
-            await _entity.ToMessageChainAsync(parameter.Message, token),
+            await _convert.ToMessageChainAsync(parameter.Message, token),
             parameter.GroupId
         );
 

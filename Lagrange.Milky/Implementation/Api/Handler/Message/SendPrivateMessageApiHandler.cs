@@ -8,15 +8,15 @@ using Lagrange.Milky.Implementation.Utility;
 namespace Lagrange.Milky.Implementation.Api.Handler.Message;
 
 [Api("send_private_message")]
-public class SendPrivateMessageApiHandler(BotContext bot, EntityConvert entity) : IApiHandler<SendPrivateMessageApiParameter>
+public class SendPrivateMessageApiHandler(BotContext bot, EntityConvert convert) : IApiHandler<SendPrivateMessageApiParameter>
 {
     private readonly BotContext _bot = bot;
-    private readonly EntityConvert _entity = entity;
+    private readonly EntityConvert _convert = convert;
 
     public async Task<IApiResult> HandleAsync(SendPrivateMessageApiParameter parameter, CancellationToken token)
     {
         var result = await _bot.SendFriendMessage(
-            await _entity.ToMessageChainAsync(parameter.Message, token),
+            await _convert.ToMessageChainAsync(parameter.Message, token),
             parameter.UserId
         );
 

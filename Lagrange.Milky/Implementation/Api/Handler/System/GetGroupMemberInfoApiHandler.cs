@@ -7,10 +7,10 @@ using Lagrange.Milky.Implementation.Utility;
 namespace Lagrange.Milky.Implementation.Api.Handler.System;
 
 [Api("get_group_member_info")]
-public class GetGroupMemberInfoApiHandler(BotContext bot, EntityConvert entity) : IApiHandler<GetGroupMemberInfoApiParameter>
+public class GetGroupMemberInfoApiHandler(BotContext bot, EntityConvert convert) : IApiHandler<GetGroupMemberInfoApiParameter>
 {
     private readonly BotContext _bot = bot;
-    private readonly EntityConvert _entity = entity;
+    private readonly EntityConvert _convert = convert;
 
     public async Task<IApiResult> HandleAsync(GetGroupMemberInfoApiParameter parameter, CancellationToken token)
     {
@@ -18,6 +18,6 @@ public class GetGroupMemberInfoApiHandler(BotContext bot, EntityConvert entity) 
             .FirstOrDefault(member => member.Uin == parameter.UserId);
         if (member == null) return IApiResult.Failed(-1, "group member not found");
 
-        return IApiResult.Ok(_entity.GroupMember(member));
+        return IApiResult.Ok(_convert.GroupMember(member));
     }
 }
