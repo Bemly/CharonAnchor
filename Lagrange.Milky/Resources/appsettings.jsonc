@@ -32,9 +32,7 @@
         // "EventPath": null,
         // "WebHook": null, // Default
         // "WebHook": {
-        //     "Host": "127.0.0.1",
-        //     "Port": 3000,
-        //     "Path": "/webhook"
+        //     "Url": "http://127.0.0.1:30001/webhook"
         // }
     },
 }

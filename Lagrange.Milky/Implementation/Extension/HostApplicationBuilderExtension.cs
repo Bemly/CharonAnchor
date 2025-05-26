@@ -32,5 +32,6 @@ public static partial class HostApplicationBuilderExtension
             }
 
             if (configuration?.EventPath != null) services.AddHostedService<MilkyWebSocketEventService>();
+            if (configuration?.WebHook != null) services.AddHostedService<MilkyWebHookEventService>();
         });
 }
