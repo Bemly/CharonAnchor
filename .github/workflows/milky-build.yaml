@@ -3,7 +3,7 @@ name: Build Lagrange.Milky
 on:
   push:
     branches: [ main ]
-  # pull_request:
+    # pull_request:
     # branches: [ main ]
   workflow_dispatch:
 
@@ -36,14 +36,19 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
-      - name: Restore dependencies
-        run: dotnet restore
-
       - name: Publish with Native AOT
-        run: dotnet publish --self-contained Lagrange.Milky/Lagrange.Milky.csproj -c Release -r ${{ matrix.rid }}
+        run: dotnet publish Lagrange.Milky/Lagrange.Milky.csproj -c Release -r ${{ matrix.rid }}
 
-      - name: Upload artifacts
+      - name: Upload Windows artifacts
+        if: matrix.os == 'windows-latest'
         uses: actions/upload-artifact@v4
         with:
           name: Lagrange.Milky-${{ matrix.rid }}
-          path: Lagrange.Milky/bin/Release/net9.0/${{ matrix.rid }}/publish/
+          path: Lagrange.Milky/bin/Release/net9.0/${{ matrix.rid }}/publish/Lagrange.Milky.exe
+
+      - name: Upload macOS and Linux artifacts
+        if: matrix.os != 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lagrange.Milky-${{ matrix.rid }}
+          path: Lagrange.Milky/bin/Release/net9.0/${{ matrix.rid }}/publish/Lagrange.Milky
