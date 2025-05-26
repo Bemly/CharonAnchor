@@ -1,8 +1,6 @@
 using System.Text.Json.Serialization;
-using Lagrange.Milky.Implementation.Api.Handler.Message;
 
 namespace Lagrange.Milky.Implementation.Api.Parameter;
-
 
 [JsonDerivedType(typeof(EmptyApiParameter))]
 
@@ -25,4 +23,10 @@ namespace Lagrange.Milky.Implementation.Api.Parameter;
 [JsonDerivedType(typeof(SendPrivateMessageApiParameter))]
 // send_group_message
 [JsonDerivedType(typeof(SendGroupMessageApiParameter))]
+
+// === file ===
+// get_group_file_download_url
+[JsonDerivedType(typeof(GetGroupFileDownloadUrlApiParameter))]
+// delete_group_file
+[JsonDerivedType(typeof(DeleteGroupFileApiParameter))]
 public interface IApiParameter { }

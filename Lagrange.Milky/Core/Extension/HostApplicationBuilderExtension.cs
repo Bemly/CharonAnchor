@@ -12,7 +12,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using CoreLogLevel = Lagrange.Core.Events.EventArgs.LogLevel;
 
-
 namespace Lagrange.Milky.Core.Extension;
 
 public static class HostApplicationBuilderExtension

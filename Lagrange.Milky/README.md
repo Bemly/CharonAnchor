@@ -17,7 +17,7 @@ _[Milky](https://github.com/SaltifyDev/milky) protocol implementation based on [
 
 #### system
 
-- [ ] /get_login_info
+- [x] /get_login_info
 - [x] /get_friend_list
 - [x] /get_friend_info
 - [x] /get_group_list
@@ -38,7 +38,7 @@ _[Milky](https://github.com/SaltifyDev/milky) protocol implementation based on [
 
 #### friend
 
-- [ ] /send_friend_nudge
+- [x] /send_friend_nudge
 - [ ] /send_profile_like
 
 #### group
@@ -56,7 +56,7 @@ _[Milky](https://github.com/SaltifyDev/milky) protocol implementation based on [
 - [ ] /delete_group_announcement
 - [ ] /quit_group
 - [ ] /send_group_message_reaction
-- [ ] /send_group_nudge
+- [x] /send_group_nudge
 
 #### request
 
@@ -68,11 +68,11 @@ _[Milky](https://github.com/SaltifyDev/milky) protocol implementation based on [
 - [ ] /upload_private_file
 - [ ] /upload_group_file
 - [ ] /get_private_file_download_url
-- [ ] /get_group_file_download_url
+- [x] /get_group_file_download_url
 - [ ] /get_group_files
 - [ ] /move_group_file
 - [ ] /rename_group_file
-- [ ] /delete_group_file
+- [x] /delete_group_file
 - [ ] /create_group_folder
 - [ ] /rename_group_folder
 - [ ] /delete_group_folder

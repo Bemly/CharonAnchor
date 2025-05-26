@@ -5,6 +5,7 @@ using Lagrange.Milky.Implementation.Entity;
 namespace Lagrange.Milky.Implementation.Api.Result;
 
 [JsonDerivedType(typeof(ApiFailedResult))]
+[JsonDerivedType(typeof(ApiOkResult<object>))]
 
 // === system ===
 // get_login_info
@@ -27,6 +28,12 @@ namespace Lagrange.Milky.Implementation.Api.Result;
 [JsonDerivedType(typeof(ApiOkResult<SendPrivateMessageResultData>))]
 // send_group_message
 [JsonDerivedType(typeof(ApiOkResult<SendGroupMessageResultData>))]
+
+// === file ===
+// get_group_file_download_url
+[JsonDerivedType(typeof(GetGroupFileDownloadUrlResultData))]
+// delete_group_file
+// [JsonDerivedType(typeof(ApiOkResult<object>))]
 public interface IApiResult
 {
     public string Status { get; }
