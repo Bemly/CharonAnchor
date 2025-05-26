@@ -46,9 +46,9 @@ internal static class Program
     {
         Console.WriteLine(Constants.Banner);
 
-        string? version = Assembly.GetAssembly(typeof(Program))
-            ?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+        string? version = typeof(Program).Assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
             ?.InformationalVersion;
-        Console.WriteLine($"Version: {version?["1.0.0+".Length..]}");
+        Console.WriteLine($"Version: {version?[6..]}");
     }
 }

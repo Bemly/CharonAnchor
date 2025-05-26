@@ -26,9 +26,15 @@
         },
     },
     "Milky": {
-        "WebSocket": {
-            "Host": "127.0.0.1",
-            "Port": 3000,
-        },
+        "Host": "127.0.0.1",
+        "Port": 3000,
+        // "ApiPrefix": "/api",
+        // "EventPath": null,
+        // "WebHook": null, // Default
+        // "WebHook": {
+        //     "Host": "127.0.0.1",
+        //     "Port": 3000,
+        //     "Path": "/webhook"
+        // }
     },
 }

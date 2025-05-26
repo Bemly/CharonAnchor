@@ -3,9 +3,6 @@ using Lagrange.Milky.Implementation.Entity.Segment.Incoming;
 
 namespace Lagrange.Milky.Implementation.Entity.Message.Incoming;
 
-[JsonDerivedType(typeof(FriendIncomingMessage))]
-[JsonDerivedType(typeof(GroupIncomingMessage))]
-[JsonDerivedType(typeof(TempIncomingMessage))]
 public abstract class IncomingMessageBase(string type)
 {
     [JsonPropertyName("peer_id")]

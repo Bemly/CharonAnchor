@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace Lagrange.Milky.Implementation.Event;
 
-public class Event<TData>(string type) : IEvent
+public class Event
 {
     [JsonPropertyName("time")]
     public required long Time { get; init; }
@@ -11,10 +11,9 @@ public class Event<TData>(string type) : IEvent
     public required long SelfId { get; init; }
 
     [JsonPropertyName("event_type")]
-    public string EventType { get; } = type;
+    public required string EventType { get; init; }
 
-    object? IEvent.Data => Data;
     [JsonPropertyName("data")]
-    public required TData Data { get; init; }
+    public required object Data { get; init; }
 }
 
