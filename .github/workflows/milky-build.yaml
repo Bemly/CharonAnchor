@@ -1,0 +1,49 @@
+name: Build Lagrange.Milky
+
+on:
+  push:
+    branches: [ main ]
+  # pull_request:
+    # branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            rid: win-x64
+          - os: macos-latest
+            rid: osx-arm64
+          - os: ubuntu-latest
+            rid: linux-x64
+    
+    env:
+      RUNTIME_IDENTIFIER: ${{ matrix.rid }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Linux Dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Publish with Native AOT
+        run: dotnet publish --self-contained Lagrange.Milky/Lagrange.Milky.csproj -c Release -r ${{ matrix.rid }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lagrange.Milky-${{ matrix.rid }}
+          path: Lagrange.Milky/bin/Release/net9.0/${{ matrix.rid }}/publish/
