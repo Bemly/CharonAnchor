@@ -3,8 +3,8 @@ name: Build Lagrange.Milky
 on:
   push:
     branches: [ main ]
-    # pull_request:
-    # branches: [ main ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -24,9 +24,6 @@ jobs:
       RUNTIME_IDENTIFIER: ${{ matrix.rid }}
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Install Linux Dependencies
         if: matrix.os == 'ubuntu-latest'
         run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
@@ -36,18 +33,21 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Publish with Native AOT
         run: dotnet publish Lagrange.Milky/Lagrange.Milky.csproj -c Release -r ${{ matrix.rid }}
 
       - name: Upload Windows artifacts
-        if: matrix.os == 'windows-latest'
+        if: matrix.os == 'windows-latest' && github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: Lagrange.Milky-${{ matrix.rid }}
           path: Lagrange.Milky/bin/Release/net9.0/${{ matrix.rid }}/publish/Lagrange.Milky.exe
 
       - name: Upload macOS and Linux artifacts
-        if: matrix.os != 'windows-latest'
+        if: matrix.os != 'windows-latest' && github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: Lagrange.Milky-${{ matrix.rid }}
