@@ -18,7 +18,7 @@ public class TextEntity(string text) : IMessageEntity
     
     IMessageEntity? IMessageEntity.Parse(List<Elem> elements, Elem target)
     {
-        return target.Text is ({ Attr6Buf: null } or { Attr6Buf.Length: 0 }) and ({ PbReserve: null } or { PbReserve.Length: 0 })
+        return target.Text is ({ Attr6Buf: null } or { Attr6Buf.Length: 0 }) and ({ PbReserve.Length: 0 })
             ? new TextEntity(target.Text.TextMsg)
             : null;
     }

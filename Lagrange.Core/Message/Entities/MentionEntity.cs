@@ -1,37 +1,84 @@
+using Lagrange.Core.Common.Entity;
+using Lagrange.Core.Exceptions;
 using Lagrange.Core.Internal.Packets.Message;
-using Lagrange.Proto.Nodes;
+using Lagrange.Core.Utility.Binary;
+using Lagrange.Core.Utility;
 
 namespace Lagrange.Core.Message.Entities;
 
-public class MentionEntity(long uin, string display) : IMessageEntity
+public class MentionEntity(long uin, string? display) : IMessageEntity
 {
     public long Uin { get; } = uin;
 
-    public string Display { get; } = display;
+    public string? Display { get; private set; } = display;
     
     internal string? Uid { get; private set; }
     
-    public MentionEntity() : this(0, string.Empty) { }
-    
-    Task IMessageEntity.Preprocess(BotContext context, BotMessage message)
+    public MentionEntity() : this(0, null) { }
+
+    async Task IMessageEntity.Preprocess(BotContext context, BotMessage message)
     {
-        throw new NotImplementedException();
+        if (Uin != 0)
+        {
+            BotContact contact;
+            switch (message.Receiver)
+            {
+                case BotGroup group: 
+                    (_, contact) = await context.CacheContext.ResolveMember(group.Uin, Uin) ?? throw new InvalidTargetException(Uin, group.Uin);
+                    break;
+                case BotFriend friend:
+                    contact = await context.CacheContext.ResolveFriend(Uin) ?? throw new InvalidTargetException(Uin, friend.Uin);
+                    break;
+                case BotStranger stranger:
+                    contact = stranger;
+                    break;
+                default:
+                    throw new InvalidTargetException(Uin, message.Contact.Uin);
+            }
+
+            Display ??= contact.Nickname;
+            if (!Display.StartsWith('@')) Display = '@' + Display;
+            Uid = contact.Uid;
+        }
     }
 
     Elem[] IMessageEntity.Build()
     {
-        throw new NotImplementedException();
+        var resvAttr = new TextResvAttr
+        {
+            AtType = Uin == 0 ? 1u : 2u, // 1 for mention all
+            AtMemberUin = (ulong)Uin,
+            AtMemberTinyid = 0,
+            AtMemberUid = Uid
+        };
+        
+        return
+        [
+            new Elem
+            {
+                Text = new Text
+                {
+                    TextMsg = Display ?? throw new InvalidOperationException("Display cannot be null"),
+                    PbReserve = ProtoHelper.Serialize(resvAttr),
+                }
+            }
+        ];
     }
     
     IMessageEntity? IMessageEntity.Parse(List<Elem> elements, Elem target)
     {
-        if (target.Text?.PbReserve is { Length: > 0 } reserve)
+        if (target.Text?.Attr6Buf is { Length: > 0 } attr6Buf)
         {
-            var obj = ProtoObject.Parse(reserve);
-            return new MentionEntity(obj[4].GetValue<long>(), target.Text.TextMsg)
-            {
-                Uid = obj[9].GetValue<string>()
-            };
+            var reader = new BinaryPacket(attr6Buf.AsSpan());
+            reader.Skip(2);
+            
+            short startPos = reader.Read<short>();
+            short textLen = reader.Read<short>();
+            byte flag = reader.Read<byte>();
+            uint uin = reader.Read<uint>();
+            ushort wExtBufLen = reader.Read<ushort>();
+            
+            return new MentionEntity(uin, target.Text.TextMsg);
         }
 
         return null;

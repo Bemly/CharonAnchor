@@ -14,6 +14,12 @@ public class MessageBuilder
         return this;
     }
 
+    public MessageBuilder Mention(long uin, string? display)
+    {
+        _entities.Add(new MentionEntity(uin, display));
+        return this;
+    }
+
     public MessageBuilder Image(string path, string? summary = "[图片]", int subType = 0) =>
         Image(new FileStream(path, FileMode.Open, FileAccess.Read), summary, subType);
 

@@ -30,7 +30,7 @@ internal partial class Text
     
     [ProtoMember(11)] public byte[] Buf { get; set; }
 
-    [ProtoMember(12)] public byte[] PbReserve { get; set; }
+    [ProtoMember(12)] public ReadOnlyMemory<byte> PbReserve { get; set; }
 }
 
 [ProtoPackable]
