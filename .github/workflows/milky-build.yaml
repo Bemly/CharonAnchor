@@ -15,10 +15,13 @@ jobs:
         include:
           - os: windows-latest
             rid: win-x64
+            binary-extension: '.exe'
           - os: macos-latest
             rid: osx-arm64
+            binary-extension: ''
           - os: ubuntu-latest
             rid: linux-x64
+            binary-extension: ''
     
     env:
       RUNTIME_IDENTIFIER: ${{ matrix.rid }}
@@ -39,16 +42,9 @@ jobs:
       - name: Publish with Native AOT
         run: dotnet publish Lagrange.Milky/Lagrange.Milky.csproj -c Release -r ${{ matrix.rid }}
 
-      - name: Upload Windows artifacts
-        if: matrix.os == 'windows-latest' && github.event_name != 'pull_request'
+      - name: Upload artifacts
+        if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: Lagrange.Milky-${{ matrix.rid }}
-          path: Lagrange.Milky/bin/Release/net9.0/${{ matrix.rid }}/publish/Lagrange.Milky.exe
-
-      - name: Upload macOS and Linux artifacts
-        if: matrix.os != 'windows-latest' && github.event_name != 'pull_request'
-        uses: actions/upload-artifact@v4
-        with:
-          name: Lagrange.Milky-${{ matrix.rid }}
-          path: Lagrange.Milky/bin/Release/net9.0/${{ matrix.rid }}/publish/Lagrange.Milky
+          path: Lagrange.Milky/bin/Release/net9.0/${{ matrix.rid }}/publish/Lagrange.Milky${{ matrix.binary-extension }}
