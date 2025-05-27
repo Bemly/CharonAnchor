@@ -55,12 +55,12 @@ namespace Lagrange.Core.NativeAPI.NativeModel.Common
 
         public ByteArrayNative SKey = new();
 
-        public ByteArrayKVPNative[] PsKey = [];
+        public ByteArrayDictNative PsKey = new();
 
         public static implicit operator BotKeystore(BotKeystoreStruct keystore)
         {
             var psKey = new Dictionary<string, string>();
-            foreach (var kvp in keystore.PsKey)
+            foreach (var kvp in (ByteArrayKVPNative[])keystore.PsKey)
             {
                 psKey[Encoding.UTF8.GetString(kvp.Key)] = Encoding.UTF8.GetString(kvp.Value);
             }
@@ -141,7 +141,7 @@ namespace Lagrange.Core.NativeAPI.NativeModel.Common
         public BotKeystore ToKeystoreWithoutFree()
         {
             var psKey = new Dictionary<string, string>();
-            foreach (var kvp in PsKey)
+            foreach (var kvp in (ByteArrayKVPNative[])PsKey)
             {
                 psKey[Encoding.UTF8.GetString(kvp.Key)] = Encoding.UTF8.GetString(kvp.Value);
             }
