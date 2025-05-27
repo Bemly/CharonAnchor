@@ -40,10 +40,9 @@ jobs:
           - os: ubuntu-latest
             rid: linux-x64
             binary-extension: '.so'
-          - os: ubuntu-latest
+          - os: ubuntu-22.04-arm
             rid: linux-arm64
             binary-extension: '.so'
-            use-docker: true
 
     env:
       RUNTIME_IDENTIFIER: ${{ matrix.rid }}
@@ -58,25 +57,13 @@ jobs:
           dotnet-version: '9.0.x'
 
       - name: Install Linux Dependencies
-        if: matrix.os == 'ubuntu-latest' && matrix.use-docker != true
+        if: matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-22.04-arm'
         run: |
           sudo apt-get update
           sudo apt-get install -y clang zlib1g-dev
 
-      - name: Setup Docker
-        if: matrix.use-docker == true
-        uses: docker/setup-qemu-action@v3
-
-      - name: Publish with Native AOT (non-Docker)
-        if: matrix.use-docker != true
+      - name: Publish with Native AOT
         run: dotnet publish Lagrange.Core.NativeAPI -c Release -r ${{ matrix.rid }}
-
-      - name: Publish with Native AOT (Docker for ARM64)
-        if: matrix.use-docker == true
-        run: |
-          docker run --rm --platform linux/arm64 -v $(pwd):/source -w /source \
-            mcr.microsoft.com/dotnet/sdk:9.0 \
-            bash -c "apt-get update && apt-get install -y clang zlib1g-dev && dotnet publish Lagrange.Core.NativeAPI -c Release -r linux-arm64"
 
       - name: Upload artifacts
         if: github.event_name != 'pull_request'
