@@ -11,7 +11,7 @@ _[Milky](https://github.com/SaltifyDev/milky) protocol implementation based on [
 ### communication
 
 - [x] WebSocket
-- [ ] WebHook
+- [x] WebHook
 
 ### api
 
