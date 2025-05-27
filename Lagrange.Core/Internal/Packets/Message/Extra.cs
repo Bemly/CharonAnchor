@@ -42,3 +42,13 @@ internal partial class ChannelInfo
 
 [ProtoPackable]
 internal partial class RoleInfo;
+
+[ProtoPackable]
+internal partial class SourceMsgResvAttr
+{
+    [ProtoMember(3)] public ulong SourceMsgId { get; set; }
+    
+    [ProtoMember(6)] public string SenderUid { get; set; }
+    
+    [ProtoMember(7)] public string ReceiverUid { get; set; }
+}
