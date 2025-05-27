@@ -131,11 +131,11 @@ internal class MessagePacker
 
         switch (message.Contact)
         {
-            case BotFriend friend:
-                routingHead.C2C = new C2C { PeerUin = friend.Uin, PeerUid = friend.Uid };
+            case BotFriend:
+                routingHead.C2C = new C2C { PeerUin = message.Receiver.Uin, PeerUid = message.Receiver.Uid };
                 break;
             case BotStranger:
-                throw new InvalidOperationException();
+                throw new NotSupportedException();
         }
         
         if (message.Receiver is BotGroup group)
