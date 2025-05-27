@@ -1,8 +1,11 @@
+using System.Text.Json.Serialization;
+
 namespace Lagrange.Core.Common;
 
 [Serializable]
 public class BotInfo
 {
+    [JsonConstructor]
     internal BotInfo(byte age, byte gender, string name)
     {
         Age = age;

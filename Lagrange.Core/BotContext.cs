@@ -29,8 +29,7 @@ public class BotContext : IDisposable
     public BotAppInfo AppInfo { get; }
     public BotKeystore Keystore { get; }
     public long BotUin => Keystore.Uin;
-    public BotInfo? BotInfo { get; internal set; }
-    
+    public BotInfo? BotInfo => Keystore.BotInfo;
     
     public bool IsOnline { get; internal set; }
     public EventInvoker EventInvoker { get; }

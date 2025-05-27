@@ -564,7 +564,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
                     byte age = reader.Read<byte>();
                     byte gender = reader.Read<byte>();
                     string nickname = reader.ReadString(Prefix.Int8 | Prefix.LengthOnly);
-                    _context.BotInfo = new BotInfo(age, gender, nickname);
+                    _context.Keystore.BotInfo = new BotInfo(age, gender, nickname);
                     break;
                 }
                 case 0x120:

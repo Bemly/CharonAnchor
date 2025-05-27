@@ -16,7 +16,8 @@ public class BotKeystore
     internal EcdhProvider Prime256V1 { get; } = new(EllipticCurve.Prime256V1);
     internal EcdhProvider Secp192K1 { get; } = new(EllipticCurve.Secp192K1);
     internal State State { get; } = new();
-    
+
+    public BotInfo? BotInfo { get; set; }
     public WLoginSigs WLoginSigs { get; set; } = new();
     
     public byte[] Guid { get; set; } = [];
