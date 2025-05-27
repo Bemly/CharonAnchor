@@ -1,3 +1,4 @@
+using Lagrange.Core.Common.Entity;
 using Lagrange.Core.Internal.Packets.Message;
 using Lagrange.Core.Utility;
 
@@ -5,26 +6,74 @@ namespace Lagrange.Core.Message.Entities;
 
 public class ReplyEntity : IMessageEntity
 {
-    public ulong SrcUid { get; set; }
+    public ulong SrcUid { get; private init; }
     
-    public int SrcSequence { get; set; }
+    public int SrcSequence { get; private init; }
     
-    internal List<Elem> Elems { get; set; } = new();
+    public BotContact? Source { get; private set; }
+    
+    internal List<Elem> Elems { get; private init; } = [];
+    
+    private long SourceUin { get; set; } // only for storage, not used in protocol
     
     public ReplyEntity(BotMessage source)
     {
+        Source = source.Contact;
+        SrcUid = source.MessageId;
+        SrcSequence = source.Sequence;
     }
 
-    public ReplyEntity() { }
-
-    public Task Preprocess(BotContext context, BotMessage message)
+    async Task IMessageEntity.Postprocess(BotContext context, BotMessage message)
     {
-        throw new NotImplementedException();
+        Source = message.Contact switch
+        {
+            BotFriend => await context.CacheContext.ResolveFriend(SourceUin),
+            BotGroupMember s => (await context.CacheContext.ResolveMember(s.Group.GroupUin, SourceUin)).GetValueOrDefault().Item2,
+            BotStranger => new BotStranger(SourceUin, string.Empty, string.Empty),
+            _ => null
+        };
     }
+    
+    public ReplyEntity() { }
 
     Elem[] IMessageEntity.Build()
     {
-        throw new NotImplementedException();
+        if (Source == null) return [];
+
+        return
+        [
+            new Elem
+            {
+                Text = new Text
+                {
+                    TextMsg = $"@{Source.Nickname}",
+                    PbReserve = ProtoHelper.Serialize(new TextResvAttr
+                    {
+                        AtType = 2u,
+                        AtMemberUin = 0,
+                        AtMemberTinyid = 0,
+                        AtMemberUid = Source.Uid
+                    })
+                }
+            },
+            new Elem
+            {
+                SrcMsg = new SourceMsg
+                {
+                    OrigSeqs = [(uint)SrcSequence],
+                    SenderUin = 0,
+                    Time = (uint)DateTimeOffset.Now.ToUnixTimeSeconds(),
+                    Flag = 0, // intentional, force the client to fetch the original message
+                    Elems = Elems.Select(ProtoHelper.Serialize).ToList(),
+                    PbReserve = ProtoHelper.Serialize(new SourceMsgResvAttr
+                    {
+                        OriMsgType = 2,
+                        SourceMsgId = SrcUid,
+                        SenderUid = Source.Uid
+                    }),
+                }
+            }
+        ];
     }
 
     IMessageEntity? IMessageEntity.Parse(List<Elem> elements, Elem target)
@@ -37,7 +86,8 @@ public class ReplyEntity : IMessageEntity
             {
                 SrcUid = resvAttr.SourceMsgId, 
                 SrcSequence = (int)srcMsg.OrigSeqs[0],
-                Elems = srcMsg.Elems.Select(x => ProtoHelper.Deserialize<Elem>(x.Span)).ToList()
+                Elems = (srcMsg.Elems ?? []).Select(x => ProtoHelper.Deserialize<Elem>(x.Span)).ToList(),
+                SourceUin = (long)srcMsg.SenderUin,
             };
         }
         

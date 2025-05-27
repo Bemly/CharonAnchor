@@ -46,6 +46,8 @@ internal partial class RoleInfo;
 [ProtoPackable]
 internal partial class SourceMsgResvAttr
 {
+    [ProtoMember(2)] public uint OriMsgType { get; set; }
+    
     [ProtoMember(3)] public ulong SourceMsgId { get; set; }
     
     [ProtoMember(6)] public string SenderUid { get; set; }

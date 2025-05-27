@@ -20,6 +20,12 @@ public class MessageBuilder
         return this;
     }
 
+    public MessageBuilder Reply(BotMessage source)
+    {
+        _entities.Add(new ReplyEntity(source));
+        return this;
+    }
+
     public MessageBuilder Image(string path, string? summary = "[图片]", int subType = 0) =>
         Image(new FileStream(path, FileMode.Open, FileAccess.Read), summary, subType);
 

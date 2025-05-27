@@ -266,7 +266,7 @@ internal partial class SourceMsg
 
     [ProtoMember(4)] public uint Flag { get; set; } // 摘要里是否包括原消息的完整内容0 非完整内容，需要客户端拉取  1 完整内容，不用拉取
 
-    [ProtoMember(5)] public List<ReadOnlyMemory<byte>> Elems { get; set; } // 消息的种类，包括文本消息，系统表情消息, use ReadOnlyMemory instead of Elem to avoid circular reference
+    [ProtoMember(5)] public List<ReadOnlyMemory<byte>>? Elems { get; set; } // 消息的种类，包括文本消息，系统表情消息, use ReadOnlyMemory instead of Elem to avoid circular reference
 
     [ProtoMember(6)] public uint Type { get; set; } // 引用消息展示样式，0表示普通文本，对应解析elems字段；1表示部落类型类似结构化消息的样式，对应解析bytes_richMsg字段
 
