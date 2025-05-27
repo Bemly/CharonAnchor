@@ -33,17 +33,16 @@ public partial class Converter
 
     public GroupIncomingMessage ToGroupIncomingMessage(BotMessage message)
     {
-        var groupMember = (BotGroupMember)message.Contact;
-        var group = groupMember.Group;
+        var member = (BotGroupMember)message.Contact;
         return new GroupIncomingMessage
         {
-            PeerId = group.Uin,
+            PeerId = member.Group.Uin,
             MessageSeq = message.Sequence,
             SenderId = message.Contact.Uin,
             Time = new DateTimeOffset(message.Time).ToUnixTimeSeconds(),
             Segments = ToIncomingSegments(message.Entities),
-            Group = Group(group),
-            GroupMember = GroupMember(groupMember)
+            Group = Group(member.Group),
+            GroupMember = GroupMember(member)
         };
     }
 
