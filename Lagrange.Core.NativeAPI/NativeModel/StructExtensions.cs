@@ -19,34 +19,34 @@ namespace Lagrange.Core.NativeAPI.NativeModel
 
         #region Dictionary
 
-        public static KeyValuePairNative<T1, T2>[] ToDictionaryStruct<T1, T2>(
-            this Dictionary<T1, T2> dict
-        )
-            where T1 : notnull
-        {
-            var result = new KeyValuePairNative<T1, T2>[dict.Count];
-            int i = 0;
-            foreach (var kvp in dict)
-            {
-                result[i++] = new KeyValuePairNative<T1, T2>() { Key = kvp.Key, Value = kvp.Value };
-            }
-
-            return result;
-        }
-
-        public static Dictionary<T1, T2> ToDictionary<T1, T2>(
-            this KeyValuePairNative<T1, T2>[] dict
-        )
-            where T1 : notnull
-        {
-            var result = new Dictionary<T1, T2>(dict.Length);
-            foreach (var kvp in dict)
-            {
-                result[kvp.Key] = kvp.Value;
-            }
-
-            return result;
-        }
+        // public static KeyValuePairNative<T1, T2>[] ToDictionaryStruct<T1, T2>(
+        //     this Dictionary<T1, T2> dict
+        // )
+        //     where T1 : notnull
+        // {
+        //     var result = new KeyValuePairNative<T1, T2>[dict.Count];
+        //     int i = 0;
+        //     foreach (var kvp in dict)
+        //     {
+        //         result[i++] = new KeyValuePairNative<T1, T2>() { Key = kvp.Key, Value = kvp.Value };
+        //     }
+        //
+        //     return result;
+        // }
+        //
+        // public static Dictionary<T1, T2> ToDictionary<T1, T2>(
+        //     this KeyValuePairNative<T1, T2>[] dict
+        // )
+        //     where T1 : notnull
+        // {
+        //     var result = new Dictionary<T1, T2>(dict.Length);
+        //     foreach (var kvp in dict)
+        //     {
+        //         result[kvp.Key] = kvp.Value;
+        //     }
+        //
+        //     return result;
+        // }
 
         #endregion
 

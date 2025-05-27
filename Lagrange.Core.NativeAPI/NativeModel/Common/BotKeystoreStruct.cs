@@ -55,7 +55,7 @@ namespace Lagrange.Core.NativeAPI.NativeModel.Common
 
         public ByteArrayNative SKey = new();
 
-        public KeyValuePairNative<ByteArrayNative, ByteArrayNative>[] PsKey = [];
+        public ByteArrayKVPNative[] PsKey = [];
 
         public static implicit operator BotKeystore(BotKeystoreStruct keystore)
         {
@@ -99,16 +99,13 @@ namespace Lagrange.Core.NativeAPI.NativeModel.Common
 
         public static implicit operator BotKeystoreStruct(BotKeystore keystore)
         {
-            var bytePsKey = new KeyValuePairNative<ByteArrayNative, ByteArrayNative>[
-                keystore.WLoginSigs.PsKey.Count
-            ];
+            var bytePsKey = new ByteArrayKVPNative[keystore.WLoginSigs.PsKey.Count];
             int i = 0;
             foreach (var kvp in keystore.WLoginSigs.PsKey)
             {
-                bytePsKey[i++] = new KeyValuePairNative<ByteArrayNative, ByteArrayNative>()
+                bytePsKey[i++] = new ByteArrayKVPNative
                 {
-                    Key = Encoding.UTF8.GetBytes(kvp.Key),
-                    Value = Encoding.UTF8.GetBytes(kvp.Value)
+                    Key = Encoding.UTF8.GetBytes(kvp.Key), Value = Encoding.UTF8.GetBytes(kvp.Value)
                 };
             }
 
