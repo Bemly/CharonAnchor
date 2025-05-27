@@ -7,6 +7,9 @@ public class IncomingRecordData
     [JsonPropertyName("resource_id")]
     public required string ResourceId { get; init; }
 
+    [JsonPropertyName("temp_url")]
+    public required string TempUrl { get; init; }
+
     [JsonPropertyName("duration")]
     public required int Duration { get; init; }
 }

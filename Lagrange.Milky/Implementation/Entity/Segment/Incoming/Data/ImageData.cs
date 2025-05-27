@@ -7,6 +7,9 @@ public class IncomingImageData
     [JsonPropertyName("resource_id")]
     public required string ResourceId { get; init; }
 
+    [JsonPropertyName("temp_url")]
+    public required string TempUrl { get; init; }
+
     [JsonPropertyName("summary")]
     public required string Summary { get; init; }
 

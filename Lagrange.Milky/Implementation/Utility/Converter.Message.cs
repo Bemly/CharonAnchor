@@ -79,6 +79,7 @@ public partial class Converter
             Data = new IncomingImageData
             {
                 ResourceId = image.FileUuid,
+                TempUrl = image.FileUrl,
                 Summary = image.Summary,
                 SubType = image.SubType switch
                 {
@@ -101,6 +102,7 @@ public partial class Converter
             Data = new IncomingRecordData
             {
                 ResourceId = record.FileUuid,
+                TempUrl = record.FileUrl,
                 Duration = (int)record.RecordLength,
             }
         },
@@ -112,6 +114,7 @@ public partial class Converter
             Data = new IncomingVideoData
             {
                 ResourceId = video.FileUuid,
+                TempUrl = video.FileUrl,
             }
         },
         _ => throw new NotSupportedException(),
