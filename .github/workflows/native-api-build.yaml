@@ -43,25 +43,40 @@ jobs:
           - os: ubuntu-latest
             rid: linux-arm64
             binary-extension: '.so'
+            use-docker: true
 
     env:
       RUNTIME_IDENTIFIER: ${{ matrix.rid }}
 
     steps:
-      - name: Install Linux Dependencies
-        if: matrix.os == 'ubuntu-latest'
-        run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'
 
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Install Linux Dependencies
+        if: matrix.os == 'ubuntu-latest' && matrix.use-docker != true
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang zlib1g-dev
 
-      - name: Publish with Native AOT
+      - name: Setup Docker
+        if: matrix.use-docker == true
+        uses: docker/setup-qemu-action@v3
+
+      - name: Publish with Native AOT (non-Docker)
+        if: matrix.use-docker != true
         run: dotnet publish Lagrange.Core.NativeAPI -c Release -r ${{ matrix.rid }}
+
+      - name: Publish with Native AOT (Docker for ARM64)
+        if: matrix.use-docker == true
+        run: |
+          docker run --rm --platform linux/arm64 -v $(pwd):/source -w /source \
+            mcr.microsoft.com/dotnet/sdk:9.0 \
+            bash -c "apt-get update && apt-get install -y clang zlib1g-dev && dotnet publish Lagrange.Core.NativeAPI -c Release -r linux-arm64"
 
       - name: Upload artifacts
         if: github.event_name != 'pull_request'
