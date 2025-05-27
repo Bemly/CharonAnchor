@@ -111,7 +111,7 @@ public class MilkyHttpApiService(ILogger<MilkyHttpApiService> logger, IOptions<M
             {
                 await SendWithLoggerAsync(
                     context,
-                    new ApiFailedResult { Retcode = e.Retcode, Message = e.Message },
+                    new ApiFailedResult { Retcode = e.Retcode, Message = e.Error },
                     LogLevel.Warning,
                     token
                 );

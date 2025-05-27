@@ -7,7 +7,7 @@ using Lagrange.Milky.Implementation.Api.Generator.Extension;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace Lagrange.Milky.ApiHandler.Generator;
+namespace Lagrange.Milky.Implementation.Api.Generator;
 
 [Generator(LanguageNames.CSharp)]
 public class MilkyApiHandlerGenerator : IIncrementalGenerator

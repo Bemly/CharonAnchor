@@ -2,7 +2,7 @@
 
 using Microsoft.CodeAnalysis;
 
-namespace Lagrange.Milky.ApiHandler.Generator;
+namespace Lagrange.Milky.Implementation.Api.Generator;
 
 public static class DiagnosticDescriptors
 {

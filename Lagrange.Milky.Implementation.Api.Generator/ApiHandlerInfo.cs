@@ -1,7 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace Lagrange.Milky.ApiHandler.Generator;
+namespace Lagrange.Milky.Implementation.Api.Generator;
 
 public class ApiHandlerInfo(ClassDeclarationSyntax targetNode, INamedTypeSymbol targetSymbol, SemanticModel semanticModel, string apiName, string handlerTypeFullName)
 {
