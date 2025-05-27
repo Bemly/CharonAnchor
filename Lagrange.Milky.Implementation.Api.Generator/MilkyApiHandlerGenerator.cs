@@ -17,9 +17,9 @@ public class MilkyApiHandlerGenerator : IIncrementalGenerator
     private const string IApiHandlerGFullName = "Lagrange.Milky.Implementation.Api.IApiHandler`2";
 
     private const string MilkyJsonContextSyntaxName = "MilkyJsonContext";
-    private const string MilkyJsonContextGlobalFullName = "global::Lagrange.Milky.Implementation.Utility.MilkyJsonUtility.MilkyJsonContext";
+    private const string MilkyJsonContextFullName = "Lagrange.Milky.Implementation.Utility.MilkyJsonUtility+MilkyJsonContext";
     private const string JsonSerializableSyntaxName = "JsonSerializable";
-    private const string JsonSerializableGlobalFullName = "global::System.Text.Json.Serialization.JsonSerializableAttribute";
+    private const string JsonSerializableFullName = "System.Text.Json.Serialization.JsonSerializableAttribute";
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -34,19 +34,21 @@ public class MilkyApiHandlerGenerator : IIncrementalGenerator
 
     private IEnumerable<INamedTypeSymbol> ToJsonSerializableValue(GeneratorSyntaxContext context, CancellationToken token)
     {
-        var attributeMethodSymbolInfo = context.SemanticModel.GetSymbolInfo(context.Node);
+        var model = context.SemanticModel;
+
+        var attributeMethodSymbolInfo = model.GetSymbolInfo(context.Node);
         if (attributeMethodSymbolInfo.Symbol is not IMethodSymbol attributeMethodSymbol) return [];
         var attributeSymbol = attributeMethodSymbol.ContainingType;
-        if (attributeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) != JsonSerializableGlobalFullName)
+        if (!attributeSymbol.SEquals(model.Compilation.GetTypeByMetadataName(JsonSerializableFullName)))
         {
             return [];
         }
 
         var classSyntax = ((AttributeSyntax)context.Node).GetAnnotatedClass();
         if (classSyntax == null) return [];
-        var classSymbol = context.SemanticModel.GetDeclaredSymbol(classSyntax);
+        var classSymbol = model.GetDeclaredSymbol(classSyntax);
         if (classSymbol == null) return [];
-        if (classSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) != MilkyJsonContextGlobalFullName)
+        if (!classSymbol.SEquals(model.Compilation.GetTypeByMetadataName(MilkyJsonContextFullName)))
         {
             return [];
         }
