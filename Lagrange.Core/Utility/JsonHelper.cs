@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using Lagrange.Core.Common;
 using Lagrange.Core.Internal.Packets.Login;
 using Lagrange.Core.Internal.Packets.Message;
+using Lagrange.Core.Internal.Packets.Service;
 
 namespace Lagrange.Core.Utility;
 
@@ -22,6 +23,7 @@ internal static partial class JsonHelper
     
     [JsonSerializable(typeof(JsonObject))]
     [JsonSerializable(typeof(MsgPush))]
+    [JsonSerializable(typeof(LightApp))]
     private partial class CoreSerializerContext : JsonSerializerContext;
     
     public static T? Deserialize<T>(string json) where T : class => 
