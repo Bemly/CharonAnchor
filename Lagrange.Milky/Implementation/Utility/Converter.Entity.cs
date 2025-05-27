@@ -11,6 +11,14 @@ public partial class Converter
         UserId = friend.Uin,
         Qid = friend.Qid,
         Nickname = friend.Nickname,
+        Sex = friend.Gender switch
+        {
+            BotGender.Male => "male",
+            BotGender.Female => "female",
+            BotGender.Unset or
+                BotGender.Unknown => "unknown",
+            _ => throw new NotSupportedException(),
+        },
         Remark = friend.Remarks,
         Category = FriendCategory(friend.Category),
     };

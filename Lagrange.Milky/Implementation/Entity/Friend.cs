@@ -13,6 +13,9 @@ public class Friend
     [JsonPropertyName("nickname")]
     public required string Nickname { get; init; }
 
+    [JsonPropertyName("sex")]
+    public required string Sex { get; init; }
+
     [JsonPropertyName("remark")]
     public required string Remark { get; init; }
 
