@@ -22,7 +22,7 @@
     <ItemGroup>
         <ProjectReference Include="..\Lagrange.Codec\Lagrange.Codec.csproj" />
         <ProjectReference Include="..\Lagrange.Core\Lagrange.Core.csproj" />
-        <ProjectReference Include="..\Lagrange.Milky.ApiHandler.Generator\Lagrange.Milky.ApiHandler.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <ProjectReference Include="..\Lagrange.Milky.Implementation.Api.Generator\Lagrange.Milky.Implementation.Api.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
     <ItemGroup>
