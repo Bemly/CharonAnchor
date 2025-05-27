@@ -140,7 +140,7 @@ public class MilkyHttpApiService(ILogger<MilkyHttpApiService> logger, IOptions<M
                 return;
             }
 
-            await SendWithLoggerAsync(context, result, LogLevel.Information, token);
+            await SendWithLoggerAsync(context, new ApiOkResult { Data = result }, LogLevel.Information, token);
         }
         catch (OperationCanceledException) { throw; }
         catch (Exception e)
