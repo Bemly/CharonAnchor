@@ -25,22 +25,27 @@ public partial class Converter
         PeerId = message.Contact.Uin,
         MessageSeq = message.Sequence,
         SenderId = message.Contact.Uin,
-        Time = message.Contact.Uin,
+        Time = new DateTimeOffset(message.Time).ToUnixTimeSeconds(),
         Segments = ToIncomingSegments(message.Entities),
         Friend = Friend((BotFriend)message.Contact),
         ClientSeq = message.ClientSequence,
     };
 
-    public GroupIncomingMessage ToGroupIncomingMessage(BotMessage message) => new()
+    public GroupIncomingMessage ToGroupIncomingMessage(BotMessage message)
     {
-        PeerId = message.Contact.Uin,
-        MessageSeq = message.Sequence,
-        SenderId = message.Contact.Uin,
-        Time = message.Contact.Uin,
-        Segments = ToIncomingSegments(message.Entities),
-        Group = Group(((BotGroupMember)message.Contact).Group),
-        GroupMember = GroupMember((BotGroupMember)message.Contact)
-    };
+        var groupMember = (BotGroupMember)message.Contact;
+        var group = groupMember.Group;
+        return new GroupIncomingMessage
+        {
+            PeerId = group.Uin,
+            MessageSeq = message.Sequence,
+            SenderId = message.Contact.Uin,
+            Time = new DateTimeOffset(message.Time).ToUnixTimeSeconds(),
+            Segments = ToIncomingSegments(message.Entities),
+            Group = Group(group),
+            GroupMember = GroupMember(groupMember)
+        };
+    }
 
     public TempIncomingMessage ToTempIncomingMessage(BotMessage message) => new()
     {
