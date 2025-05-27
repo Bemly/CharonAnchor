@@ -140,9 +140,10 @@ internal static class NTV2RichMedia
                 };
                 break;
             }
-            case VideoEntity video:
+            case VideoEntity:
             {
-                throw new NotImplementedException();
+                info.Type.Type = 2; // unable to determine video type, skip
+                break;
             }
         }
         
