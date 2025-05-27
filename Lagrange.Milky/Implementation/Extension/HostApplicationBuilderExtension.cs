@@ -23,15 +23,16 @@ public static partial class HostApplicationBuilderExtension
         {
             services.AddHostedService<MilkyHttpApiService>();
 
-            var configuration = builder.Configuration.GetSection("Milky").Get<MilkyConfiguration>();
+            var configuration = builder.Configuration.GetSection("Milky").Get<MilkyConfiguration>()
+                ?? throw new Exception("Milky cannot be null");
 
-            if (configuration?.EventPath != null || configuration?.WebHook != null)
+            if (configuration.UseWebSocket || configuration.WebHook != null)
             {
                 services.AddSingleton<EventService>();
                 services.AddHostedService(ServiceProviderServiceExtensions.GetRequiredService<EventService>);
             }
 
-            if (configuration?.EventPath != null) services.AddHostedService<MilkyWebSocketEventService>();
-            if (configuration?.WebHook != null) services.AddHostedService<MilkyWebHookEventService>();
+            if (configuration.UseWebSocket) services.AddHostedService<MilkyWebSocketEventService>();
+            if (configuration.WebHook != null) services.AddHostedService<MilkyWebHookEventService>();
         });
 }

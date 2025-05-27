@@ -6,9 +6,9 @@ public class MilkyConfiguration
 
     public ulong? Port { get; set; }
 
-    public string ApiPrefix { get; set; } = "/api";
+    public string Prefix { get; set; } = "/";
 
-    public string? EventPath { get; set; }
+    public bool UseWebSocket { get; set; } = true;
 
     public string? AccessToken { get; set; }
 

@@ -18,7 +18,7 @@ public class MilkyHttpApiService(ILogger<MilkyHttpApiService> logger, IOptions<M
 
     private readonly string _host = options.Value.Host ?? throw new Exception("Milky.Host cannot be null");
     private readonly ulong _port = options.Value.Port ?? throw new Exception("Milky.Port cannot be null");
-    private readonly string _prefix = options.Value.ApiPrefix ?? throw new Exception("Milky.ApiPrefix cannot be null");
+    private readonly string _prefix = $"{options.Value.Prefix}{(options.Value.Prefix.EndsWith('/') ? "" : "/")}api";
     private readonly string? _token = options.Value.AccessToken;
 
     private readonly IServiceProvider _services = services;

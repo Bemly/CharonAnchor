@@ -16,7 +16,7 @@ public class MilkyWebSocketEventService(ILogger<MilkyWebSocketEventService> logg
 
     private readonly string _host = options.Value.Host ?? throw new Exception("Milky.Host cannot be null");
     private readonly ulong _port = options.Value.Port ?? throw new Exception("Milky.Port cannot be null");
-    private readonly string _path = options.Value.EventPath ?? throw new Exception("Milky.EventPath cannot be null");
+    private readonly string _path = $"{options.Value.Prefix}{(options.Value.Prefix.EndsWith('/') ? "" : "/")}event";
     private readonly string? _token = options.Value.AccessToken;
 
     private readonly EventService _event = @event;
