@@ -80,9 +80,9 @@ public class MilkyApiHandlerGenerator : IIncrementalGenerator
         context.AddSource("Lagrange.Milky.Implementation.Extension.ServiceCollectionExtension.g.cs", $$"""
         namespace Lagrange.Milky.Implementation.Extension;
 
-        public static class ServiceCollectionExtension
+        public static partial class ServiceCollectionExtension
         {
-            public static TServiceCollection AddApiHandlers<TServiceCollection>(this TServiceCollection services) where TServiceCollection : global::Microsoft.Extensions.DependencyInjection.IServiceCollection
+            public static partial TServiceCollection AddApiHandlers<TServiceCollection>(this TServiceCollection services) where TServiceCollection : global::Microsoft.Extensions.DependencyInjection.IServiceCollection
             {
         {{string.Join("\n", infos.Select(info => $"        global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddKeyedSingleton<global::Lagrange.Milky.Implementation.Api.IApiHandler, {info.HandlerTypeFullName}>(services, \"{info.ApiName}\");"))}}
 
