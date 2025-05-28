@@ -133,12 +133,8 @@ public partial class Converter
     public async Task<IMessageEntity> ToMessageEntityAsync(IOutgoingSegment segment, CancellationToken token) => segment switch
     {
         OutgoingTextSegment text => new TextEntity(text.Data.Text),
-        // TODO: Core not implemented
-        // OutgoingMentionSegment mention => new MentionEntity(mention.Data.UserId, string.Empty),
-        OutgoingMentionSegment => throw new NotImplementedException(),
-        // TODO: Core not implemented
-        // OutgoingMentionAllSegment => new MentionEntity(0, string.Empty),
-        OutgoingMentionAllSegment => throw new NotImplementedException(),
+        OutgoingMentionSegment mention => new MentionEntity(mention.Data.UserId, null),
+        OutgoingMentionAllSegment => new MentionEntity(0, null),
         // TODO: Core not implemented
         OutgoingFaceSegment => throw new NotImplementedException(),
         // TODO: Core not implemented
