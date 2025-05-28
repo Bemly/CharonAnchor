@@ -8,9 +8,9 @@ public static class UriUtility
     {
         return uri[..uri.IndexOf("://", StringComparison.Ordinal)] switch
         {
-            "file" => new MemoryStream(await File.ReadAllBytesAsync(uri[8..], token)),
-            "http" or "https" => await HttpUriToMemoryStreamAsync(uri, token),
             "base64" => new MemoryStream(Convert.FromBase64String(uri[9..])),
+            "file" => new MemoryStream(await File.ReadAllBytesAsync(new Uri(uri).LocalPath, token)),
+            "http" or "https" => await HttpUriToMemoryStreamAsync(uri, token),
             _ => throw new NotSupportedException(),
         };
     }
