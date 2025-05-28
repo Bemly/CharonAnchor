@@ -67,8 +67,8 @@ public static partial class MilkyJsonUtility
         return JsonSerializer.SerializeToUtf8Bytes(value, type, MilkyJsonContext.Default);
     }
 
-    public static ValueTask<object?> DeserializeAsync(Type type, Stream json, CancellationToken token)
+    public static object? Deserialize(Type type, string json)
     {
-        return JsonSerializer.DeserializeAsync(json, type, MilkyJsonContext.Default, token);
+        return JsonSerializer.Deserialize(json, type, MilkyJsonContext.Default);
     }
 }

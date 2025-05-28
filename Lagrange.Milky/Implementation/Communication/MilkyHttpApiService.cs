@@ -83,12 +83,10 @@ public class MilkyHttpApiService(ILogger<MilkyHttpApiService> logger, IOptions<M
             object? parameter;
             try
             {
-                // TODO: _logger.LogReceive(identifier, request.RemoteEndPoint, );
-                parameter = await MilkyJsonUtility.DeserializeAsync(
-                    handler.ParameterType,
-                    request.InputStream,
-                    token
-                );
+                var reader = new StreamReader(request.InputStream);
+                string body = await reader.ReadToEndAsync(token);
+                _logger.LogReceive(identifier, request.RemoteEndPoint, body);
+                parameter = MilkyJsonUtility.Deserialize(handler.ParameterType, body);
                 if (parameter == null) throw new NullReferenceException();
             }
             catch (Exception e)
@@ -222,11 +220,7 @@ public static partial class MilkyApiServiceLoggerExtension
     public static partial void LogHttpContext(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote, string method, string? path);
 
     [LoggerMessage(EventId = 2, Level = LogLevel.Information, Message = "{identifier} {remote} -->> {body}", SkipEnabledCheck = true)]
-    private static partial void LogReceive(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote, string body);
-    public static void LogReceive(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote, Span<byte> bytes)
-    {
-        if (logger.IsEnabled(LogLevel.Information)) logger.LogReceive(identifier, remote, Encoding.UTF8.GetString(bytes));
-    }
+    public static partial void LogReceive(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote, string body);
 
     [LoggerMessage(EventId = 3, Message = "{identifier} {remote} <<-- {status}")]
     public static partial void LogSend(this ILogger<MilkyHttpApiService> logger, LogLevel level, Guid identifier, IPEndPoint remote, HttpStatusCode status, Exception? e);
