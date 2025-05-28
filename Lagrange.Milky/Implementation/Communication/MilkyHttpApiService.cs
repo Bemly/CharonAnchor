@@ -84,7 +84,6 @@ public class MilkyHttpApiService(ILogger<MilkyHttpApiService> logger, IOptions<M
             try
             {
                 // TODO: _logger.LogReceive(identifier, request.RemoteEndPoint, );
-                request.InputStream.Seek(0, SeekOrigin.Begin);
                 parameter = await MilkyJsonUtility.DeserializeAsync(
                     handler.ParameterType,
                     request.InputStream,
