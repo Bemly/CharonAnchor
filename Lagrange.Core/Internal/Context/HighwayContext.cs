@@ -83,13 +83,6 @@ internal class HighwayContext : IClientListener, IDisposable
             _ticket = (resp.SigSession, DateTime.Now);
             _url = resp.HighwayUrls[1][0];
         }
-
-        var client = _clients.Get();
-        if (client.Connected) client.Disconnect();
-        
-        string url = _url.Split(":")[0];
-        ushort port = ushort.Parse(_url.Split(":")[1]);
-        if (!await client.Connect(url, port)) return false;
         
         var tasks = new List<Task<bool>>();
         bool result = true;
@@ -106,6 +99,13 @@ internal class HighwayContext : IClientListener, IDisposable
             ulong currentBlockOffset = offset;
             var task = Task.Run(async () => // closure
             {
+                var client = _clients.Get();
+                if (client.Connected) client.Disconnect();
+        
+                string url = _url.Split(":")[0];
+                ushort port = ushort.Parse(_url.Split(":")[1]);
+                if (!await client.Connect(url, port)) return false;
+                
                 var head = new DataHighwayHead
                 {
                     Version = 1,
@@ -140,26 +140,36 @@ internal class HighwayContext : IClientListener, IDisposable
                     MsgLoginSigHead = loginHead
                 };
 
-                var headProto = ProtoHelper.Serialize(highwayHead);
-                
-                var tcs = new HighwayValueTaskSource();
-                _tasks[sequence] = tcs;
+                try
+                {
+                    var headProto = ProtoHelper.Serialize(highwayHead);
 
-                var length = new byte[8];
-                BinaryPrimitives.WriteUInt32BigEndian(length.AsSpan(0), (uint)headProto.Length);
-                BinaryPrimitives.WriteUInt32BigEndian(length.AsSpan(4), (uint)payload);
-                
-                await client.Send(new ReadOnlyMemory<byte>([0x28]), SocketFlags.Partial);
-                await client.Send(length, SocketFlags.Partial);
-                await client.Send(headProto, SocketFlags.Partial);
-                await client.Send(buffer.AsMemory(0, (int)payload), SocketFlags.Partial);
-                await client.Send(new ReadOnlyMemory<byte>([0x29]));
+                    var tcs = new HighwayValueTaskSource();
+                    _tasks[sequence] = tcs;
 
-                var (respHead, resp) = await new ValueTask<(RespDataHighwayHead, byte[])>(tcs, 0);
+                    var length = new byte[8];
+                    BinaryPrimitives.WriteUInt32BigEndian(length.AsSpan(0), (uint)headProto.Length);
+                    BinaryPrimitives.WriteUInt32BigEndian(length.AsSpan(4), (uint)payload);
 
-                _context.LogDebug(Tag, "Highway Block Result: {0} | {1} | {2}", respHead.ErrorCode, respHead.MsgSegHead?.RetCode, Convert.ToHexString(resp));
-                ArrayPool<byte>.Shared.Return(buffer);
-                return respHead.ErrorCode == 0;
+                    await client.Send(new ReadOnlyMemory<byte>([0x28]), SocketFlags.Partial);
+                    await client.Send(length, SocketFlags.Partial);
+                    await client.Send(headProto, SocketFlags.Partial);
+                    await client.Send(buffer.AsMemory(0, (int)payload), SocketFlags.Partial);
+                    await client.Send(new ReadOnlyMemory<byte>([0x29]));
+
+                    var (respHead, resp) = await new ValueTask<(RespDataHighwayHead, byte[])>(tcs, 0);
+
+                    _context.LogDebug(Tag, "Highway Block Result: {0} | {1} | {2}", respHead.ErrorCode,
+                        respHead.MsgSegHead?.RetCode, Convert.ToHexString(resp));
+                    return respHead.ErrorCode == 0;
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(buffer);
+                    
+                    client.Disconnect();
+                    _clients.Return(client);
+                }
             });
 
 
@@ -180,9 +190,7 @@ internal class HighwayContext : IClientListener, IDisposable
             foreach (bool t in finalBlocks) result &= t;
             tasks.Clear();
         }
-
-        _clients.Return(client);
-
+        
         return result;
     }
 
