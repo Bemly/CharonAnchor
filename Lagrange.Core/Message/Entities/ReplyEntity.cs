@@ -40,40 +40,33 @@ public class ReplyEntity : IMessageEntity
     {
         if (Source == null) return [];
 
-        return
-        [
-            new Elem
+        var srcMsg = new Elem
+        {
+            SrcMsg = new SourceMsg
             {
-                Text = new Text
+                OrigSeqs = [(uint)SrcSequence],
+                SenderUin = 0,
+                Time = (uint)DateTimeOffset.Now.ToUnixTimeSeconds(),
+                Flag = 0, // intentional, force the client to fetch the original message
+                Elems = Elems.Select(ProtoHelper.Serialize).ToList(),
+                PbReserve = ProtoHelper.Serialize(new SourceMsgResvAttr
                 {
-                    TextMsg = $"@{Source.Nickname}",
-                    PbReserve = ProtoHelper.Serialize(new TextResvAttr
-                    {
-                        AtType = 2u,
-                        AtMemberUin = 0,
-                        AtMemberTinyid = 0,
-                        AtMemberUid = Source.Uid
-                    })
-                }
-            },
-            new Elem
-            {
-                SrcMsg = new SourceMsg
-                {
-                    OrigSeqs = [(uint)SrcSequence],
-                    SenderUin = 0,
-                    Time = (uint)DateTimeOffset.Now.ToUnixTimeSeconds(),
-                    Flag = 0, // intentional, force the client to fetch the original message
-                    Elems = Elems.Select(ProtoHelper.Serialize).ToList(),
-                    PbReserve = ProtoHelper.Serialize(new SourceMsgResvAttr
-                    {
-                        OriMsgType = 2,
-                        SourceMsgId = SrcUid,
-                        SenderUid = Source.Uid
-                    }),
-                }
+                    OriMsgType = 2, SourceMsgId = SrcUid, SenderUid = Source.Uid
+                }),
             }
-        ];
+        };
+
+        return Source is not BotGroupMember ? [srcMsg] : [srcMsg, new Elem
+        {
+            Text = new Text
+            {
+                TextMsg = $"@{Source.Nickname}",
+                PbReserve = ProtoHelper.Serialize(new TextResvAttr
+                {
+                    AtType = 2u, AtMemberUin = 0, AtMemberTinyid = 0, AtMemberUid = Source.Uid
+                })
+            }
+        }];
     }
 
     IMessageEntity? IMessageEntity.Parse(List<Elem> elements, Elem target)
