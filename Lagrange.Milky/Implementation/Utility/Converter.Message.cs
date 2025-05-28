@@ -106,8 +106,13 @@ public partial class Converter
                 Duration = (int)record.RecordLength,
             }
         },
-        // TODO: Core not implemented
-        ReplyEntity => throw new NotImplementedException(),
+        ReplyEntity reply => new IncomingReplySegment
+        {
+            Data = new IncomingReplyData
+            {
+                MessageSeq = reply.SrcSequence
+            }
+        },
         TextEntity text => new IncomingTextSegment { Data = new TextData { Text = text.Text } },
         VideoEntity video => new IncomingVideoSegment
         {
@@ -137,7 +142,7 @@ public partial class Converter
         OutgoingMentionAllSegment => new MentionEntity(0, null),
         // TODO: Core not implemented
         OutgoingFaceSegment => throw new NotImplementedException(),
-        // TODO: Core not implemented
+        // TODO: Core not implement fetch history message
         OutgoingReplySegment => throw new NotImplementedException(),
         OutgoingImageSegment image => new ImageEntity(
             await UriUtility.ToMemoryStreamAsync(image.Data.Uri, token),
