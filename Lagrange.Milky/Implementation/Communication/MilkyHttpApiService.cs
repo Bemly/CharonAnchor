@@ -83,6 +83,8 @@ public class MilkyHttpApiService(ILogger<MilkyHttpApiService> logger, IOptions<M
             object? parameter;
             try
             {
+                // TODO: _logger.LogReceive(identifier, request.RemoteEndPoint, );
+                request.InputStream.Seek(0, SeekOrigin.Begin);
                 parameter = await MilkyJsonUtility.DeserializeAsync(
                     handler.ParameterType,
                     request.InputStream,
@@ -220,10 +222,17 @@ public static partial class MilkyApiServiceLoggerExtension
     [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "{identifier} {remote} -->> {method} {path}")]
     public static partial void LogHttpContext(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote, string method, string? path);
 
-    [LoggerMessage(EventId = 2, Message = "{identifier} {remote} <<-- {status}")]
+    [LoggerMessage(EventId = 2, Level = LogLevel.Information, Message = "{identifier} {remote} -->> {body}", SkipEnabledCheck = true)]
+    private static partial void LogReceive(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote, string body);
+    public static void LogReceive(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote, Span<byte> bytes)
+    {
+        if (logger.IsEnabled(LogLevel.Information)) logger.LogReceive(identifier, remote, Encoding.UTF8.GetString(bytes));
+    }
+
+    [LoggerMessage(EventId = 3, Message = "{identifier} {remote} <<-- {status}")]
     public static partial void LogSend(this ILogger<MilkyHttpApiService> logger, LogLevel level, Guid identifier, IPEndPoint remote, HttpStatusCode status, Exception? e);
 
-    [LoggerMessage(EventId = 3, Message = "{identifier} {remote} <<-- {body}", SkipEnabledCheck = true)]
+    [LoggerMessage(EventId = 4, Message = "{identifier} {remote} <<-- {body}", SkipEnabledCheck = true)]
     private static partial void LogSend(this ILogger<MilkyHttpApiService> logger, LogLevel level, Guid identifier, IPEndPoint remote, string body, Exception? e);
     public static void LogSend(this ILogger<MilkyHttpApiService> logger, LogLevel level, Guid identifier, IPEndPoint remote, byte[] body, Exception? e)
     {

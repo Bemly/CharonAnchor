@@ -5,7 +5,7 @@ namespace Lagrange.Milky.Implementation.Api;
 public class ApiFailedResult
 {
     [JsonPropertyName("status")]
-    public static string Status => "failed";
+    public string Status => "failed";
 
     [JsonPropertyName("retcode")]
     public required long Retcode { get; init; }
