@@ -1,11 +1,10 @@
-
 using System.Text.Json.Serialization;
 using Lagrange.Core;
 using Lagrange.Milky.Implementation.Api.Exception;
 
 namespace Lagrange.Milky.Implementation.Api.Handler.System;
 
-[Api("/get_login_info")]
+[Api("get_login_info")]
 public class GetLoginInfoHandler(BotContext bot) : IApiHandler<object, GetLoginInfoResult>
 {
     private readonly BotContext _bot = bot;
