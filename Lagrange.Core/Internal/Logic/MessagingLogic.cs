@@ -9,27 +9,12 @@ namespace Lagrange.Core.Internal.Logic;
 internal class MessagingLogic(BotContext context) : ILogic
 {
     private readonly MessagePacker _packer = new(context);
-    
+
     public Task<BotMessage> Parse(CommonMessage msg) => _packer.Parse(msg);
-    
+
     public Task<CommonMessage> BuildFake(BotMessage msg) => _packer.BuildFake(msg);
-    
-    public async Task<BotMessage> SendGroupMessage(MessageChain chain, long groupUin)
-    {
-        var (group, self) = await context.CacheContext.ResolveMember(groupUin, context.BotUin) ?? throw new InvalidTargetException(context.BotUin, groupUin);
-        var message = await BuildMessage(chain, self, group);
-        var result = await context.EventContext.SendEvent<SendMessageEventResp>(new SendMessageEventReq(message));
-        
-        if (result == null) throw new InvalidOperationException();
-        if (result.Result != 0) throw new OperationException(result.Result);
-        
-        message.Sequence = result.Sequence;
-        message.Time = DateTimeOffset.FromUnixTimeSeconds(result.SendTime).DateTime;
-        
-        return message;
-    }
-    
-    public async Task<BotMessage> SendFriendMessage(MessageChain chain, long friendUin)
+
+    public async Task<BotMessage> SendFriendMessage(long friendUin, MessageChain chain)
     {
         var friend = await context.CacheContext.ResolveFriend(friendUin) ?? throw new InvalidTargetException(friendUin);
         var self = await context.CacheContext.ResolveFriend(context.BotUin) ?? throw new InvalidTargetException(context.BotUin);
@@ -38,10 +23,25 @@ internal class MessagingLogic(BotContext context) : ILogic
 
         if (result == null) throw new InvalidOperationException();
         if (result.Result != 0) throw new OperationException(result.Result);
-        
+
         message.Sequence = result.Sequence;
         message.Time = DateTimeOffset.FromUnixTimeSeconds(result.SendTime).DateTime;
-        
+
+        return message;
+    }
+
+    public async Task<BotMessage> SendGroupMessage(long groupUin, MessageChain chain)
+    {
+        var (group, self) = await context.CacheContext.ResolveMember(groupUin, context.BotUin) ?? throw new InvalidTargetException(context.BotUin, groupUin);
+        var message = await BuildMessage(chain, self, group);
+        var result = await context.EventContext.SendEvent<SendMessageEventResp>(new SendMessageEventReq(message));
+
+        if (result == null) throw new InvalidOperationException();
+        if (result.Result != 0) throw new OperationException(result.Result);
+
+        message.Sequence = result.Sequence;
+        message.Time = DateTimeOffset.FromUnixTimeSeconds(result.SendTime).DateTime;
+
         return message;
     }
 
@@ -53,12 +53,12 @@ internal class MessagingLogic(BotContext context) : ILogic
             Random = random,
             MessageId = (0x10000000ul << 32) | random
         };
-        
+
         foreach (var entity in chain)
         {
             await entity.Preprocess(context, message);
         }
-        
+
         return message;
     }
 }
