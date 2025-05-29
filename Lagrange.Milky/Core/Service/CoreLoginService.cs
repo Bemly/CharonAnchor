@@ -89,7 +89,7 @@ public class CoreLoginService(ILogger<CoreLoginService> logger, IOptions<CoreCon
         {
             TransEmpState.Confirmed or
             TransEmpState.WaitingForScan or
-            TransEmpState.WaitingForConfirm => MSLogLevel.Information,
+            TransEmpState.WaitingForConfirm => MSLogLevel.Debug,
             _ => MSLogLevel.Error,
         };
         _logger.LogQrCodeState(level, @event.State);

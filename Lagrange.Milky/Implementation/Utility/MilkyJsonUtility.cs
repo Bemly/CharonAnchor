@@ -69,7 +69,7 @@ public static partial class MilkyJsonUtility
         return JsonSerializer.SerializeToUtf8Bytes(value, type, MilkyJsonContext.Default);
     }
 
-    public static object? Deserialize(Type type, string json)
+    public static object? Deserialize(Type type, byte[] json)
     {
         return JsonSerializer.Deserialize(json, type, MilkyJsonContext.Default);
     }

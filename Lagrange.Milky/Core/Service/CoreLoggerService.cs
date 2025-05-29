@@ -81,6 +81,6 @@ public partial class CoreLoggerService(ILogger<CoreLoggerService> logger, IOptio
 
 public static partial class CoreLoggerServiceLoggerExtension
 {
-    [LoggerMessage(EventId = 0, Level = MSLogLevel.Information, Message = "Core minimum log level reloaded to {level}")]
+    [LoggerMessage(EventId = 0, Level = MSLogLevel.Debug, Message = "Core minimum log level reloaded to {level}")]
     public static partial void LogCoreMinimumLogLevelReloaded(this ILogger<CoreLoggerService> logger, CoreLogLevel level);
 }

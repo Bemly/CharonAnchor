@@ -1,4 +1,3 @@
-using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using Lagrange.Milky.Implementation.Configuration;
@@ -32,7 +31,7 @@ public class MilkyWebHookEventService(ILogger<MilkyWebHookEventService> logger, 
     {
         try
         {
-            _logger.LogSend(_url, body);
+            _logger.LogSend(_url, body.Span);
 
             using HttpRequestMessage request = new();
             request.Method = HttpMethod.Post;
@@ -43,7 +42,7 @@ public class MilkyWebHookEventService(ILogger<MilkyWebHookEventService> logger, 
 
             using var response = await _client.SendAsync(request);
 
-            if (response.StatusCode != HttpStatusCode.NoContent)
+            if (!response.IsSuccessStatusCode)
             {
                 throw new Exception($"Unexpected http status code({response.StatusCode})");
             }
@@ -67,11 +66,11 @@ public static partial class MilkyWebHookEventServiceLoggerExtension
     [LoggerMessage(EventId = 0, Level = LogLevel.Information, Message = "WebHook service running; delivering to {url}")]
     public static partial void LogServiceRunning(this ILogger<MilkyWebHookEventService> logger, string url);
 
-    [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "{url} <<-- {body}", SkipEnabledCheck = true)]
+    [LoggerMessage(EventId = 1, Level = LogLevel.Debug, Message = "{url} <<-- {body}", SkipEnabledCheck = true)]
     private static partial void LogSend(this ILogger<MilkyWebHookEventService> logger, string url, string body);
-    public static void LogSend(this ILogger<MilkyWebHookEventService> logger, string url, Memory<byte> body)
+    public static void LogSend(this ILogger<MilkyWebHookEventService> logger, string url, Span<byte> body)
     {
-        if (logger.IsEnabled(LogLevel.Information)) logger.LogSend(url, Encoding.UTF8.GetString(body.Span));
+        if (logger.IsEnabled(LogLevel.Information)) logger.LogSend(url, Encoding.UTF8.GetString(body));
     }
 
 

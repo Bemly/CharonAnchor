@@ -43,11 +43,19 @@ public class MilkyWebSocketEventService(ILogger<MilkyWebSocketEventService> logg
 
     private async Task GetHttpContextLoopAsync(CancellationToken token)
     {
-        while (true)
+        try
         {
-            _ = HandleHttpContextAsync(await _listener.GetContextAsync().WaitAsync(token), token);
+            while (true)
+            {
+                _ = HandleHttpContextAsync(await _listener.GetContextAsync().WaitAsync(token), token);
 
-            token.ThrowIfCancellationRequested();
+                token.ThrowIfCancellationRequested();
+            }
+        }
+        catch (Exception e)
+        {
+            _logger.LogGetHttpContextException(e);
+            throw;
         }
     }
 
@@ -55,44 +63,30 @@ public class MilkyWebSocketEventService(ILogger<MilkyWebSocketEventService> logg
     {
         var request = httpContext.Request;
         var identifier = request.RequestTraceIdentifier;
+        var remote = request.RemoteEndPoint;
+        string method = request.HttpMethod;
+        string? rawUrl = request.RawUrl;
 
         try
         {
-            _logger.LogHttpContext(identifier, request.RemoteEndPoint, request.HttpMethod, request.RawUrl);
+            _logger.LogHttpContext(identifier, remote, method, rawUrl);
 
-            if (request.Url?.LocalPath != _path)
-            {
-                await SendWithLoggerAsync(httpContext, HttpStatusCode.NotFound, LogLevel.Warning, token);
-            }
+            if (!await ValidateHttpContextAsync(httpContext, token)) return;
 
-            if (!request.HttpMethod.Equals("GET", StringComparison.OrdinalIgnoreCase))
-            {
-                await SendWithLoggerAsync(httpContext, HttpStatusCode.MethodNotAllowed, LogLevel.Warning, token);
-                return;
-            }
+            var connection = await GetConnectionContextAsync(httpContext, token);
+            if (connection == null) return;
 
-            if (!ValidateApiAccessToken(httpContext))
-            {
-                await SendWithLoggerAsync(httpContext, HttpStatusCode.Unauthorized, LogLevel.Warning, token);
-                return;
-            }
-
-            if (!request.IsWebSocketRequest)
-            {
-                await SendWithLoggerAsync(httpContext, HttpStatusCode.BadRequest, LogLevel.Warning, token);
-                return;
-            }
-
-            var wsContext = await httpContext.AcceptWebSocketAsync(null).WaitAsync(token);
-            var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
-            var connection = new ConnectionContext { HttpContext = httpContext, WsContext = wsContext, Cts = cts };
-            _connections.TryAdd(connection, null);
-
-            _ = WaitConnectionCloseLoopAsync(connection, cts.Token);
+            _ = WaitConnectionCloseLoopAsync(connection, connection.Cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            await SendWithLoggerAsync(httpContext, HttpStatusCode.InternalServerError, token);
+            throw;
         }
         catch (Exception e)
         {
-            await SendWithLoggerAsync(httpContext, HttpStatusCode.InternalServerError, LogLevel.Error, e, token);
+            _logger.LogHandleHttpContextException(identifier, remote, e);
+            await SendWithLoggerAsync(httpContext, HttpStatusCode.InternalServerError, token);
         }
     }
 
@@ -159,7 +153,9 @@ public class MilkyWebSocketEventService(ILogger<MilkyWebSocketEventService> logg
 
     private async void HandleEventAsync(Memory<byte> payload)
     {
-        _logger.LogSend(payload);
+        if (_connections.IsEmpty) return;
+
+        _logger.LogSend(payload.Span);
         foreach (var connection in _connections.Keys)
         {
             var identifier = connection.HttpContext.Request.RequestTraceIdentifier;
@@ -198,34 +194,94 @@ public class MilkyWebSocketEventService(ILogger<MilkyWebSocketEventService> logg
         _listener.Stop();
     }
 
-    private bool ValidateApiAccessToken(HttpListenerContext context)
+    private async Task<bool> ValidateHttpContextAsync(HttpListenerContext httpContext, CancellationToken token)
+    {
+        var request = httpContext.Request;
+        var identifier = request.RequestTraceIdentifier;
+        var remote = request.RemoteEndPoint;
+
+        if (request.Url?.LocalPath != _path)
+        {
+            await SendWithLoggerAsync(httpContext, HttpStatusCode.NotFound, token);
+        }
+
+        if (!httpContext.Request.HttpMethod.Equals("GET", StringComparison.OrdinalIgnoreCase))
+        {
+            await SendWithLoggerAsync(httpContext, HttpStatusCode.MethodNotAllowed, token);
+            return false;
+        }
+
+        if (!ValidateApiAccessToken(httpContext))
+        {
+            _logger.LogValidateAccessTokenFailed(identifier, remote);
+            await SendWithLoggerAsync(httpContext, HttpStatusCode.Unauthorized, token);
+            return false;
+        }
+
+        if (!request.IsWebSocketRequest)
+        {
+            await SendWithLoggerAsync(httpContext, HttpStatusCode.BadRequest, token);
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool ValidateApiAccessToken(HttpListenerContext httpContext)
     {
         if (_token == null) return true;
 
-        string? authorization = context.Request.QueryString["access_token"];
+        string? authorization = httpContext.Request.QueryString["access_token"];
         if (authorization == null) return false;
 
         return authorization == _token;
     }
 
-    private Task SendWithLoggerAsync(HttpListenerContext context, HttpStatusCode status, LogLevel level, CancellationToken token)
+    private async Task<ConnectionContext?> GetConnectionContextAsync(HttpListenerContext httpContext, CancellationToken token)
     {
-        return SendWithLoggerAsync(context, status, level, null, token);
-    }
-    private async Task SendWithLoggerAsync(HttpListenerContext context, HttpStatusCode status, LogLevel level, Exception? e, CancellationToken token)
-    {
+        var request = httpContext.Request;
+        var identifier = request.RequestTraceIdentifier;
+        var remote = request.RemoteEndPoint;
+
         try
         {
-            context.Response.StatusCode = (int)status;
-            await context.Response.OutputStream.WriteAsync(Encoding.UTF8.GetBytes($"{(int)status} {status}"), token);
-            context.Response.Close();
-
-            _logger.LogSend(level, context.Request.RequestTraceIdentifier, context.Request.RemoteEndPoint, status, e);
+            var wsContext = await httpContext.AcceptWebSocketAsync(null).WaitAsync(token);
+            var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
+            var connection = new ConnectionContext { HttpContext = httpContext, WsContext = wsContext, Cts = cts };
+            _connections.TryAdd(connection, null);
+            return connection;
         }
-        catch (Exception ex)
+        catch (OperationCanceledException) { throw; }
+        catch (Exception e)
         {
-            Exception exc = e == null ? ex : new AggregateException(e, ex);
-            _logger.LogSendException(context.Request.RequestTraceIdentifier, context.Request.RemoteEndPoint, exc);
+            _logger.LogUpgradeWebSocketException(identifier, remote, e);
+            await SendWithLoggerAsync(httpContext, HttpStatusCode.InternalServerError, token);
+        }
+
+        return null;
+    }
+
+    private async Task SendWithLoggerAsync(HttpListenerContext context, HttpStatusCode status, CancellationToken token)
+    {
+        var request = context.Request;
+        var identifier = request.RequestTraceIdentifier;
+        var remote = request.RemoteEndPoint;
+
+        var response = context.Response;
+        var output = response.OutputStream;
+
+        try
+        {
+            int code = (int)status;
+
+            response.StatusCode = code;
+            await output.WriteAsync(Encoding.UTF8.GetBytes($"{code} {status}"), token);
+
+            _logger.LogSend(identifier, remote, status);
+        }
+        catch (Exception e)
+        {
+            _logger.LogSendException(identifier, remote, e);
         }
     }
 
@@ -246,29 +302,41 @@ public static partial class MilkyWebSocketEventServiceLoggerExtension
     [LoggerMessage(EventId = 0, Level = LogLevel.Information, Message = "Event websocket server is running on {prefix}")]
     public static partial void LogServerRunning(this ILogger<MilkyWebSocketEventService> logger, string prefix);
 
-    [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "{identifier} {remote} -->> {method} {path}")]
+    [LoggerMessage(EventId = 1, Level = LogLevel.Debug, Message = "{identifier} {remote} -->> {method} {path}")]
     public static partial void LogHttpContext(this ILogger<MilkyWebSocketEventService> logger, Guid identifier, IPEndPoint remote, string method, string? path);
 
-    [LoggerMessage(EventId = 2, Message = "{identifier} {remote} <<-- {status}")]
-    public static partial void LogSend(this ILogger<MilkyWebSocketEventService> logger, LogLevel level, Guid identifier, IPEndPoint remote, HttpStatusCode status, Exception? e);
+    [LoggerMessage(EventId = 2, Level = LogLevel.Debug, Message = "{identifier} {remote} <<-- {status}")]
+    public static partial void LogSend(this ILogger<MilkyWebSocketEventService> logger, Guid identifier, IPEndPoint remote, HttpStatusCode status);
 
-    [LoggerMessage(EventId = 3, Level = LogLevel.Information, Message = "{identifier} {remote} <//> WebSocket close")]
-    public static partial void LogWebSocketClosed(this ILogger<MilkyWebSocketEventService> logger, Guid identifier, IPEndPoint remote);
-
-    [LoggerMessage(EventId = 4, Level = LogLevel.Information, Message = "ALL WEBSOCKET <<-- {payload}", SkipEnabledCheck = true)]
+    [LoggerMessage(EventId = 3, Level = LogLevel.Debug, Message = "WebSockets <<-- {payload}")]
     private static partial void LogSend(this ILogger<MilkyWebSocketEventService> logger, string payload);
-    public static void LogSend(this ILogger<MilkyWebSocketEventService> logger, Memory<byte> body)
+    public static void LogSend(this ILogger<MilkyWebSocketEventService> logger, Span<byte> payload)
     {
-        if (logger.IsEnabled(LogLevel.Information)) logger.LogSend(Encoding.UTF8.GetString(body.Span));
+        if (logger.IsEnabled(LogLevel.Debug)) logger.LogSend(Encoding.UTF8.GetString(payload));
     }
 
+    [LoggerMessage(EventId = 4, Level = LogLevel.Debug, Message = "{identifier} {remote} <//> WebSocket closed")]
+    public static partial void LogWebSocketClosed(this ILogger<MilkyWebSocketEventService> logger, Guid identifier, IPEndPoint remote);
 
-    [LoggerMessage(EventId = 998, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> WebSocket close exception")]
+
+    [LoggerMessage(EventId = 995, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> WebSocket close failed")]
     public static partial void LogWebSocketCloseException(this ILogger<MilkyWebSocketEventService> logger, Guid identifier, IPEndPoint remote, Exception e);
 
-    [LoggerMessage(EventId = 998, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> Wait websocket close exception")]
+    [LoggerMessage(EventId = 995, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> Wait websocket close failed")]
     public static partial void LogWaitWebSocketCloseException(this ILogger<MilkyWebSocketEventService> logger, Guid identifier, IPEndPoint remote, Exception e);
 
-    [LoggerMessage(EventId = 999, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> Send exception")]
+    [LoggerMessage(EventId = 995, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> Send failed")]
     public static partial void LogSendException(this ILogger<MilkyWebSocketEventService> logger, Guid identifier, IPEndPoint remote, Exception e);
+
+    [LoggerMessage(EventId = 996, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> Handle http context failed")]
+    public static partial void LogHandleHttpContextException(this ILogger<MilkyWebSocketEventService> logger, Guid identifier, IPEndPoint remote, Exception e);
+
+    [LoggerMessage(EventId = 997, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> Upgrade websocket failed")]
+    public static partial void LogUpgradeWebSocketException(this ILogger<MilkyWebSocketEventService> logger, Guid identifier, IPEndPoint remote, Exception e);
+
+    [LoggerMessage(EventId = 998, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> Validate access token failed")]
+    public static partial void LogValidateAccessTokenFailed(this ILogger<MilkyWebSocketEventService> logger, Guid identifier, IPEndPoint remote);
+
+    [LoggerMessage(EventId = 999, Level = LogLevel.Error, Message = "Get http context failed")]
+    public static partial void LogGetHttpContextException(this ILogger<MilkyWebSocketEventService> logger, Exception e);
 }

@@ -42,11 +42,20 @@ public class MilkyHttpApiService(ILogger<MilkyHttpApiService> logger, IOptions<M
 
     private async Task GetHttpContextLoopAsync(CancellationToken token)
     {
-        while (true)
+        try
         {
-            _ = HandleHttpContextAsync(await _listener.GetContextAsync().WaitAsync(token), token);
+            while (true)
+            {
+                _ = HandleHttpContextAsync(await _listener.GetContextAsync().WaitAsync(token), token);
 
-            token.ThrowIfCancellationRequested();
+                token.ThrowIfCancellationRequested();
+            }
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception e)
+        {
+            _logger.LogGetHttpContextException(e);
+            throw;
         }
     }
 
@@ -54,97 +63,33 @@ public class MilkyHttpApiService(ILogger<MilkyHttpApiService> logger, IOptions<M
     {
         var request = context.Request;
         var identifier = request.RequestTraceIdentifier;
+        var remote = request.RemoteEndPoint;
+        var method = request.HttpMethod;
+        var rawUrl = request.RawUrl;
 
         try
         {
-            _logger.LogHttpContext(identifier, request.RemoteEndPoint, request.HttpMethod, request.RawUrl);
+            _logger.LogReceive(identifier, remote, method, rawUrl);
 
-            if (!request.HttpMethod.Equals("POST", StringComparison.OrdinalIgnoreCase))
-            {
-                await SendWithLoggerAsync(context, HttpStatusCode.MethodNotAllowed, LogLevel.Warning, token);
-                return;
-            }
+            if (!await ValidateHttpContextAsync(context, token)) return;
 
-            if (!ValidateApiAccessToken(context))
-            {
-                await SendWithLoggerAsync(context, HttpStatusCode.Unauthorized, LogLevel.Warning, token);
-                return;
-            }
+            var handler = await GetApiHandlerAsync(context, token);
+            if (handler == null) return;
 
-            string? path = request.Url?.LocalPath;
-            string? api = path?.Length > _prefix.Length + 1 ? path[(_prefix.Length + 1)..] : null;
-            var handler = _services.GetKeyedService<IApiHandler>(api);
-            if (handler == null)
-            {
-                await SendWithLoggerAsync(context, HttpStatusCode.NotFound, LogLevel.Warning, token);
-                return;
-            }
+            var parameter = await GetParameterAsync(context, handler.ParameterType, token);
+            if (parameter == null) return;
 
-            object? parameter;
-            try
-            {
-                var reader = new StreamReader(request.InputStream);
-                string body = await reader.ReadToEndAsync(token);
-                _logger.LogReceive(identifier, request.RemoteEndPoint, body);
-                parameter = MilkyJsonUtility.Deserialize(handler.ParameterType, body);
-                if (parameter == null) throw new NullReferenceException();
-            }
-            catch (Exception e)
-            {
-                await SendWithLoggerAsync(
-                    context,
-                    new ApiFailedResult { Retcode = -400, Message = "parameter deserialize failed" },
-                    LogLevel.Warning,
-                    e,
-                    token
-                );
-                return;
-            }
+            var result = await GetResultAsync(context, handler, parameter, token);
+            if (result == null) return;
 
-            object result;
-            try
-            {
-                result = await handler.HandleAsync(parameter, token);
-            }
-            catch (ApiException e)
-            {
-                await SendWithLoggerAsync(
-                    context,
-                    new ApiFailedResult { Retcode = e.Retcode, Message = e.Error },
-                    LogLevel.Warning,
-                    token
-                );
-                return;
-            }
-            catch (OperationException e)
-            {
-                await SendWithLoggerAsync(
-                    context,
-                    new ApiFailedResult { Retcode = e.Result, Message = e.ErrMsg ?? string.Empty },
-                    LogLevel.Error,
-                    e,
-                    token
-                );
-                return;
-            }
-            catch (Exception e)
-            {
-                await SendWithLoggerAsync(
-                    context,
-                    new ApiFailedResult { Retcode = -500, Message = "InternalServerError" },
-                    LogLevel.Error,
-                    e,
-                    token
-                );
-                return;
-            }
-
-            await SendWithLoggerAsync(context, new ApiOkResult { Data = result }, LogLevel.Information, token);
+            await SendWithLoggerAsync(context, result, token);
         }
         catch (OperationCanceledException) { throw; }
         catch (Exception e)
         {
-            await SendWithLoggerAsync(context, HttpStatusCode.InternalServerError, LogLevel.Error, e, token);
+            _logger.LogHandleHttpContextException(identifier, remote, e);
+
+            await SendWithLoggerAsync(context, HttpStatusCode.InternalServerError, token);
         }
     }
 
@@ -156,7 +101,29 @@ public class MilkyHttpApiService(ILogger<MilkyHttpApiService> logger, IOptions<M
         _listener.Stop();
     }
 
-    private bool ValidateApiAccessToken(HttpListenerContext context)
+    private async Task<bool> ValidateHttpContextAsync(HttpListenerContext context, CancellationToken token)
+    {
+        var request = context.Request;
+        var identifier = request.RequestTraceIdentifier;
+        var remote = request.RemoteEndPoint;
+
+        if (!context.Request.HttpMethod.Equals("POST", StringComparison.OrdinalIgnoreCase))
+        {
+            await SendWithLoggerAsync(context, HttpStatusCode.MethodNotAllowed, token);
+            return false;
+        }
+
+        if (!ValidateAccessToken(context))
+        {
+            _logger.LogValidateAccessTokenFailed(identifier, remote);
+            await SendWithLoggerAsync(context, HttpStatusCode.Unauthorized, token);
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool ValidateAccessToken(HttpListenerContext context)
     {
         if (_token == null) return true;
 
@@ -167,52 +134,126 @@ public class MilkyHttpApiService(ILogger<MilkyHttpApiService> logger, IOptions<M
         return authorization[7..] == _token;
     }
 
-    private Task SendWithLoggerAsync(HttpListenerContext context, HttpStatusCode status, LogLevel level, CancellationToken token)
+    private async Task<IApiHandler?> GetApiHandlerAsync(HttpListenerContext context, CancellationToken token)
     {
-        return SendWithLoggerAsync(context, status, level, null, token);
+        string? path = context.Request.Url?.LocalPath;
+        string? api = path?.Length > _prefix.Length + 1 ? path[(_prefix.Length + 1)..] : null;
+        var handler = _services.GetKeyedService<IApiHandler>(api);
+        if (handler == null) await SendWithLoggerAsync(context, HttpStatusCode.NotFound, token);
+        return handler;
     }
-    private async Task SendWithLoggerAsync(HttpListenerContext context, HttpStatusCode status, LogLevel level, Exception? e, CancellationToken token)
+
+    private async Task<object?> GetParameterAsync(HttpListenerContext context, Type type, CancellationToken token)
     {
-        var remote = context.Request.RemoteEndPoint;
-        var identifier = context.Request.RequestTraceIdentifier;
+        var request = context.Request;
+        var identifier = request.RequestTraceIdentifier;
+        var remote = request.RemoteEndPoint;
+        var input = request.InputStream;
 
         try
         {
-            context.Response.StatusCode = (int)status;
-            await context.Response.OutputStream.WriteAsync(Encoding.UTF8.GetBytes($"{(int)status} {status}"), token);
-            context.Response.Close();
+            using var content = new StreamContent(input);
+            byte[] body = await content.ReadAsByteArrayAsync(token);
+            _logger.LogReceiveBody(identifier, remote, body);
 
-            _logger.LogSend(level, identifier, remote, status, e);
+            return MilkyJsonUtility.Deserialize(type, body) ?? throw new NullReferenceException();
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            Exception exc = e == null ? ex : new AggregateException(e, ex);
-            _logger.LogSendException(identifier, remote, exc);
+            _logger.LogDeserializeParameterException(identifier, remote, e);
+
+            var result = new ApiFailedResult { Retcode = -400, Message = "parameter deserialize failed" };
+            await SendWithLoggerAsync(context, result, token);
+
+            return null;
         }
     }
 
-    private Task SendWithLoggerAsync<TBody>(HttpListenerContext context, TBody body, LogLevel level, CancellationToken token) where TBody : notnull
+    private async Task<object?> GetResultAsync(HttpListenerContext context, IApiHandler handler, object parameter, CancellationToken token)
     {
-        return SendWithLoggerAsync(context, body, level, null, token);
-    }
-    private async Task SendWithLoggerAsync<TBody>(HttpListenerContext context, TBody body, LogLevel level, Exception? e, CancellationToken token) where TBody : notnull
-    {
-        var remote = context.Request.RemoteEndPoint;
-        var identifier = context.Request.RequestTraceIdentifier;
+        var request = context.Request;
+        var identifier = request.RequestTraceIdentifier;
+        var remote = request.RemoteEndPoint;
 
         try
         {
-            context.Response.ContentType = "application/json; charset=utf-8";
-            byte[] bytes = MilkyJsonUtility.SerializeToUtf8Bytes(body.GetType(), body);
-            await context.Response.OutputStream.WriteAsync(bytes, token);
-            context.Response.Close();
-
-            _logger.LogSend(level, identifier, remote, bytes, e);
+            return new ApiOkResult { Data = await handler.HandleAsync(parameter, token) };
         }
-        catch (Exception ex)
+        catch (OperationException e)
         {
-            Exception exc = e == null ? ex : new AggregateException(e, ex);
-            _logger.LogSendException(identifier, remote, exc);
+            _logger.LogHandleApiException(identifier, remote, e);
+
+            return new ApiFailedResult
+            {
+                Retcode = e.Result,
+                Message = e.ErrMsg ?? string.Empty
+            };
+        }
+        catch (ApiException e)
+        {
+            _logger.LogHandleApiException(identifier, remote, e);
+
+            return new ApiFailedResult
+            {
+                Retcode = e.Retcode,
+                Message = e.Error,
+            };
+        }
+        catch (Exception e)
+        {
+            _logger.LogHandleApiException(identifier, remote, e);
+
+            return new ApiFailedResult
+            {
+                Retcode = -400,
+                Message = "Internal server error",
+            };
+        }
+    }
+
+    private async Task SendWithLoggerAsync(HttpListenerContext context, HttpStatusCode status, CancellationToken token)
+    {
+        var request = context.Request;
+        var identifier = request.RequestTraceIdentifier;
+        var remote = request.RemoteEndPoint;
+
+        var response = context.Response;
+        var output = response.OutputStream;
+
+        try
+        {
+            int code = (int)status;
+
+            response.StatusCode = code;
+            await output.WriteAsync(Encoding.UTF8.GetBytes($"{code} {status}"), token);
+
+            _logger.LogSend(identifier, remote, status);
+        }
+        catch (Exception e)
+        {
+            _logger.LogSendException(identifier, remote, e);
+        }
+    }
+
+    private async Task SendWithLoggerAsync<TBody>(HttpListenerContext context, TBody body, CancellationToken token) where TBody : notnull
+    {
+        var request = context.Request;
+        var identifier = request.RequestTraceIdentifier;
+        var remote = request.RemoteEndPoint;
+
+        var response = context.Response;
+        var output = response.OutputStream;
+
+        try
+        {
+            byte[] buffer = MilkyJsonUtility.SerializeToUtf8Bytes(body.GetType(), body);
+            await output.WriteAsync(buffer, token);
+
+            _logger.LogSend(identifier, remote, buffer);
+        }
+        catch (Exception e)
+        {
+            _logger.LogSendException(identifier, remote, e);
         }
     }
 }
@@ -222,22 +263,41 @@ public static partial class MilkyApiServiceLoggerExtension
     [LoggerMessage(EventId = 0, Level = LogLevel.Information, Message = "Api http server is running on {prefix}")]
     public static partial void LogServerRunning(this ILogger<MilkyHttpApiService> logger, string prefix);
 
-    [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "{identifier} {remote} -->> {method} {path}")]
-    public static partial void LogHttpContext(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote, string method, string? path);
+    [LoggerMessage(EventId = 1, Level = LogLevel.Debug, Message = "{identifier} {remote} -->> {method} {path}")]
+    public static partial void LogReceive(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote, string method, string? path);
 
-    [LoggerMessage(EventId = 2, Level = LogLevel.Information, Message = "{identifier} {remote} -->> {body}", SkipEnabledCheck = true)]
-    public static partial void LogReceive(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote, string body);
-
-    [LoggerMessage(EventId = 3, Message = "{identifier} {remote} <<-- {status}")]
-    public static partial void LogSend(this ILogger<MilkyHttpApiService> logger, LogLevel level, Guid identifier, IPEndPoint remote, HttpStatusCode status, Exception? e);
-
-    [LoggerMessage(EventId = 4, Message = "{identifier} {remote} <<-- {body}", SkipEnabledCheck = true)]
-    private static partial void LogSend(this ILogger<MilkyHttpApiService> logger, LogLevel level, Guid identifier, IPEndPoint remote, string body, Exception? e);
-    public static void LogSend(this ILogger<MilkyHttpApiService> logger, LogLevel level, Guid identifier, IPEndPoint remote, byte[] body, Exception? e)
+    [LoggerMessage(EventId = 2, Level = LogLevel.Debug, Message = "{identifier} {remote} -->> {body}")]
+    private static partial void LogReceiveBody(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote, string body);
+    public static void LogReceiveBody(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote, Span<byte> body)
     {
-        if (logger.IsEnabled(level)) logger.LogSend(level, identifier, remote, Encoding.UTF8.GetString(body), e);
+        if (logger.IsEnabled(LogLevel.Debug)) logger.LogReceiveBody(identifier, remote, Encoding.UTF8.GetString(body));
     }
 
-    [LoggerMessage(EventId = 999, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> Send exception")]
+    [LoggerMessage(EventId = 3, Level = LogLevel.Debug, Message = "{identifier} {remote} <<-- {status}")]
+    public static partial void LogSend(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote, HttpStatusCode status);
+
+    [LoggerMessage(EventId = 4, Level = LogLevel.Debug, Message = "{identifier} {remote} <<-- {body}", SkipEnabledCheck = true)]
+    private static partial void LogSend(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote, string body);
+    public static void LogSend(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote, Span<byte> body)
+    {
+        if (logger.IsEnabled(LogLevel.Debug)) logger.LogSend(identifier, remote, Encoding.UTF8.GetString(body));
+    }
+
+    [LoggerMessage(EventId = 996, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> Send failed")]
     public static partial void LogSendException(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote, Exception e);
+
+    [LoggerMessage(EventId = 997, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> Handle http context failed")]
+    public static partial void LogHandleHttpContextException(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote, Exception e);
+
+    [LoggerMessage(EventId = 997, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> Handle api failed")]
+    public static partial void LogHandleApiException(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote, Exception e);
+
+    [LoggerMessage(EventId = 998, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> Deserialize parameter failed")]
+    public static partial void LogDeserializeParameterException(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote, Exception e);
+
+    [LoggerMessage(EventId = 999, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> Validate access token failed")]
+    public static partial void LogValidateAccessTokenFailed(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote);
+
+    [LoggerMessage(EventId = 999, Level = LogLevel.Error, Message = "Get http context failed")]
+    public static partial void LogGetHttpContextException(this ILogger<MilkyHttpApiService> logger, Exception e);
 }
