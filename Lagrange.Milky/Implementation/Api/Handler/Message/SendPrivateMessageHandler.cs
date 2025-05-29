@@ -15,8 +15,8 @@ public class SendPrivateMessageHandler(BotContext bot, Converter converter) : IA
     public async Task<SendPrivateMessageResult> HandleAsync(SendPrivateMessageParameter parameter, CancellationToken token)
     {
         var result = await _bot.SendFriendMessage(
-            await _converter.ToMessageChainAsync(parameter.Message, token),
-            parameter.UserId
+            parameter.UserId,
+            await _converter.ToMessageChainAsync(parameter.Message, token)
         );
 
         return new SendPrivateMessageResult

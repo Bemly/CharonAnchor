@@ -15,8 +15,8 @@ public class SendGroupMessageHandler(BotContext bot, Converter converter) : IApi
     public async Task<SendGroupMessageResult> HandleAsync(SendGroupMessageParameter parameter, CancellationToken token)
     {
         var result = await _bot.SendGroupMessage(
-            await _converter.ToMessageChainAsync(parameter.Message, token),
-            parameter.GroupId
+            parameter.GroupId,
+            await _converter.ToMessageChainAsync(parameter.Message, token)
         );
 
         return new SendGroupMessageResult
