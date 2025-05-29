@@ -140,7 +140,7 @@ internal class HighwayContext : IClientListener, IDisposable
                 };
                 var headProto = ProtoHelper.Serialize(highwayHead);
 
-                if (!_context.Config.UseHttpHighway)
+                if (_context.Config.UseHttpHighway)
                 {
                     bool end = currentBlockOffset + payload >= fileSize;
                     var upload = ArrayPool<byte>.Shared.Rent(1 + 1 + 4 + 4 + headProto.Length + (int)payload);
