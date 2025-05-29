@@ -47,6 +47,7 @@ public static class HostApplicationBuilderExtension
                     UseIPv6Network = coreConfiguration.Server.UseIPv6Network,
                     GetOptimumServer = coreConfiguration.Server.GetOptimumServer,
                     AutoReLogin = coreConfiguration.Login.AutoReLogin,
+                    UseHttpHighway = OperatingSystem.IsLinux(),
                     SignProvider = signer,
                 };
             })
