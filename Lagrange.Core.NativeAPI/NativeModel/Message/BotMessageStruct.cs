@@ -83,7 +83,7 @@ namespace Lagrange.Core.NativeAPI.NativeModel.Message
                         entities[i] = new TypedEntityStruct()
                         {
                             Type = (int)EntityType.RecordEntity,
-                            Entity = Marshal.AllocHGlobal(Marshal.SizeOf<RecordEntity>())
+                            Entity = Marshal.AllocHGlobal(Marshal.SizeOf<RecordEntityStruct>())
                         };
                         Marshal.StructureToPtr((RecordEntityStruct)recordEntity, entities[i].Entity, false);
                         break;
@@ -91,7 +91,7 @@ namespace Lagrange.Core.NativeAPI.NativeModel.Message
                         entities[i] = new TypedEntityStruct()
                         {
                             Type = (int)EntityType.ReplyEntity,
-                            Entity = Marshal.AllocHGlobal(Marshal.SizeOf<ReplyEntity>())
+                            Entity = Marshal.AllocHGlobal(Marshal.SizeOf<ReplyEntityStruct>())
                         };
                         Marshal.StructureToPtr((ReplyEntityStruct)replyEntity, entities[i].Entity, false);
                         break;
@@ -110,6 +110,14 @@ namespace Lagrange.Core.NativeAPI.NativeModel.Message
                             Entity = Marshal.AllocHGlobal(Marshal.SizeOf<VideoEntityStruct>())
                         };
                         Marshal.StructureToPtr((VideoEntityStruct)videoEntity, entities[i].Entity, false);
+                        break;
+                    case MultiMsgEntity multiMsgEntity:
+                        entities[i] = new TypedEntityStruct()
+                        {
+                            Type = (int)EntityType.MultiMsgEntity,
+                            Entity = Marshal.AllocHGlobal(Marshal.SizeOf<MultiMsgEntityStruct>())
+                        };
+                        Marshal.StructureToPtr((MultiMsgEntityStruct)multiMsgEntity, entities[i].Entity, false);
                         break;
                 }
             }

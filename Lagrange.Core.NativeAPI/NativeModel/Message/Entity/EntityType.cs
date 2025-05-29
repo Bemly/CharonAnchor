@@ -8,5 +8,6 @@ namespace Lagrange.Core.NativeAPI.NativeModel.Message.Entity
         ReplyEntity = 3,
         VideoEntity = 4,
         TextEntity = 5,
+        MultiMsgEntity = 6,
     }
 }

@@ -171,7 +171,7 @@ namespace Lagrange.Core.NativeAPI
                 return IntPtr.Zero;
             }
             
-            var message = context.BotContext.SendFriendMessage(chain, friendUin).GetAwaiter().GetResult();
+            var message = context.BotContext.SendFriendMessage(friendUin, chain).GetAwaiter().GetResult();
             
             IntPtr messagePtr = Marshal.AllocHGlobal(Marshal.SizeOf<BotMessageStruct>());
             Marshal.StructureToPtr((BotMessageStruct)message, messagePtr, false);
@@ -193,7 +193,7 @@ namespace Lagrange.Core.NativeAPI
                 return IntPtr.Zero;
             }
 
-            var message = context.BotContext.SendGroupMessage(chain, groupUin).GetAwaiter().GetResult();
+            var message = context.BotContext.SendGroupMessage(groupUin, chain).GetAwaiter().GetResult();
 
             IntPtr messagePtr = Marshal.AllocHGlobal(Marshal.SizeOf<BotMessageStruct>());
             Marshal.StructureToPtr((BotMessageStruct)message, messagePtr, false);

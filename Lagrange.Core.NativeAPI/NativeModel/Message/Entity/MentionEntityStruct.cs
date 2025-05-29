@@ -18,7 +18,7 @@ namespace Lagrange.Core.NativeAPI.NativeModel.Message.Entity
             return new MentionEntityStruct()
             {
                 Uin = entity.Uin,
-                Display = Encoding.UTF8.GetBytes(entity.Display)
+                Display = Encoding.UTF8.GetBytes(entity.Display ?? string.Empty)
             };
         }
     }
