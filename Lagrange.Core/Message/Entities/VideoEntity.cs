@@ -79,7 +79,9 @@ public class VideoEntity : RichMediaEntityBase
         
         FileUrl = result.Url;
     }
-    
+
+    public override string ToPreviewString() => "[视频]";
+
     internal override Elem[] Build()
     {
         if (_compat == null)

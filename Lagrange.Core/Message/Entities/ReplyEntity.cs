@@ -35,6 +35,8 @@ public class ReplyEntity : IMessageEntity
     }
     
     public ReplyEntity() { }
+    
+    string IMessageEntity.ToPreviewString() => string.Empty;
 
     Elem[] IMessageEntity.Build()
     {

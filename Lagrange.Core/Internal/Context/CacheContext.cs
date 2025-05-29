@@ -67,7 +67,8 @@ internal class CacheContext(BotContext context)
         if (_groups == null) Interlocked.Exchange(ref _groups, await FetchGroups());
         var groups = _groups;
         
-        var group = groups.First(g => g.GroupUin == groupUin);
+        var group = groups.FirstOrDefault(g => g.GroupUin == groupUin);
+        if (group == null) return null;
 
         if (!_members.TryGetValue(groupUin, out var members))
         {

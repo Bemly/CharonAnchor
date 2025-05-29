@@ -12,9 +12,13 @@ internal partial class Elem
     
     [ProtoMember(8)] public CustomFace? CustomFace { get; set; }
     
+    [ProtoMember(12)] public RichMsg? RichMsg { get; set; }
+    
     [ProtoMember(19)] public VideoFile? VideoFile { get; set; }
     
     [ProtoMember(45)] public SourceMsg? SrcMsg { get; set; }
+    
+    [ProtoMember(51)] public LightAppElem? LightAppElem { get; set; }
     
     [ProtoMember(53)] public CommonElem? CommonElem { get; set; }
 }
@@ -204,6 +208,22 @@ internal partial class CustomFace
 }
 
 [ProtoPackable]
+internal partial class RichMsg
+{
+    [ProtoMember(1)] public ReadOnlyMemory<byte> BytesTemplate1 { get; set; } // Xml模板一
+    
+    [ProtoMember(2)] public uint ServiceId { get; set; } // 对应的业务标识
+    
+    [ProtoMember(3)] public ReadOnlyMemory<byte> BytesMsgResid { get; set; } // 长消息resid
+    
+    [ProtoMember(4)] public uint Rand { get; set; } // 需要删除的消息 rand 值
+    
+    [ProtoMember(5)] public uint Seq { get; set; } // 需要删除的消息 seq 
+    
+    [ProtoMember(6)] public uint Flags { get; set; } // bit 0:消息是否来自UrlCache; bit 1:是否包含video标签; bit 2:来自公众帐号的video结构化消息; bit 3:消息在urlencode模块从url转成richmsg
+}
+
+[ProtoPackable]
 internal partial class VideoFile
 {
     [ProtoMember(1)] public string FileUuid { get; set; }
@@ -279,6 +299,14 @@ internal partial class SourceMsg
     [ProtoMember(10)] public ulong ToUin { get; set; } // 所属接收者uin
 
     [ProtoMember(11)] public ReadOnlyMemory<byte> TroopName { get; set; } // 单独回复原消息群名
+}
+
+[ProtoPackable]
+internal partial class LightAppElem
+{
+    [ProtoMember(1)] public ReadOnlyMemory<byte> BytesData { get; set; } // LightApp数据
+
+    [ProtoMember(2)] public byte[] BytesMsgResid { get; set; } // 长消息resid
 }
 
 [ProtoPackable]

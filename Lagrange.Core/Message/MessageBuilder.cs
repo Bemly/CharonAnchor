@@ -26,6 +26,18 @@ public class MessageBuilder
         return this;
     }
 
+    public MessageBuilder MultiMsg(List<BotMessage> messages)
+    {
+        _entities.Add(new MultiMsgEntity(messages));
+        return this;
+    }
+    
+    public MessageBuilder MultiMsg(string resId)
+    {
+        _entities.Add(new MultiMsgEntity(resId));
+        return this;
+    }
+
     public MessageBuilder Image(string path, string? summary = "[图片]", int subType = 0) =>
         Image(new FileStream(path, FileMode.Open, FileAccess.Read), summary, subType);
 

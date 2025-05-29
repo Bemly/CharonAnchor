@@ -10,7 +10,7 @@ namespace Lagrange.Core.Utility;
 
 internal static partial class JsonHelper
 {
-    [JsonSourceGenerationOptions(GenerationMode = JsonSourceGenerationMode.Default, WriteIndented = true)]
+    [JsonSourceGenerationOptions(GenerationMode = JsonSourceGenerationMode.Default, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
     
     [JsonSerializable(typeof(NTNewDeviceQrCodeRequest))]
     [JsonSerializable(typeof(NTNewDeviceQrCodeResponse))]
@@ -31,4 +31,7 @@ internal static partial class JsonHelper
     
     public static string Serialize<T>(T value) =>
         JsonSerializer.Serialize(value, typeof(T), CoreSerializerContext.Default);
+    
+    public static ReadOnlyMemory<byte> SerializeToUtf8Bytes<T>(T value) =>
+        JsonSerializer.SerializeToUtf8Bytes(value, typeof(T), CoreSerializerContext.Default);
 }

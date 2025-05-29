@@ -105,7 +105,7 @@ internal partial class MessageBody
 {
     [ProtoMember(1)] public RichText RichText { get; set; } = new();
 
-    [ProtoMember(2)] public ReadOnlyMemory<byte> MsgContent { get; set; }
+    [ProtoMember(2)] public ReadOnlyMemory<byte>? MsgContent { get; set; }
 
     [ProtoMember(3)] public byte[]? MsgEncryptContent { get; set; }
 }

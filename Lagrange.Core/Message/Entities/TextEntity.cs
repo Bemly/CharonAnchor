@@ -16,6 +16,8 @@ public class TextEntity(string text) : IMessageEntity
         ];
     }
     
+    string IMessageEntity.ToPreviewString() => Text;
+    
     IMessageEntity? IMessageEntity.Parse(List<Elem> elements, Elem target)
     {
         return target.Text is ({ Attr6Buf: null } or { Attr6Buf.Length: 0 }) and ({ PbReserve.Length: 0 })

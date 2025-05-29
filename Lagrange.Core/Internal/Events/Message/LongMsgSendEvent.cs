@@ -3,11 +3,9 @@ using Lagrange.Core.Message;
 
 namespace Lagrange.Core.Internal.Events.Message;
 
-internal class LongMsgSendEventReq(BotContact contact, long? groupUin, List<BotMessage> messages) : ProtocolEvent
+internal class LongMsgSendEventReq(BotContact receiver, List<BotMessage> messages) : ProtocolEvent
 {
-    public BotContact Contact { get; } = contact;
-    
-    public long? GroupUin { get; } = groupUin;
+    public BotContact Receiver { get; } = receiver;
     
     public List<BotMessage> Messages { get; } = messages;
 }

@@ -41,6 +41,8 @@ public class MentionEntity(long uin, string? display) : IMessageEntity
             Uid = contact.Uid;
         }
     }
+    
+    string IMessageEntity.ToPreviewString() => Display;
 
     Elem[] IMessageEntity.Build()
     {

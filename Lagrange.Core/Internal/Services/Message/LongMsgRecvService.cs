@@ -26,7 +26,7 @@ internal class LongMsgRecvService : BaseService<LongMsgRecvEventReq, LongMsgRecv
             },
             Attr = new LongMsgAttr
             {
-                SubCmd = context.Config.Protocol.IsAndroid() ? 3u : 4u, // 1 -> Android 2 -> NTPC 0 -> Undefined
+                SubCmd = context.Config.Protocol.IsAndroid() ? 3u : 2u, // 1 -> Android 2 -> NTPC 0 -> Undefined
                 ClientType = context.Config.Protocol switch
                 {
                     Protocols.Windows or Protocols.MacOs or Protocols.Linux => 1u,
@@ -56,10 +56,10 @@ internal class LongMsgRecvService : BaseService<LongMsgRecvEventReq, LongMsgRecv
     {
         var rsp = ProtoHelper.Deserialize<LongMsgInterfaceRsp>(input.Span);
         
+        await using var src = new MemoryStream(rsp.RecvRsp.Payload);
         await using var dest = new MemoryStream();
-        await using var gzip = new GZipStream(dest, CompressionMode.Compress);
-        gzip.Write(rsp.RecvRsp.Payload);
-        gzip.Close();
+        await using var gzip = new GZipStream(src, CompressionMode.Decompress);
+        await gzip.CopyToAsync(dest);
         var decompressedContent = dest.ToArray();
 
         var logic = context.EventContext.GetLogic<MessagingLogic>();

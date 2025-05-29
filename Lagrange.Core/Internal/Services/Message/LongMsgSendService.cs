@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using Lagrange.Core.Common;
+using Lagrange.Core.Common.Entity;
 using Lagrange.Core.Internal.Events;
 using Lagrange.Core.Internal.Events.Message;
 using Lagrange.Core.Internal.Logic;
@@ -22,17 +23,10 @@ internal class LongMsgSendService : BaseService<LongMsgSendEventReq, LongMsgSend
             var fakeMsg = await context.EventContext.GetLogic<MessagingLogic>().BuildFake(msg);
             messages.Add(fakeMsg);
         }
-        
+
         var content = new PbMultiMsgTransmit
         {
-            Items =
-            [
-                new PbMultiMsgItem
-                {
-                    FileName = "MultiMsg", 
-                    Buffer = new PbMultiMsgNew { Msg = messages }
-                }
-            ]
+            Items = [new PbMultiMsgItem { FileName = "MultiMsg", Buffer = new PbMultiMsgNew { Msg = messages } }]
         };
         
         await using var dest = new MemoryStream();
@@ -45,9 +39,9 @@ internal class LongMsgSendService : BaseService<LongMsgSendEventReq, LongMsgSend
         {
             SendReq = new LongMsgSendReq
             {
-                MsgType = input.GroupUin is null ? 1u : 3u, // 4 for wpamsg, 5 for grpmsg temp
-                PeerInfo = new LongMsgPeerInfo { PeerUid = input.Contact.Uid },
-                GroupUin = input.GroupUin ?? 0,
+                MsgType = input.Receiver is not BotGroup ? 1u : 3u, // 4 for wpamsg, 5 for grpmsg temp
+                PeerInfo = new LongMsgPeerInfo { PeerUid = input.Receiver.Uid },
+                GroupUin = input.Receiver is BotGroup group ? group.Uin : 0,
                 Payload = compressedContent
             },
             Attr = new LongMsgAttr

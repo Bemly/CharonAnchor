@@ -18,7 +18,7 @@ public class LightApp
 
     [JsonPropertyName("meta")] public JsonObject Meta { get; set; }
     
-    [JsonPropertyName("extra")] public Extra? Extra { get; set; }
+    [JsonPropertyName("extra")] public string? Extra { get; set; }
 
     [JsonPropertyName("prompt")] public string Prompt { get; set; }
 
@@ -32,9 +32,9 @@ public class LightApp
 [Serializable]
 public class Config
 {
-    [JsonPropertyName("autosize")] public bool Autosize { get; set; }
+    [JsonPropertyName("autosize")] public int Autosize { get; set; }
     
-    [JsonPropertyName("ctime")] public long Ctime { get; set; }
+    // [JsonPropertyName("ctime")] public long Ctime { get; set; }
     
     [JsonPropertyName("token")] public string Token { get; set; }
 
@@ -42,19 +42,11 @@ public class Config
     
     [JsonPropertyName("forward")] public int Forward { get; set; }
     
-    [JsonPropertyName("height")] public int Height { get; set; }
+    [JsonPropertyName("round")] public int Round { get; set; }
+    
+    // [JsonPropertyName("height")] public int Height { get; set; }
     
     [JsonPropertyName("width")] public int Width { get; set; }
     
-    [JsonPropertyName("showsender")] public int ShowSender { get; set; }
-}
-
-[Serializable]
-public class Extra
-{
-    [JsonPropertyName("app_type")] public int AppType { get; set; }
-
-    [JsonPropertyName("appid")] public int AppId { get; set; }
-
-    [JsonPropertyName("uin")] public uint Uin { get; set; }
+    // [JsonPropertyName("showsender")] public int ShowSender { get; set; }
 }

@@ -47,6 +47,8 @@ public class RecordEntity : RichMediaEntityBase
         FileUrl = result.Url;
     }
 
+    public override string ToPreviewString() => $"[语音] {RecordLength}\"";
+
     internal override Elem[] Build() =>
     [
         new()

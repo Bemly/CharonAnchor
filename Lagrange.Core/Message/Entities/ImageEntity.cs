@@ -53,7 +53,8 @@ public class ImageEntity : RichMediaEntityBase
         
         FileUrl = result.Url;
     }
-    
+
+    public override string ToPreviewString() => Summary;
     internal override Elem[] Build()
     {
         if (_compat == null)

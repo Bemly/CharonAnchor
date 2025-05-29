@@ -51,7 +51,11 @@ public abstract class RichMediaEntityBase : IMessageEntity
     
     internal abstract IMessageEntity? Parse(List<Elem> elements, Elem target);
     
+    public abstract string ToPreviewString();
+    
     Elem[] IMessageEntity.Build() => Build();
 
     IMessageEntity? IMessageEntity.Parse(List<Elem> elements, Elem target) => Parse(elements, target);
+    
+    string IMessageEntity.ToPreviewString() => ToPreviewString();
 }
