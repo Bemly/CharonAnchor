@@ -59,6 +59,7 @@ public abstract class ProtoRepeatedConverter<TCollection, TElement> : ProtoConve
         {
             var item = _converter.Read(field, wireType, ref reader);
             Add(item, collection, state);
+            if (reader.IsCompleted) return Finalize(collection, state);
             if ((tag = reader.DecodeVarInt<int>() >> 3) != field) break;
         }
 
