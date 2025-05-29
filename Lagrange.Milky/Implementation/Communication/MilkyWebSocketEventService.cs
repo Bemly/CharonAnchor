@@ -52,6 +52,7 @@ public class MilkyWebSocketEventService(ILogger<MilkyWebSocketEventService> logg
                 token.ThrowIfCancellationRequested();
             }
         }
+        catch (OperationCanceledException) { throw; }
         catch (Exception e)
         {
             _logger.LogGetHttpContextException(e);
