@@ -84,8 +84,7 @@ public partial class Converter
                 SubType = image.SubType switch
                 {
                     0 => "normal",
-                    1 => "sticker",
-                    _ => throw new NotSupportedException(),
+                    _ => "sticker",
                 }
             }
         },
