@@ -18,8 +18,10 @@ internal class HighwayContext : IClientListener, IDisposable
     private const string Tag = nameof(HighwayContext);
     
     private readonly BotContext _context;
+
+    private readonly HttpClient _client;
     
-    private readonly ObjectPool<CallbackClientListener> _clients;
+    private readonly ObjectPool<CallbackClientListener> _sockets;
 
     private readonly Dictionary<int, HighwayValueTaskSource> _tasks = new();
     
@@ -32,11 +34,15 @@ internal class HighwayContext : IClientListener, IDisposable
     private (byte[], DateTime)? _ticket;
 
     private string? _url;
-
+    
     public HighwayContext(BotContext context)
     {
         _context = context;
-        _clients = new ObjectPool<CallbackClientListener>(() => new CallbackClientListener(this), t => t.Disconnect());
+
+        _client = new HttpClient(new HttpClientHandler { ServerCertificateCustomValidationCallback = (_, _, _, _) => true });
+        _client.DefaultRequestHeaders.Add("Accept-Encoding", "identity");
+        _client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2)");
+        _sockets = new ObjectPool<CallbackClientListener>(() => new CallbackClientListener(this), t => t.Disconnect());
         
         _sequence = 0;
         _chunkSize = context.Config.HighwayChunkSize;
@@ -99,13 +105,6 @@ internal class HighwayContext : IClientListener, IDisposable
             ulong currentBlockOffset = offset;
             var task = Task.Run(async () => // closure
             {
-                var client = _clients.Get();
-                if (client.Connected) client.Disconnect();
-        
-                string url = _url.Split(":")[0];
-                ushort port = ushort.Parse(_url.Split(":")[1]);
-                if (!await client.Connect(url, port)) return false;
-                
                 var head = new DataHighwayHead
                 {
                     Version = 1,
@@ -139,11 +138,71 @@ internal class HighwayContext : IClientListener, IDisposable
                     Timestamp = 0,
                     MsgLoginSigHead = loginHead
                 };
+                var headProto = ProtoHelper.Serialize(highwayHead);
 
+                if (!_context.Config.UseHttpHighway)
+                {
+                    bool end = currentBlockOffset + payload >= fileSize;
+                    var upload = ArrayPool<byte>.Shared.Rent(1 + 1 + 4 + 4 + headProto.Length + (int)payload);
+
+                    upload[0] = 0x28;
+                    BinaryPrimitives.WriteUInt32BigEndian(upload.AsSpan(1), (uint)headProto.Length);
+                    BinaryPrimitives.WriteUInt32BigEndian(upload.AsSpan(5), (uint)payload);
+                    headProto.Span.CopyTo(upload.AsSpan(9));
+                    buffer.AsSpan(0, (int)payload).CopyTo(upload.AsSpan(9 + headProto.Length));
+                    upload[^1] = 0x29;
+
+                    var content = new ByteArrayContent(upload);
+                    var request = new HttpRequestMessage(HttpMethod.Post, $"http://{_url}")
+                    {
+                        Content = content, Headers = { { "Connection", end ? "close" : "keep-alive" } }
+                    };
+
+                    try
+                    {
+                        var response = await _client.SendAsync(request);
+                        var reader = new BinaryPacket((await response.Content.ReadAsByteArrayAsync()).AsSpan());
+
+                        if (reader.Read<byte>() == 0x28)
+                        {
+                            int headLen = reader.Read<int>();
+                            int bodyLen = reader.Read<int>();
+                            var respHead = reader.CreateSpan(headLen);
+                            var body = GC.AllocateUninitializedArray<byte>(bodyLen);
+                            reader.ReadBytes(body.AsSpan());
+
+                            if (reader.Read<byte>() == 0x29)
+                            {
+                                var obj = ProtoHelper.Deserialize<RespDataHighwayHead>(respHead);
+                                _context.LogDebug(Tag, "Highway Block Result: {0} | {1} | {2}", obj.ErrorCode, obj.MsgSegHead?.RetCode, Convert.ToHexString(body));
+                                return obj.ErrorCode == 0;
+                            }
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        _context.LogError(Tag, "Highway HTTP error: {0}", e.Message);
+                        if (e.StackTrace is { } stack) _context.LogDebug(Tag, stack);
+                    }
+                    finally
+                    {
+                        ArrayPool<byte>.Shared.Return(upload);
+                        request.Dispose();
+                        content.Dispose();
+                    }
+
+                    return false;
+                }
+
+                var client = _sockets.Get();
+                if (client.Connected) client.Disconnect();
+                    
                 try
                 {
-                    var headProto = ProtoHelper.Serialize(highwayHead);
-
+                    string url = _url.Split(":")[0];
+                    ushort port = ushort.Parse(_url.Split(":")[1]);
+                    if (!await client.Connect(url, port)) return false;
+                        
                     var tcs = new HighwayValueTaskSource();
                     _tasks[sequence] = tcs;
 
@@ -159,16 +218,15 @@ internal class HighwayContext : IClientListener, IDisposable
 
                     var (respHead, resp) = await new ValueTask<(RespDataHighwayHead, byte[])>(tcs, 0);
 
-                    _context.LogDebug(Tag, "Highway Block Result: {0} | {1} | {2}", respHead.ErrorCode,
-                        respHead.MsgSegHead?.RetCode, Convert.ToHexString(resp));
+                    _context.LogDebug(Tag, "Highway Block Result: {0} | {1} | {2}", respHead.ErrorCode, respHead.MsgSegHead?.RetCode, Convert.ToHexString(resp));
                     return respHead.ErrorCode == 0;
                 }
                 finally
                 {
                     ArrayPool<byte>.Shared.Return(buffer);
-                    
+
                     client.Disconnect();
-                    _clients.Return(client);
+                    _sockets.Return(client);
                 }
             });
 
@@ -196,7 +254,7 @@ internal class HighwayContext : IClientListener, IDisposable
 
     public void Dispose()
     {
-        _clients.Dispose();
+        _sockets.Dispose();
     }
 
     private int GetNewSequence()
