@@ -16,6 +16,8 @@ public static partial class MilkyJsonUtility
     [JsonSerializable(typeof(ApiOkResult))]
     [JsonSerializable(typeof(ApiFailedResult))]
     // == system ==
+    // get_login_info
+    [JsonSerializable(typeof(GetLoginInfoResult))]
     // get_friend_list
     [JsonSerializable(typeof(GetFriendListParameter))]
     [JsonSerializable(typeof(GetFriendListResult))]
