@@ -52,7 +52,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
         _timers[ExchangeEmpTag] = new Timer(OnExchangeEmp);
     }
 
-    public ValueTask Incoming(ProtocolEvent e)
+    public async ValueTask Incoming(ProtocolEvent e)
     {
         switch (e)
         {
@@ -62,11 +62,11 @@ internal class WtExchangeLogic : ILogic, IDisposable
                 _context.EventInvoker.PostEvent(new BotOfflineEvent(BotOfflineEvent.Reasons.Kicked, (kick.TipsTitle, kick.TipsInfo)));
                 _context.IsOnline = false;
                 _timers[SsoHeartBeatTag].Change(Timeout.Infinite, Timeout.Infinite);
+                
+                await _context.EventContext.SendEvent<SsoUnregisterEventResp>(new SsoUnregisterEventReq());
                 break;
             }
         }
-        
-        return ValueTask.CompletedTask;
     }
 
     public async Task<bool> Login(long uin, string? password, CancellationToken token)
