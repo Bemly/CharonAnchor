@@ -173,18 +173,21 @@ public class MilkyHttpApiService(ILogger<MilkyHttpApiService> logger, IOptions<M
     }
     private async Task SendWithLoggerAsync(HttpListenerContext context, HttpStatusCode status, LogLevel level, Exception? e, CancellationToken token)
     {
+        var remote = context.Request.RemoteEndPoint;
+        var identifier = context.Request.RequestTraceIdentifier;
+
         try
         {
             context.Response.StatusCode = (int)status;
             await context.Response.OutputStream.WriteAsync(Encoding.UTF8.GetBytes($"{(int)status} {status}"), token);
             context.Response.Close();
 
-            _logger.LogSend(level, context.Request.RequestTraceIdentifier, context.Request.RemoteEndPoint, status, e);
+            _logger.LogSend(level, identifier, remote, status, e);
         }
         catch (Exception ex)
         {
             Exception exc = e == null ? ex : new AggregateException(e, ex);
-            _logger.LogSendException(context.Request.RequestTraceIdentifier, context.Request.RemoteEndPoint, exc);
+            _logger.LogSendException(identifier, remote, exc);
         }
     }
 
@@ -194,6 +197,9 @@ public class MilkyHttpApiService(ILogger<MilkyHttpApiService> logger, IOptions<M
     }
     private async Task SendWithLoggerAsync<TBody>(HttpListenerContext context, TBody body, LogLevel level, Exception? e, CancellationToken token) where TBody : notnull
     {
+        var remote = context.Request.RemoteEndPoint;
+        var identifier = context.Request.RequestTraceIdentifier;
+
         try
         {
             context.Response.ContentType = "application/json; charset=utf-8";
@@ -201,12 +207,12 @@ public class MilkyHttpApiService(ILogger<MilkyHttpApiService> logger, IOptions<M
             await context.Response.OutputStream.WriteAsync(bytes, token);
             context.Response.Close();
 
-            _logger.LogSend(level, context.Request.RequestTraceIdentifier, context.Request.RemoteEndPoint, bytes, e);
+            _logger.LogSend(level, identifier, remote, bytes, e);
         }
         catch (Exception ex)
         {
             Exception exc = e == null ? ex : new AggregateException(e, ex);
-            _logger.LogSendException(context.Request.RequestTraceIdentifier, context.Request.RemoteEndPoint, exc);
+            _logger.LogSendException(identifier, remote, exc);
         }
     }
 }
