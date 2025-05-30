@@ -277,6 +277,7 @@ public class MilkyWebSocketEventService(ILogger<MilkyWebSocketEventService> logg
 
             response.StatusCode = code;
             await output.WriteAsync(Encoding.UTF8.GetBytes($"{code} {status}"), token);
+            response.Close();
 
             _logger.LogSend(identifier, remote, status);
         }

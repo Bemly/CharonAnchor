@@ -247,7 +247,10 @@ public class MilkyHttpApiService(ILogger<MilkyHttpApiService> logger, IOptions<M
         try
         {
             byte[] buffer = MilkyJsonUtility.SerializeToUtf8Bytes(body.GetType(), body);
+
+            response.ContentType = "application/json; charset=utf-8";
             await output.WriteAsync(buffer, token);
+            response.Close();
 
             _logger.LogSend(identifier, remote, buffer);
         }
@@ -283,19 +286,19 @@ public static partial class MilkyApiServiceLoggerExtension
         if (logger.IsEnabled(LogLevel.Debug)) logger.LogSend(identifier, remote, Encoding.UTF8.GetString(body));
     }
 
-    [LoggerMessage(EventId = 996, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> Send failed")]
+    [LoggerMessage(EventId = 994, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> Send failed")]
     public static partial void LogSendException(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote, Exception e);
 
-    [LoggerMessage(EventId = 997, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> Handle http context failed")]
+    [LoggerMessage(EventId = 995, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> Handle http context failed")]
     public static partial void LogHandleHttpContextException(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote, Exception e);
 
-    [LoggerMessage(EventId = 997, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> Handle api failed")]
+    [LoggerMessage(EventId = 996, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> Handle api failed")]
     public static partial void LogHandleApiException(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote, Exception e);
 
-    [LoggerMessage(EventId = 998, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> Deserialize parameter failed")]
+    [LoggerMessage(EventId = 997, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> Deserialize parameter failed")]
     public static partial void LogDeserializeParameterException(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote, Exception e);
 
-    [LoggerMessage(EventId = 999, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> Validate access token failed")]
+    [LoggerMessage(EventId = 998, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> Validate access token failed")]
     public static partial void LogValidateAccessTokenFailed(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote);
 
     [LoggerMessage(EventId = 999, Level = LogLevel.Error, Message = "Get http context failed")]
