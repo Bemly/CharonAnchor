@@ -28,9 +28,6 @@ jobs:
           - os: windows-latest
             rid: win-x64
             binary-extension: '.exe'
-          - os: macos-latest
-            rid: osx-arm64
-            binary-extension: ''
           - os: ubuntu-latest
             rid: linux-x64
             binary-extension: ''
