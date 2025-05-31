@@ -44,7 +44,7 @@ public class ProtoWriter : IDisposable
         int utf16Max = ProtoConstants.MaxExpansionFactorWhileTranscoding * str.Length;
         if (_memory.Length < utf16Max) Grow(utf16Max);
         
-        if (str.Length > min && str.Length < max) // falls within the range
+        if (str.Length > min && utf16Max < max) // falls within the range
         {
             BytesPending += count;
             var status = ProtoWriteHelper.ToUtf8(str, _memory.Span[BytesPending..], out int written);
