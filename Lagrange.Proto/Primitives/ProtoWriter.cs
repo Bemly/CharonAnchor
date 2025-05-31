@@ -42,9 +42,9 @@ public class ProtoWriter : IDisposable
         int min = ProtoHelper.GetVarIntMin(count);
         int max = ProtoHelper.GetVarIntMax(count);
         int utf16Max = ProtoConstants.MaxExpansionFactorWhileTranscoding * str.Length;
-        if (_memory.Length < utf16Max) Grow(utf16Max);
+        if (_memory.Length < utf16Max + count) Grow(utf16Max + count);
         
-        if (str.Length > min && utf16Max < max) // falls within the range
+        if (str.Length + count > min && utf16Max + count < max) // falls within the range
         {
             BytesPending += count;
             var status = ProtoWriteHelper.ToUtf8(str, _memory.Span[BytesPending..], out int written);
@@ -91,7 +91,6 @@ public class ProtoWriter : IDisposable
         BytesPending += 8;
     }
     
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void EncodeVarInt<T>(T value) where T : unmanaged, INumber<T>
     {
         if (_memory.Length - BytesPending >= 10)
