@@ -42,7 +42,7 @@ public class MentionEntity(long uin, string? display) : IMessageEntity
         }
     }
     
-    string IMessageEntity.ToPreviewString() => Display;
+    string IMessageEntity.ToPreviewString() => Display ?? "";
 
     Elem[] IMessageEntity.Build()
     {
