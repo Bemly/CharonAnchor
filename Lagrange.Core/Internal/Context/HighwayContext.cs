@@ -95,7 +95,6 @@ internal class HighwayContext : IClientListener, IDisposable
 
         ulong fileSize = (ulong)stream.Length;
         ulong offset = 0;
-        int sequence = GetNewSequence();
         var fileMd5 = stream.Md5();
         while (offset < fileSize)
         {
@@ -105,6 +104,8 @@ internal class HighwayContext : IClientListener, IDisposable
             ulong currentBlockOffset = offset;
             var task = Task.Run(async () => // closure
             {
+                int sequence = GetNewSequence();
+
                 var head = new DataHighwayHead
                 {
                     Version = 1,
@@ -224,15 +225,13 @@ internal class HighwayContext : IClientListener, IDisposable
                 finally
                 {
                     ArrayPool<byte>.Shared.Return(buffer);
-
-                    client.Disconnect();
                     _sockets.Return(client);
                 }
             });
 
 
             tasks.Add(task);
-            if (tasks.Count == (commandId == 95 ? 1 : _concurrent))
+            if (tasks.Count == (_concurrent))
             {
                 var successBlocks = await Task.WhenAll(tasks);
                 foreach (bool t in successBlocks) result &= t;
@@ -280,11 +279,11 @@ internal class HighwayContext : IClientListener, IDisposable
     
     private sealed class ObjectPool<T>(Func<T> objectGenerator, Action<T> onDispose) : IDisposable
     {
-        private readonly ConcurrentBag<T> _objects = [];
+        private readonly ConcurrentQueue<T> _objects = [];
 
-        public T Get() => _objects.TryTake(out var item) ? item : objectGenerator();
+        public T Get() => _objects.TryDequeue(out var item) ? item : objectGenerator();
 
-        public void Return(T item) => _objects.Add(item);
+        public void Return(T item) => _objects.Enqueue(item);
 
         public void Dispose()
         {
