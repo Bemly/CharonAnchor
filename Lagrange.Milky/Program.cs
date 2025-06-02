@@ -34,11 +34,13 @@ internal static class Program
     {
         if (!File.Exists(Constants.ConfigFileName))
         {
-            Console.WriteLine($"{Constants.ConfigFileName} not found. Generating...");
-            using var input = typeof(Program).Assembly.GetManifestResourceStream(Constants.ConfigResourceName);
-            if (input == null) throw new Exception("Default configuration file not found");
-            using var output = File.OpenWrite(Constants.ConfigFileName);
-            input.CopyTo(output);
+            {
+                Console.WriteLine($"{Constants.ConfigFileName} not found. Generating...");
+                using var input = typeof(Program).Assembly.GetManifestResourceStream(Constants.ConfigResourceName);
+                if (input == null) throw new Exception("Default configuration file not found");
+                using var output = File.OpenWrite(Constants.ConfigFileName);
+                input.CopyTo(output);
+            }
 
             Console.WriteLine("Please edit the configuration file");
             Console.WriteLine("and press any key to continue starting the application.");
