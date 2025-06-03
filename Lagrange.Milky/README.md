@@ -6,7 +6,7 @@ _[Milky](https://github.com/SaltifyDev/milky) protocol implementation based on [
 
 </div>
 
-## Implementation Progress
+## Feature List
 
 ### communication
 
@@ -60,6 +60,9 @@ _[Milky](https://github.com/SaltifyDev/milky) protocol implementation based on [
 
 #### request
 
+- [ ] /get_friend_requests
+- [ ] /get_group_requests
+- [ ] /get_group_invitations
 - [ ] /accept_request
 - [ ] /reject_request
 
@@ -79,12 +82,12 @@ _[Milky](https://github.com/SaltifyDev/milky) protocol implementation based on [
 
 ### event
 
+- [ ] bot_offline
 - [x] message_receive
 - [ ] message_recall
 - [ ] friend_request
-- [ ] group_join_request
-- [ ] group_invited_join_request
-- [ ] group_invitation_request
+- [ ] group_request
+- [ ] group_invitation
 - [ ] friend_nudge
 - [ ] friend_file_upload
 - [ ] group_admin_change
