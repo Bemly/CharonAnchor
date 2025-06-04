@@ -58,7 +58,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
         {
             case KickEvent kick:
             {
-                _context.LogError(Tag, "Kicked by server: {0} | {1}", kick.TipsTitle, kick.TipsInfo);
+                _context.LogError(Tag, "Kicked by server: {0} | {1}", null, kick.TipsTitle, kick.TipsInfo);
                 _context.EventInvoker.PostEvent(new BotOfflineEvent(BotOfflineEvent.Reasons.Kicked, (kick.TipsTitle, kick.TipsInfo)));
                 _context.IsOnline = false;
                 _timers[SsoHeartBeatTag].Change(Timeout.Infinite, Timeout.Infinite);
@@ -109,7 +109,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
             }
             else
             {
-                _context.LogError(Tag, "Logout failed, directly offline {0}", result.Message);
+                _context.LogError(Tag, "Logout failed, directly offline {0}", null, result.Message);
             }
         }
         
@@ -121,7 +121,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
     {
         if (string.IsNullOrEmpty(password) && _context.Config.Protocol.IsAndroid())
         {
-            _context.LogError(Tag, "Android Platform can not use QRLogin, Please fill in password");
+            _context.LogCritical(Tag, "Android Platform can not use QRLogin, Please fill in password");
             return false;
         }
 
@@ -150,7 +150,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
                     if (await _transEmpSource.Task) return await Online();
                     break;
                 default:
-                    _context.LogError(Tag, "Login failed: {0} | Message: {1}", result.State, result.Tips);
+                    _context.LogError(Tag, "Login failed: {0} | Message: {1}", null, result.State, result.Tips);
                     _context.EventInvoker.PostEvent(new BotLoginEvent((int)result.State, result.Tips));
                     break;
             }
@@ -259,7 +259,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
                 }
                 else
                 {
-                    _context.LogError(Tag, "Login failed: {0} | Message: {1}", result.RetCode, result.Error);
+                    _context.LogError(Tag, "Login failed: {0} | Message: {1}", null, result.RetCode, result.Error);
                     _context.EventInvoker.PostEvent(new BotLoginEvent(result.RetCode, result.Error));
                 }
             }
@@ -315,7 +315,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
                             if (await _transEmpSource.Task) return await Online();
                             break;
                         default:
-                            _context.LogError(Tag, "Login failed: {0} | Message: {1}", result.State, result.Tips);
+                            _context.LogError(Tag, "Login failed: {0} | Message: {1}", null, result.State, result.Tips);
                             _context.EventInvoker.PostEvent(new BotLoginEvent((int)result.State, result.Tips));
                             return false;
                     }
@@ -344,7 +344,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
         }
         else if (result is { Error: { } error })
         {
-            _context.LogError(Tag, "Failed to resolve uin: {0} | {1}", error.Item1, error.Item2);
+            _context.LogError(Tag, "Failed to resolve uin: {0} | {1}", null, error.Item1, error.Item2);
         }
 
         return 0;
@@ -398,7 +398,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
         }
         catch (LagrangeException e) when (e.InnerException is InvalidOperationException invalid)
         {
-            _context.LogError(Tag, "Failed to send InfoSyncEvent: {0}", invalid.Message);
+            _context.LogError(Tag, "Failed to send InfoSyncEvent: {0}", null, invalid.Message);
         }
 
         return false;
@@ -451,7 +451,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
                     }
                     else
                     {
-                        _context.LogError(Tag, "Login failed: {0} | Message: {1}", result.State, result.Tips);
+                        _context.LogError(Tag, "Login failed: {0} | Message: {1}", null, result.State, result.Tips);
                         _transEmpSource.TrySetResult(false);
                     }
                     
@@ -469,7 +469,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
                     }
                     else
                     {
-                        _context.LogError(Tag, "Login failed: {0} | Message: {1}", result.RetCode, result.Error);
+                        _context.LogError(Tag, "Login failed: {0} | Message: {1}", null, result.RetCode, result.Error);
                         _transEmpSource.TrySetResult(false);
                     }
 
@@ -477,7 +477,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
                 } 
                 break;
             case { State: TransEmp12EventResp.TransEmpState.Canceled or TransEmp12EventResp.TransEmpState.Invalid or TransEmp12EventResp.TransEmpState.CodeExpired }:
-                _context.LogCritical(Tag, "QR Code State: {0}", transEmp12.State);
+                _context.LogCritical(Tag, "QR Code State: {0}", null, transEmp12.State);
                 
                 _transEmpSource.TrySetResult(false);
                 _timers[QueryStateTag].Change(Timeout.Infinite, Timeout.Infinite);
@@ -521,7 +521,7 @@ internal class WtExchangeLogic : ILogic, IDisposable
             }
             else
             {
-                _context.LogError(Tag, "Login failed: {0} | Message: {1}", result.State, result.Tips);
+                _context.LogError(Tag, "Login failed: {0} | Message: {1}", null, result.State, result.Tips);
                 _transEmpSource.TrySetResult(false);
             }
         }

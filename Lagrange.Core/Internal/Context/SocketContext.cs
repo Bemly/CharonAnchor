@@ -51,7 +51,7 @@ internal class SocketContext : IClientListener, IDisposable
         bool connected = await _client.Connect(servers[0]);
         
         if (connected) _context.LogInfo(Tag, "Connected to the server {0}", servers[0]);
-        else _context.LogError(Tag, "Failed to connect to the server {0}", servers[0]);
+        else _context.LogError(Tag, "Failed to connect to the server {0}", null,servers[0]);
         
         return connected;
     }

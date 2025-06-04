@@ -64,7 +64,7 @@ public sealed class EventInvoker(BotContext context) : IDisposable
                 Console.WriteLine($"Failed to post event: {ev}");
                 return;
             }
-            PostEvent(new BotLogEvent(Tag, LogLevel.Error, ex.ToString()));
+            PostEvent(new BotLogEvent(Tag, LogLevel.Error, ex.ToString(), ex));
         }
     });
 

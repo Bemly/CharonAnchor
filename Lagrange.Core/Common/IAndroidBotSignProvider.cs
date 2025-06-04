@@ -187,7 +187,7 @@ internal class DefaultAndroidBotSignProvider(BotContext context) : IAndroidBotSi
         }
         catch (Exception e)
         {
-            context.LogWarning(Tag, "Failed to get sign: {0}", e.Message);
+            context.LogWarning(Tag, "Failed to get sign: {0}", e, e.Message);
             return null;
         }
     }
@@ -213,7 +213,7 @@ internal class DefaultAndroidBotSignProvider(BotContext context) : IAndroidBotSi
         }
         catch (Exception e)
         {
-            context.LogWarning(Tag, "Failed to get energy: {0}", e.Message);
+            context.LogWarning(Tag, "Failed to get energy: {0}", e, e.Message);
             return [];
         }
     }
@@ -238,7 +238,7 @@ internal class DefaultAndroidBotSignProvider(BotContext context) : IAndroidBotSi
         }
         catch (Exception e)
         {
-            context.LogWarning(Tag, "Failed to get debug_xwid: {0}", e.Message);
+            context.LogWarning(Tag, "Failed to get debug_xwid: {0}", e, e.Message);
             return [];
         }
     }

@@ -77,7 +77,7 @@ internal class HighwayContext : IClientListener, IDisposable
 
     public void OnSocketError(Exception e, ReadOnlyMemory<byte> data = default)
     {
-        _context.LogError(Tag, "Highway Socket error: {0}", e.Message);
+        _context.LogError(Tag, "Highway Socket error: {0}", e, e.Message);
         if (e.StackTrace is { } stack) _context.LogDebug(Tag, stack);
     }
     
@@ -182,7 +182,7 @@ internal class HighwayContext : IClientListener, IDisposable
                     }
                     catch (Exception e)
                     {
-                        _context.LogError(Tag, "Highway HTTP error: {0}", e.Message);
+                        _context.LogError(Tag, "Highway HTTP error: {0}", e, e.Message);
                         if (e.StackTrace is { } stack) _context.LogDebug(Tag, stack);
                     }
                     finally

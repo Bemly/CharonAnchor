@@ -29,7 +29,8 @@ namespace Lagrange.Core.NativeAPI.NativeModel.Event
             return new BotLogEvent(
                 Encoding.UTF8.GetString(e.Tag),
                 (LogLevel)e.Level,
-                Encoding.UTF8.GetString(e.Message)
+                Encoding.UTF8.GetString(e.Message),
+                null // TODO: Handle exception if needed
             );
         }
     }

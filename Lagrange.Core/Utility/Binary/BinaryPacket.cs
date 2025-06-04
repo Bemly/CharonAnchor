@@ -5,6 +5,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Unicode;
 
 namespace Lagrange.Core.Utility.Binary;
 
@@ -208,8 +209,9 @@ internal ref struct BinaryPacket
     
     public void ReadString(scoped Span<char> buffer)
     {
-        int byteCount = Encoding.UTF8.GetChars(_span.Slice(_offset, buffer.Length), buffer);
-        Encoding.UTF8.GetChars(_span.Slice(_offset, buffer.Length), buffer);
+        var status = Utf8.ToUtf16(_span.Slice(_offset, Math.Min(buffer.Length * 3, _span.Length - _offset)), buffer, out int byteCount, out int written);
+        Debug.Assert(written == buffer.Length);
+        Debug.Assert(status is OperationStatus.Done or OperationStatus.DestinationTooSmall, "Failed to read string from packet, status: " + status);
         Increment(byteCount);
     }
 

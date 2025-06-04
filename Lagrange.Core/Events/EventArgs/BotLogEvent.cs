@@ -10,13 +10,15 @@ public enum LogLevel
     Critical = 5
 }
 
-public class BotLogEvent(string tag, LogLevel level, string message) : EventBase
+public class BotLogEvent(string tag, LogLevel level, string message, Exception? Exception) : EventBase
 {
     public string Tag { get; } = tag;
     
     public LogLevel Level { get; } = level;
     
     public string Message { get; } = message;
+
+    public Exception? Exception { get; } = Exception;
     
     public override string ToEventMessage() => $"[{Tag}] [{Level.ToString().ToUpper()}]: {Message}";
 }
