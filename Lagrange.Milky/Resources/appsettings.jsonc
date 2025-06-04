@@ -2,7 +2,7 @@
     "$schema": "https://raw.githubusercontent.com/LagrangeDev/LagrangeV2/refs/heads/main/Lagrange.Milky/Resources/appsettings_schema.json",
     "Logging": {
         "LogLevel": {
-            "Default": "Trace",
+            "Default": "Information",
         },
     },
     "Core": {
