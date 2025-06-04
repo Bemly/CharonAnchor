@@ -41,13 +41,13 @@ public partial class CoreLoggerService(ILogger<CoreLoggerService> logger, IOptio
     private void HandleLog(BotContext bot, BotLogEvent @event)
     {
         var logger = _loggers.GetOrAdd(@event.Tag, _loggerFactory.CreateLogger(InferFullName(@event.Tag)));
-        LoggerUtility.LogBotMessage(logger, (MSLogLevel)@event.Level, @event.Message);
+        LoggerUtility.LogBotMessage(logger, (MSLogLevel)@event.Level, @event.Message, @event.Exception);
     }
 
     public Task StopAsync(CancellationToken token)
     {
         // TODO: unregister
-        // _bot.EventInvoker.RegisterEvent<BotLogEvent>(HandleLog);
+        // _bot.EventInvoker.UnregisterEvent<BotLogEvent>(HandleLog);
 
         _levelChangeHandlerDisposable?.Dispose();
 
@@ -75,7 +75,7 @@ public partial class CoreLoggerService(ILogger<CoreLoggerService> logger, IOptio
     private static partial class LoggerUtility
     {
         [LoggerMessage(EventId = 0, Message = "{message}")]
-        public static partial void LogBotMessage(ILogger logger, MSLogLevel level, string message);
+        public static partial void LogBotMessage(ILogger logger, MSLogLevel level, string message, Exception? exception);
     }
 }
 
