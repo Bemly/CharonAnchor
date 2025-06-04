@@ -33,7 +33,7 @@
             "Uin": 0,
 
             // Account password
-            // Set to null to log in via QrCode
+            // Set to null to login via QrCode
             // "Password": null,
 
             // Device Name
