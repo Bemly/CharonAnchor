@@ -82,7 +82,7 @@ _[Milky](https://github.com/SaltifyDev/milky) protocol implementation based on [
 
 ### event
 
-- [ ] bot_offline
+- [x] bot_offline
 - [x] message_receive
 - [ ] message_recall
 - [ ] friend_request

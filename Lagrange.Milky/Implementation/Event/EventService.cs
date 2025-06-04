@@ -20,16 +20,17 @@ public class EventService(ILogger<EventService> logger, BotContext bot, Converte
 
     public Task StartAsync(CancellationToken token)
     {
+        _bot.EventInvoker.RegisterEvent<BotOfflineEvent>(HandleOfflineEvent);
         _bot.EventInvoker.RegisterEvent<BotMessageEvent>(HandleMessageEvent);
 
         return Task.CompletedTask;
     }
 
-    private void HandleMessageEvent(BotContext bot, BotMessageEvent @event)
+    private void HandleOfflineEvent(BotContext bot, BotOfflineEvent @event)
     {
         try
         {
-            var result = _converter.ToIncomingMessageEvent(@event);
+            var result = _converter.ToBotOfflineEvent(@event);
             byte[] bytes = MilkyJsonUtility.SerializeToUtf8Bytes(result.GetType(), result);
             using (_lock.UsingReadLock())
             {
@@ -41,7 +42,27 @@ public class EventService(ILogger<EventService> logger, BotContext bot, Converte
         }
         catch (Exception e)
         {
-            _logger.LogHandleMessageException(e);
+            _logger.LogHandleEventException(nameof(BotOfflineEvent), e);
+        }
+    }
+
+    private void HandleMessageEvent(BotContext bot, BotMessageEvent @event)
+    {
+        try
+        {
+            var result = _converter.ToMessageReceiveEvent(@event);
+            byte[] bytes = MilkyJsonUtility.SerializeToUtf8Bytes(result.GetType(), result);
+            using (_lock.UsingReadLock())
+            {
+                foreach (var handler in _handlers)
+                {
+                    handler(bytes);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            _logger.LogHandleEventException(nameof(BotMessageEvent), e);
         }
     }
 
@@ -72,6 +93,6 @@ public class EventService(ILogger<EventService> logger, BotContext bot, Converte
 
 public static partial class EventServiceLoggerExtension
 {
-    [LoggerMessage(EventId = 999, Level = Microsoft.Extensions.Logging.LogLevel.Error, Message = "Handle message exception")]
-    public static partial void LogHandleMessageException(this ILogger<EventService> logger, Exception e);
+    [LoggerMessage(EventId = 999, Level = Microsoft.Extensions.Logging.LogLevel.Error, Message = "Handle {event} exception")]
+    public static partial void LogHandleEventException(this ILogger<EventService> logger, string @event, Exception e);
 }

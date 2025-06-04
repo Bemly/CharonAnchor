@@ -6,6 +6,7 @@ using Lagrange.Milky.Implementation.Api.Handler.Friend;
 using Lagrange.Milky.Implementation.Api.Handler.Group;
 using Lagrange.Milky.Implementation.Api.Handler.Message;
 using Lagrange.Milky.Implementation.Api.Handler.System;
+using Lagrange.Milky.Implementation.Entity.Event;
 using Lagrange.Milky.Implementation.Entity.Message.Incoming;
 
 namespace Lagrange.Milky.Implementation.Utility;
@@ -58,6 +59,8 @@ public static partial class MilkyJsonUtility
 
     // === event ===
     [JsonSerializable(typeof(Event.Event))]
+    // bot_offline
+    [JsonSerializable(typeof(BotOfflineEvent))]
     // message_receive
     [JsonSerializable(typeof(FriendIncomingMessage))]
     [JsonSerializable(typeof(GroupIncomingMessage))]
