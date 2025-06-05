@@ -13,4 +13,6 @@ public class MilkyConfiguration
     public string? AccessToken { get; set; }
 
     public WebHookConfiguration? WebHook { get; set; }
+
+    public bool IgnoreBotMessage { get; set; } = false;
 }

@@ -1,15 +1,20 @@
 using Lagrange.Core;
+using Lagrange.Core.Common.Entity;
 using Lagrange.Core.Events.EventArgs;
 using Lagrange.Milky.Extension;
+using Lagrange.Milky.Implementation.Configuration;
 using Lagrange.Milky.Implementation.Utility;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Lagrange.Milky.Implementation.Event;
 
-public class EventService(ILogger<EventService> logger, BotContext bot, Converter converter) : IHostedService
+public class EventService(ILogger<EventService> logger, IOptions<MilkyConfiguration> options, BotContext bot, Converter converter) : IHostedService
 {
     private readonly ILogger<EventService> _logger = logger;
+
+    private readonly bool _ignoreBotMessage = options.Value.IgnoreBotMessage;
 
     private readonly BotContext _bot = bot;
 
@@ -50,6 +55,8 @@ public class EventService(ILogger<EventService> logger, BotContext bot, Converte
     {
         try
         {
+            if (_ignoreBotMessage && @event.Message.Contact.Uin == bot.BotUin) return;
+
             var result = _converter.ToMessageReceiveEvent(@event);
             byte[] bytes = MilkyJsonUtility.SerializeToUtf8Bytes(result.GetType(), result);
             using (_lock.UsingReadLock())

@@ -6,16 +6,16 @@
         },
     },
     "Core": {
-        "Server": {
-            // Whether to automatically reconnect to the server
-            // "AutoReconnect": true,
+        // "Server": {
+        //     Whether to automatically reconnect to the server
+        //     "AutoReconnect": true,
 
-            // Whether to use IPv6 to connect to the server
-            // "UseIPv6Network": false,
+        //     Whether to use IPv6 to connect to the server
+        //     "UseIPv6Network": false,
 
-            // Whether to automatically select the fastest server
-            // "GetOptimumServer": true,
-        },
+        //     Whether to automatically select the fastest server
+        //     "GetOptimumServer": true,
+        // },
         "Signer": {
             // Signer Base URL
             "Base": "https://sign.lagrangecore.org/api/sign",
@@ -31,7 +31,7 @@
             // Account uin
             // If the Uin is inconsistent with the actual login account, quick login will not be possible
             "Uin": 0,
-
+            
             // Account password
             // Set to null to login via QrCode
             // "Password": null,
@@ -62,7 +62,7 @@
         // "Prefix": "/",
 
         // Whether to use WebSocket service
-        // "UseWebSocket": true,
+        // "EnableWebSocket": true,
 
         // Set to null to disable the WebHook service
         // "WebHook": null, // Default
@@ -70,5 +70,8 @@
         //     WebHook Target URL
         //     "Url": "http://127.0.0.1:3001/webhook"
         // }
+
+        // Whether to ignore messages sent by Bot
+        // "IgnoreBotMessage": false
     },
 }
