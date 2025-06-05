@@ -22,6 +22,7 @@ https://lagrangedev.github.io/Lagrange.Milky.Document
 #### system
 
 - [x] /get_login_info
+- [x] /get_impl_info
 - [x] /get_friend_list
 - [x] /get_friend_info
 - [x] /get_group_list
