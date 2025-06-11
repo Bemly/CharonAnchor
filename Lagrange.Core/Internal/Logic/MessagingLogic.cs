@@ -14,6 +14,14 @@ internal class MessagingLogic(BotContext context) : ILogic
 
     public Task<CommonMessage> BuildFake(BotMessage msg) => _packer.BuildFake(msg);
 
+    public async Task<List<BotMessage>> GetGroupMessage(long groupUin, int startSequence, int endSequence)
+    {
+        var result = await context.EventContext.SendEvent<GetGroupMessageEventResp>(new GetGroupMessageEventReq(groupUin, startSequence, endSequence));
+        var messages = new List<BotMessage>(result.Chains.Count);
+        foreach (var chain in result.Chains) messages.Add(await Parse(chain));
+        return messages;
+    }
+
     public async Task<BotMessage> SendFriendMessage(long friendUin, MessageChain chain)
     {
         var friend = await context.CacheContext.ResolveFriend(friendUin) ?? throw new InvalidTargetException(friendUin);

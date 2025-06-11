@@ -10,6 +10,9 @@ public static class MessageExt
 
     public static Task<BotMessage> SendGroupMessage(this BotContext context, long groupUin, MessageChain chain)
         => context.EventContext.GetLogic<MessagingLogic>().SendGroupMessage(groupUin, chain);
+    
+    public static Task<List<BotMessage>> GetGroupMessage(this BotContext context, long groupUin, int startSequence, int endSequence)
+        => context.EventContext.GetLogic<MessagingLogic>().GetGroupMessage(groupUin, startSequence, endSequence);
 
     public static Task<bool> SendFriendFile(this BotContext context, long targetUin, Stream fileStream, string? fileName = null)
         => context.EventContext.GetLogic<OperationLogic>().SendFriendFile(targetUin, fileStream, fileName);
