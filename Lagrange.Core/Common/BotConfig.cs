@@ -40,7 +40,6 @@ public class BotConfig
     /// </summary>
     public uint HighwayConcurrent { get; set; } = 4;
     
-    public bool UseHttpHighway { get; set; }
 
     /// <summary>
     /// Refresh the session when the session is about to expire
