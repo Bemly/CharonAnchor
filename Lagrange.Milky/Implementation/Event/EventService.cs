@@ -1,41 +1,41 @@
 using Lagrange.Core;
-using Lagrange.Core.Common.Entity;
-using Lagrange.Core.Events.EventArgs;
 using Lagrange.Milky.Extension;
 using Lagrange.Milky.Implementation.Configuration;
+using Lagrange.Milky.Implementation.Entity.Event;
 using Lagrange.Milky.Implementation.Utility;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
+using LgrEvents = Lagrange.Core.Events.EventArgs;
+
 namespace Lagrange.Milky.Implementation.Event;
 
-public class EventService(ILogger<EventService> logger, IOptions<MilkyConfiguration> options, BotContext bot, Converter converter) : IHostedService
+public class EventService(ILogger<EventService> logger, IOptions<MilkyConfiguration> options, BotContext bot, EntityConvert convert) : IHostedService
 {
     private readonly ILogger<EventService> _logger = logger;
 
     private readonly bool _ignoreBotMessage = options.Value.IgnoreBotMessage;
 
     private readonly BotContext _bot = bot;
-
-    private readonly Converter _converter = converter;
+    private readonly EntityConvert _convert = convert;
 
     private readonly HashSet<Action<Memory<byte>>> _handlers = [];
     private readonly ReaderWriterLockSlim _lock = new();
 
     public Task StartAsync(CancellationToken token)
     {
-        _bot.EventInvoker.RegisterEvent<BotOfflineEvent>(HandleOfflineEvent);
-        _bot.EventInvoker.RegisterEvent<BotMessageEvent>(HandleMessageEvent);
+        _bot.EventInvoker.RegisterEvent<LgrEvents.BotOfflineEvent>(HandleOfflineEvent);
+        _bot.EventInvoker.RegisterEvent<LgrEvents.BotMessageEvent>(HandleMessageEvent);
 
         return Task.CompletedTask;
     }
 
-    private void HandleOfflineEvent(BotContext bot, BotOfflineEvent @event)
+    private void HandleOfflineEvent(BotContext bot, LgrEvents.BotOfflineEvent @event)
     {
         try
         {
-            var result = _converter.ToBotOfflineEvent(@event);
+            var result = _convert.BotOfflineEvent(@event);
             byte[] bytes = MilkyJsonUtility.SerializeToUtf8Bytes(result.GetType(), result);
             using (_lock.UsingReadLock())
             {
@@ -51,13 +51,13 @@ public class EventService(ILogger<EventService> logger, IOptions<MilkyConfigurat
         }
     }
 
-    private void HandleMessageEvent(BotContext bot, BotMessageEvent @event)
+    private void HandleMessageEvent(BotContext bot, LgrEvents.BotMessageEvent @event)
     {
         try
         {
             if (_ignoreBotMessage && @event.Message.Contact.Uin == bot.BotUin) return;
 
-            var result = _converter.ToMessageReceiveEvent(@event);
+            var result = _convert.MessageReceiveEvent(@event);
             byte[] bytes = MilkyJsonUtility.SerializeToUtf8Bytes(result.GetType(), result);
             using (_lock.UsingReadLock())
             {
@@ -69,7 +69,7 @@ public class EventService(ILogger<EventService> logger, IOptions<MilkyConfigurat
         }
         catch (Exception e)
         {
-            _logger.LogHandleEventException(nameof(BotMessageEvent), e);
+            _logger.LogHandleEventException(nameof(LgrEvents.BotMessageEvent), e);
         }
     }
 

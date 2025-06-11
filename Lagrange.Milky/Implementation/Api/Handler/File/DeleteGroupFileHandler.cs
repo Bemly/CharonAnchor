@@ -17,11 +17,13 @@ public class DeleteGroupFileHandler(BotContext bot) : IApiHandler<DeleteGroupFil
     }
 }
 
-public class DeleteGroupFileParameter
+public class DeleteGroupFileParameter(long groupId, string fileId)
 {
+    [JsonRequired]
     [JsonPropertyName("group_id")]
-    public required long GroupId { get; init; }
+    public long GroupId { get; init; } = groupId;
 
+    [JsonRequired]
     [JsonPropertyName("file_id")]
-    public required string FileId { get; init; }
+    public string FileId { get; init; } = fileId;
 }

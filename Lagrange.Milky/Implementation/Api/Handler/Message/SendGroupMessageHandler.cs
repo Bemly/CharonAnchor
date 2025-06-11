@@ -1,46 +1,42 @@
 using System.Text.Json.Serialization;
 using Lagrange.Core;
 using Lagrange.Core.Common.Interface;
-using Lagrange.Milky.Implementation.Entity.Segment.Outgoing;
+using Lagrange.Milky.Implementation.Entity.Segment;
 using Lagrange.Milky.Implementation.Utility;
 
 namespace Lagrange.Milky.Implementation.Api.Handler.Message;
 
 [Api("send_group_message")]
-public class SendGroupMessageHandler(BotContext bot, Converter converter) : IApiHandler<SendGroupMessageParameter, SendGroupMessageResult>
+public class SendGroupMessageHandler(BotContext bot, EntityConvert convert) : IApiHandler<SendGroupMessageParameter, SendGroupMessageResult>
 {
     private readonly BotContext _bot = bot;
-    private readonly Converter _converter = converter;
+    private readonly EntityConvert _convert = convert;
 
     public async Task<SendGroupMessageResult> HandleAsync(SendGroupMessageParameter parameter, CancellationToken token)
     {
-        var result = await _bot.SendGroupMessage(
-            parameter.GroupId,
-            await _converter.ToMessageChainAsync(parameter.Message, token)
-        );
+        var chain = await _convert.GroupSegmentsAsync(parameter.Message, parameter.GroupId, token);
+        var result = await _bot.SendGroupMessage(parameter.GroupId, chain);
 
-        return new SendGroupMessageResult
-        {
-            MessageSeq = result.Sequence,
-            Time = new DateTimeOffset(result.Time).ToUnixTimeSeconds(),
-        };
+        return new SendGroupMessageResult(result.Sequence, new DateTimeOffset(result.Time).ToUnixTimeSeconds());
     }
 }
 
-public class SendGroupMessageParameter
+public class SendGroupMessageParameter(long groupId, IReadOnlyList<IOutgoingSegment> message)
 {
+    [JsonRequired]
     [JsonPropertyName("group_id")]
-    public required long GroupId { get; init; }
+    public long GroupId { get; init; } = groupId;
 
+    [JsonRequired]
     [JsonPropertyName("message")]
-    public required IReadOnlyList<IOutgoingSegment> Message { get; init; }
+    public IReadOnlyList<IOutgoingSegment> Message { get; init; } = message;
 }
 
-public class SendGroupMessageResult
+public class SendGroupMessageResult(long messageSeq, long time)
 {
     [JsonPropertyName("message_seq")]
-    public required long MessageSeq { get; init; }
+    public long MessageSeq { get; } = messageSeq;
 
     [JsonPropertyName("time")]
-    public required long Time { get; init; }
+    public long Time { get; } = time;
 }

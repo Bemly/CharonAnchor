@@ -11,17 +11,18 @@ public class SendFriendNudgeHandler(BotContext bot) : IApiHandler<SendFriendNudg
 
     public async Task<object> HandleAsync(SendFriendNudgeParameter parameter, CancellationToken token)
     {
-        await _bot.SendFriendNudge(parameter.UserId, (parameter.IsSelf ?? false) ? _bot.BotUin : parameter.UserId);
+        await _bot.SendFriendNudge(parameter.UserId, parameter.IsSelf ? _bot.BotUin : parameter.UserId);
 
         return new object();
     }
 }
 
-public class SendFriendNudgeParameter
+public class SendFriendNudgeParameter(long userId, bool isSelf = false)
 {
+    [JsonRequired]
     [JsonPropertyName("user_id")]
-    public required long UserId { get; init; }
+    public long UserId { get; init; } = userId;
 
     [JsonPropertyName("is_self")]
-    public bool? IsSelf { get; init; } // false
+    public bool IsSelf { get; } = isSelf;
 }

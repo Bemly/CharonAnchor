@@ -162,7 +162,7 @@ public class MilkyHttpApiService(ILogger<MilkyHttpApiService> logger, IOptions<M
         {
             _logger.LogDeserializeParameterException(identifier, remote, e);
 
-            var result = new ApiFailedResult { Retcode = -400, Message = "parameter deserialize failed" };
+            var result = new ApiFailedResult(-400, "parameter deserialize failed");
             await SendWithLoggerAsync(context, result, token);
 
             return null;
@@ -177,37 +177,25 @@ public class MilkyHttpApiService(ILogger<MilkyHttpApiService> logger, IOptions<M
 
         try
         {
-            return new ApiOkResult { Data = await handler.HandleAsync(parameter, token) };
+            return new ApiOkResult(await handler.HandleAsync(parameter, token));
         }
         catch (OperationException e)
         {
             _logger.LogHandleApiException(identifier, remote, e);
 
-            return new ApiFailedResult
-            {
-                Retcode = e.Result,
-                Message = e.ErrMsg ?? string.Empty
-            };
+            return new ApiFailedResult(e.Result, e.ErrMsg ?? string.Empty);
         }
         catch (ApiException e)
         {
             _logger.LogHandleApiException(identifier, remote, e);
 
-            return new ApiFailedResult
-            {
-                Retcode = e.Retcode,
-                Message = e.Error,
-            };
+            return new ApiFailedResult(e.Retcode, e.Error);
         }
         catch (Exception e)
         {
             _logger.LogHandleApiException(identifier, remote, e);
 
-            return new ApiFailedResult
-            {
-                Retcode = -400,
-                Message = "Internal server error",
-            };
+            return new ApiFailedResult(-400, "Internal server error");
         }
     }
 

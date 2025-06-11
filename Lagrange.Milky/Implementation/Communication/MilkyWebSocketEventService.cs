@@ -248,7 +248,7 @@ public class MilkyWebSocketEventService(ILogger<MilkyWebSocketEventService> logg
         {
             var wsContext = await httpContext.AcceptWebSocketAsync(null).WaitAsync(token);
             var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
-            var connection = new ConnectionContext { HttpContext = httpContext, WsContext = wsContext, Cts = cts };
+            var connection = new ConnectionContext(httpContext, wsContext, cts);
             _connections.TryAdd(connection, null);
             return connection;
         }
@@ -287,14 +287,14 @@ public class MilkyWebSocketEventService(ILogger<MilkyWebSocketEventService> logg
         }
     }
 
-    private class ConnectionContext
+    private class ConnectionContext(HttpListenerContext httpContext, WebSocketContext wsContext, CancellationTokenSource cts)
     {
-        public required HttpListenerContext HttpContext { get; init; }
-        public required WebSocketContext WsContext { get; init; }
+        public HttpListenerContext HttpContext { get; } = httpContext;
+        public WebSocketContext WsContext { get; } = wsContext;
 
         public SemaphoreSlim SendSemaphoreSlim { get; } = new(1);
 
-        public required CancellationTokenSource Cts { get; init; }
+        public CancellationTokenSource Cts { get; } = cts;
         public TaskCompletionSource Tcs { get; } = new();
     }
 }

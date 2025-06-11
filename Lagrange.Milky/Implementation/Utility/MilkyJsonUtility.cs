@@ -7,7 +7,7 @@ using Lagrange.Milky.Implementation.Api.Handler.Group;
 using Lagrange.Milky.Implementation.Api.Handler.Message;
 using Lagrange.Milky.Implementation.Api.Handler.System;
 using Lagrange.Milky.Implementation.Entity.Event;
-using Lagrange.Milky.Implementation.Entity.Message.Incoming;
+using Lagrange.Milky.Implementation.Entity.Segment;
 
 namespace Lagrange.Milky.Implementation.Utility;
 
@@ -60,13 +60,10 @@ public static partial class MilkyJsonUtility
     [JsonSerializable(typeof(DeleteGroupFileParameter))]
 
     // === event ===
-    [JsonSerializable(typeof(Event.Event))]
     // bot_offline
     [JsonSerializable(typeof(BotOfflineEvent))]
     // message_receive
-    [JsonSerializable(typeof(FriendIncomingMessage))]
-    [JsonSerializable(typeof(GroupIncomingMessage))]
-    [JsonSerializable(typeof(TempIncomingMessage))]
+    [JsonSerializable(typeof(MessageReceiveEvent))]
     private partial class MilkyJsonContext : JsonSerializerContext;
 
     public static byte[] SerializeToUtf8Bytes(Type type, object? value)

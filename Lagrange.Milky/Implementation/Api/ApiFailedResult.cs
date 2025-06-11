@@ -2,14 +2,14 @@ using System.Text.Json.Serialization;
 
 namespace Lagrange.Milky.Implementation.Api;
 
-public class ApiFailedResult
+public class ApiFailedResult(long retcode, string message)
 {
     [JsonPropertyName("status")]
     public string Status => "failed";
 
     [JsonPropertyName("retcode")]
-    public required long Retcode { get; init; }
+    public long Retcode { get; } = retcode;
 
     [JsonPropertyName("message")]
-    public required string Message { get; init; }
+    public string Message { get; } = message;
 }

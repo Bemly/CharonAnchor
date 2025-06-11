@@ -2,18 +2,18 @@ using System.Text.Json.Serialization;
 
 namespace Lagrange.Milky.Implementation.Entity;
 
-public class Group
+public class Group(long groupId, string name, long memberCount, long maxMemberCount)
 {
 
     [JsonPropertyName("group_id")]
-    public required long GroupId { get; init; }
+    public long GroupId { get; } = groupId;
 
     [JsonPropertyName("name")]
-    public required string Name { get; init; }
+    public string Name { get; } = name;
 
     [JsonPropertyName("member_count")]
-    public required long MemberCount { get; init; }
+    public long MemberCount { get; } = memberCount;
 
     [JsonPropertyName("max_member_count")]
-    public required long MaxMemberCount { get; init; }
+    public long MaxMemberCount { get; } = maxMemberCount;
 }

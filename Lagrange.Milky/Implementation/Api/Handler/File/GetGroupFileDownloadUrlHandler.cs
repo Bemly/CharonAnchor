@@ -11,24 +11,23 @@ public class GetGroupFileDownloadUrlHandler(BotContext bot) : IApiHandler<GetGro
 
     public async Task<GetGroupFileDownloadUrlResult> HandleAsync(GetGroupFileDownloadUrlParameter parameter, CancellationToken token)
     {
-        return new GetGroupFileDownloadUrlResult
-        {
-            DownloadUrl = await _bot.GroupFSDownload(parameter.GroupId, parameter.FileId)
-        };
+        return new GetGroupFileDownloadUrlResult(await _bot.GroupFSDownload(parameter.GroupId, parameter.FileId));
     }
 }
 
-public class GetGroupFileDownloadUrlParameter
+public class GetGroupFileDownloadUrlParameter(long groupId, string fileId)
 {
+    [JsonRequired]
     [JsonPropertyName("group_id")]
-    public required long GroupId { get; init; }
+    public long GroupId { get; init; } = groupId;
 
+    [JsonRequired]
     [JsonPropertyName("file_id")]
-    public required string FileId { get; init; }
+    public string FileId { get; init; } = fileId;
 }
 
-public class GetGroupFileDownloadUrlResult
+public class GetGroupFileDownloadUrlResult(string downloadUrl)
 {
     [JsonPropertyName("download_url")]
-    public required string DownloadUrl { get; init; }
+    public string DownloadUrl { get; } = downloadUrl;
 }

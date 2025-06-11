@@ -1,50 +1,49 @@
 using System.Text.Json.Serialization;
 using Lagrange.Core;
 using Lagrange.Core.Common.Interface;
-using Lagrange.Milky.Implementation.Entity.Segment.Outgoing;
+using Lagrange.Milky.Implementation.Entity.Segment;
 using Lagrange.Milky.Implementation.Utility;
 
 namespace Lagrange.Milky.Implementation.Api.Handler.Message;
 
 [Api("send_private_message")]
-public class SendPrivateMessageHandler(BotContext bot, Converter converter) : IApiHandler<SendPrivateMessageParameter, SendPrivateMessageResult>
+public class SendPrivateMessageHandler(BotContext bot, EntityConvert convert) : IApiHandler<SendPrivateMessageParameter, SendPrivateMessageResult>
 {
     private readonly BotContext _bot = bot;
-    private readonly Converter _converter = converter;
+    private readonly EntityConvert _convert = convert;
 
     public async Task<SendPrivateMessageResult> HandleAsync(SendPrivateMessageParameter parameter, CancellationToken token)
     {
-        var result = await _bot.SendFriendMessage(
-            parameter.UserId,
-            await _converter.ToMessageChainAsync(parameter.Message, token)
-        );
+        var chain = await _convert.FriendSegmentsAsync(parameter.Message, parameter.UserId, token);
+        var result = await _bot.SendFriendMessage(parameter.UserId, chain);
 
-        return new SendPrivateMessageResult
-        {
-            MessageSeq = result.Sequence,
-            Time = new DateTimeOffset(result.Time).ToUnixTimeSeconds(),
-            ClientSeq = result.ClientSequence,
-        };
+        return new SendPrivateMessageResult(
+            result.Sequence,
+            new DateTimeOffset(result.Time).ToUnixTimeSeconds(),
+            result.ClientSequence
+        );
     }
 }
 
-public class SendPrivateMessageParameter
+public class SendPrivateMessageParameter(long userId, IReadOnlyList<IOutgoingSegment> message)
 {
+    [JsonRequired]
     [JsonPropertyName("user_id")]
-    public required long UserId { get; init; }
+    public long UserId { get; init; } = userId;
 
+    [JsonRequired]
     [JsonPropertyName("message")]
-    public required IReadOnlyList<IOutgoingSegment> Message { get; init; }
+    public IReadOnlyList<IOutgoingSegment> Message { get; init; } = message;
 }
 
-public class SendPrivateMessageResult
+public class SendPrivateMessageResult(long messageSeq, long time, long clientSeq)
 {
     [JsonPropertyName("message_seq")]
-    public required long MessageSeq { get; init; }
+    public long MessageSeq { get; } = messageSeq;
 
     [JsonPropertyName("time")]
-    public required long Time { get; init; }
+    public long Time { get; } = time;
 
     [JsonPropertyName("client_seq")]
-    public required long ClientSeq { get; init; }
+    public long ClientSeq { get; } = clientSeq;
 }

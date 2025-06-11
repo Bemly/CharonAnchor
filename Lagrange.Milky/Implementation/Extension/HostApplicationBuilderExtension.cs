@@ -1,11 +1,11 @@
 using Lagrange.Milky.Extension;
 using Lagrange.Milky.Implementation.Configuration;
 using Lagrange.Milky.Implementation.Communication;
-using Lagrange.Milky.Implementation.Utility;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Lagrange.Milky.Implementation.Event;
+using Lagrange.Milky.Implementation.Utility;
 
 namespace Lagrange.Milky.Implementation.Extension;
 
@@ -15,7 +15,7 @@ public static partial class HostApplicationBuilderExtension
         .ConfigureServices(services => services
             .Configure<MilkyConfiguration>(builder.Configuration.GetSection("Milky"))
             // Converter
-            .AddSingleton<Converter>()
+            .AddSingleton<EntityConvert>()
             // Api Handlers
             .AddApiHandlers()
         )

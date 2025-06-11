@@ -2,23 +2,23 @@ using System.Text.Json.Serialization;
 
 namespace Lagrange.Milky.Implementation.Entity;
 
-public class Friend
+public class Friend(long userId, string qid, string nickname, string sex, string remark, FriendCategory category)
 {
     [JsonPropertyName("user_id")]
-    public required long UserId { get; init; }
+    public long UserId { get; } = userId;
 
     [JsonPropertyName("qid")]
-    public required string Qid { get; init; }
+    public string Qid { get; } = qid;
 
     [JsonPropertyName("nickname")]
-    public required string Nickname { get; init; }
+    public string Nickname { get; } = nickname;
 
     [JsonPropertyName("sex")]
-    public required string Sex { get; init; }
+    public string Sex { get; } = sex;
 
     [JsonPropertyName("remark")]
-    public required string Remark { get; init; }
+    public string Remark { get; } = remark;
 
     [JsonPropertyName("category")]
-    public required FriendCategory Category { get; init; }
+    public FriendCategory Category { get; } = category;
 }

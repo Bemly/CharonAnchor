@@ -6,28 +6,27 @@ using Lagrange.Milky.Implementation.Utility;
 namespace Lagrange.Milky.Implementation.Api.Handler.System;
 
 [Api("get_group_list")]
-public class GetGroupListHandler(BotContext bot, Converter converter) : IApiHandler<GetGroupListParameter, GetGroupListResult>
+public class GetGroupListHandler(BotContext bot, EntityConvert convert) : IApiHandler<GetGroupListParameter, GetGroupListResult>
 {
     private readonly BotContext _bot = bot;
-    private readonly Converter _converter = converter;
+    private readonly EntityConvert _convert = convert;
 
     public async Task<GetGroupListResult> HandleAsync(GetGroupListParameter parameter, CancellationToken token)
     {
-        return new GetGroupListResult
-        {
-            Groups = (await _bot.FetchGroups(parameter.NoCache ?? false)).Select(_converter.Group)
-        };
+        var groups = (await _bot.FetchGroups(parameter.NoCache)).Select(_convert.Group);
+
+        return new GetGroupListResult(groups);
     }
 }
 
-public class GetGroupListParameter
+public class GetGroupListParameter(bool noCache = false)
 {
     [JsonPropertyName("no_cache")]
-    public bool? NoCache { get; init; } // false
+    public bool NoCache { get; } = noCache;
 }
 
-public class GetGroupListResult
+public class GetGroupListResult(IEnumerable<Entity.Group> groups)
 {
     [JsonPropertyName("groups")]
-    public required IEnumerable<Entity.Group> Groups { get; init; }
+    public IEnumerable<Entity.Group> Groups { get; } = groups;
 }

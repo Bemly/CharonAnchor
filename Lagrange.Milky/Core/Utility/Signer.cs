@@ -261,12 +261,7 @@ public class Signer : IAndroidBotSignProvider, IDisposable
     {
         var response = await GetSign<PcSecSignRequest, PcSecSignResponse>(
             $"{_base}/{_version}",
-            new PcSecSignRequest
-            {
-                Cmd = cmd,
-                Seq = seq,
-                Src = Convert.ToHexString(body.Span)
-            }
+            new PcSecSignRequest(cmd, seq, Convert.ToHexString(body.Span))
         );
 
         return new SsoSecureInfo
@@ -281,15 +276,14 @@ public class Signer : IAndroidBotSignProvider, IDisposable
     {
         var response = await GetSign<AndroidSecSignRequest, AndroidSignerResponse<AndroidSecSignResponseData>>(
             $"{_base}/sign",
-            new AndroidSecSignRequest
-            {
-                Uin = uin,
-                Cmd = cmd,
-                Seq = seq,
-                Buffer = Convert.ToHexString(body.Span),
-                Guid = Convert.ToHexString(_bot.Value.Keystore.Guid),
-                Version = _bot.Value.AppInfo.PtVersion
-            }
+            new AndroidSecSignRequest(
+                uin,
+                cmd,
+                seq,
+                Convert.ToHexString(body.Span),
+                Convert.ToHexString(_bot.Value.Keystore.Guid),
+                _bot.Value.AppInfo.PtVersion
+            )
         );
 
         return new SsoSecureInfo
@@ -306,14 +300,13 @@ public class Signer : IAndroidBotSignProvider, IDisposable
         {
             var response = await GetSign<AndroidEnergyRequest, AndroidSignerResponse<string>>(
                 $"{_base}/energy",
-                new AndroidEnergyRequest
-                {
-                    Uin = uin,
-                    Data = data,
-                    Guid = Convert.ToHexString(_bot.Value.Keystore.Guid),
-                    Ver = _bot.Value.AppInfo.SdkInfo.SdkVersion,
-                    Version = _bot.Value.AppInfo.PtVersion
-                }
+                new AndroidEnergyRequest(
+                    uin,
+                    data,
+                    Convert.ToHexString(_bot.Value.Keystore.Guid),
+                    _bot.Value.AppInfo.SdkInfo.SdkVersion,
+                    _bot.Value.AppInfo.PtVersion
+                )
             );
 
             return Convert.FromHexString(response.Data);
@@ -331,13 +324,12 @@ public class Signer : IAndroidBotSignProvider, IDisposable
         {
             var response = await GetSign<AndroidDebugXwidRequest, AndroidSignerResponse<string>>(
                 $"{_base}/get_tlv553",
-                new AndroidDebugXwidRequest
-                {
-                    Uin = uin,
-                    Data = data,
-                    Guid = Convert.ToHexString(_bot.Value.Keystore.Guid),
-                    Version = _bot.Value.AppInfo.PtVersion
-                }
+                new AndroidDebugXwidRequest(
+                    uin,
+                    data,
+                    Convert.ToHexString(_bot.Value.Keystore.Guid),
+                    _bot.Value.AppInfo.PtVersion
+                )
             );
 
             return Convert.FromHexString(response.Data);
@@ -401,106 +393,114 @@ public class Signer : IAndroidBotSignProvider, IDisposable
     }
 }
 
-public class PcSecSignRequest
+public class PcSecSignRequest(string cmd, int seq, string src)
 {
     [JsonPropertyName("cmd")]
-    public required string Cmd { get; init; }
+    public string Cmd { get; } = cmd;
 
     [JsonPropertyName("seq")]
-    public required int Seq { get; init; }
+    public int Seq { get; } = seq;
 
     [JsonPropertyName("src")]
-    public required string Src { get; init; }
+    public string Src { get; } = src;
 }
 
-public class PcSecSignResponse
+public class PcSecSignResponse(PcSecSignResponseValue value)
 {
+    [JsonRequired]
     [JsonPropertyName("value")]
-    public required PcSecSignResponseValue Value { get; set; }
+    public PcSecSignResponseValue Value { get; init; } = value;
 }
 
-public class PcSecSignResponseValue
+public class PcSecSignResponseValue(string sign, string token, string extra)
 {
+    [JsonRequired]
     [JsonPropertyName("sign")]
-    public required string Sign { get; set; }
+    public string Sign { get; init; } = sign;
 
+    [JsonRequired]
     [JsonPropertyName("token")]
-    public required string Token { get; set; }
+    public string Token { get; init; } = token;
 
+    [JsonRequired]
     [JsonPropertyName("extra")]
-    public required string Extra { get; set; }
+    public string Extra { get; init; } = extra;
 }
 
-public class AndroidSecSignRequest
+public class AndroidSecSignRequest(long uin, string cmd, int seq, string buffer, string guid, string version)
 {
     [JsonPropertyName("uin")]
-    public required long Uin { get; init; }
+    public long Uin { get; } = uin;
 
     [JsonPropertyName("cmd")]
-    public required string Cmd { get; init; }
+    public string Cmd { get; } = cmd;
 
     [JsonPropertyName("seq")]
-    public required int Seq { get; init; }
+    public int Seq { get; } = seq;
 
     [JsonPropertyName("buffer")]
-    public required string Buffer { get; init; }
+    public string Buffer { get; } = buffer;
 
     [JsonPropertyName("guid")]
-    public required string Guid { get; init; }
+    public string Guid { get; } = guid;
 
     [JsonPropertyName("version")]
-    public required string Version { get; init; }
+    public string Version { get; } = version;
 }
 
-public class AndroidEnergyRequest
+public class AndroidEnergyRequest(long uin, string data, string guid, string ver, string version)
 {
     [JsonPropertyName("uin")]
-    public required long Uin { get; init; }
+    public long Uin { get; } = uin;
 
     [JsonPropertyName("data")]
-    public required string Data { get; init; }
+    public string Data { get; } = data;
 
     [JsonPropertyName("guid")]
-    public required string Guid { get; init; }
+    public string Guid { get; } = guid;
 
     [JsonPropertyName("ver")]
-    public required string Ver { get; init; }
+    public string Ver { get; } = ver;
 
     [JsonPropertyName("version")]
-    public required string Version { get; init; }
+    public string Version { get; } = version;
 }
 
-public class AndroidDebugXwidRequest
+public class AndroidDebugXwidRequest(long uin, string data, string guid, string version)
 {
     [JsonPropertyName("uin")]
-    public required long Uin { get; init; }
+    public long Uin { get; } = uin;
 
     [JsonPropertyName("data")]
-    public required string Data { get; init; }
+    public string Data { get; } = data;
 
     [JsonPropertyName("guid")]
-    public required string Guid { get; init; }
+    public string Guid { get; } = guid;
 
     [JsonPropertyName("version")]
-    public required string Version { get; init; }
+    public string Version { get; } = version;
 }
 
-public class AndroidSignerResponse<TData>
+public class AndroidSignerResponse<TData>(TData data)
 {
+    [JsonRequired]
     [JsonPropertyName("data")]
-    public required TData Data { get; set; }
+    public TData Data { get; init; } = data;
 }
 
-public class AndroidSecSignResponseData
+public class AndroidSecSignResponseData(string sign, string token, string extra)
 {
+    [JsonRequired]
     [JsonPropertyName("sign")]
-    public required string Sign { get; set; }
+    public string Sign { get; init; } = sign;
 
+    [JsonRequired]
     [JsonPropertyName("token")]
-    public required string Token { get; set; }
+    public string Token { get; init; } = token;
 
+    [JsonRequired]
     [JsonPropertyName("extra")]
-    public required string Extra { get; set; }
+    public string Extra { get; init; } = extra;
 }
 
 public static partial class SignerLoggerExtension

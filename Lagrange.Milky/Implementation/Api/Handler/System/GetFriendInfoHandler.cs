@@ -7,32 +7,33 @@ using Lagrange.Milky.Implementation.Utility;
 namespace Lagrange.Milky.Implementation.Api.Handler.System;
 
 [Api("get_friend_info")]
-public class GetFriendInfoHandler(BotContext bot, Converter converter) : IApiHandler<GetFriendInfoParameter, GetFriendInfoResult>
+public class GetFriendInfoHandler(BotContext bot, EntityConvert convert) : IApiHandler<GetFriendInfoParameter, GetFriendInfoResult>
 {
     private readonly BotContext _bot = bot;
-    private readonly Converter _converter = converter;
+    private readonly EntityConvert _convert = convert;
 
     public async Task<GetFriendInfoResult> HandleAsync(GetFriendInfoParameter parameter, CancellationToken token)
     {
-        var friend = (await _bot.FetchFriends(parameter.NoCache ?? false))
+        var friend = (await _bot.FetchFriends(parameter.NoCache))
             .FirstOrDefault(friend => friend.Uin == parameter.UserId)
             ?? throw new ApiException(-1, "friend not found");
 
-        return new GetFriendInfoResult { Friend = _converter.Friend(friend) };
+        return new GetFriendInfoResult(_convert.Friend(friend));
     }
 }
 
-public class GetFriendInfoParameter
+public class GetFriendInfoParameter(long userId, bool noCache = false)
 {
+    [JsonRequired]
     [JsonPropertyName("user_id")]
-    public required long UserId { get; init; }
+    public long UserId { get; init; } = userId;
 
     [JsonPropertyName("no_cache")]
-    public bool? NoCache { get; init; } // false
+    public bool NoCache { get; } = noCache;
 }
 
-public class GetFriendInfoResult
+public class GetFriendInfoResult(Entity.Friend friend)
 {
     [JsonPropertyName("friend")]
-    public required Entity.Friend Friend { get; init; }
+    public Entity.Friend Friend { get; } = friend;
 }

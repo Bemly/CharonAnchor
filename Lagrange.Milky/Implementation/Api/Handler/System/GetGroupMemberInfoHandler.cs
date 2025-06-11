@@ -8,38 +8,37 @@ using Lagrange.Milky.Implementation.Utility;
 namespace Lagrange.Milky.Implementation.Api.Handler.System;
 
 [Api("get_group_member_info")]
-public class GetGroupMemberInfoHandler(BotContext bot, Converter converter) : IApiHandler<GetGroupMemberInfoParameter, GetGroupMemberInfoResult>
+public class GetGroupMemberInfoHandler(BotContext bot, EntityConvert convert) : IApiHandler<GetGroupMemberInfoParameter, GetGroupMemberInfoResult>
 {
     private readonly BotContext _bot = bot;
-    private readonly Converter _converter = converter;
+    private readonly EntityConvert _convert = convert;
 
     public async Task<GetGroupMemberInfoResult> HandleAsync(GetGroupMemberInfoParameter parameter, CancellationToken token)
     {
-        var member = (await _bot.FetchMembers(parameter.GroupId, parameter.NoCache ?? false))
+        var member = (await _bot.FetchMembers(parameter.GroupId, parameter.NoCache))
             .FirstOrDefault(member => member.Uin == parameter.UserId)
             ?? throw new ApiException(-1, "group member not found");
 
-        return new GetGroupMemberInfoResult
-        {
-            Member = _converter.GroupMember(member),
-        };
+        return new GetGroupMemberInfoResult(_convert.GroupMember(member));
     }
 }
 
-public class GetGroupMemberInfoParameter
+public class GetGroupMemberInfoParameter(long groupId, long userId, bool noCache = false)
 {
+    [JsonRequired]
     [JsonPropertyName("group_id")]
-    public required long GroupId { get; init; }
+    public long GroupId { get; init; } = groupId;
 
+    [JsonRequired]
     [JsonPropertyName("user_id")]
-    public required long UserId { get; init; }
+    public long UserId { get; init; } = userId;
 
     [JsonPropertyName("no_cache")]
-    public bool? NoCache { get; init; } // false
+    public bool NoCache { get; } = noCache;
 }
 
-public class GetGroupMemberInfoResult
+public class GetGroupMemberInfoResult(GroupMember member)
 {
     [JsonPropertyName("member")]
-    public required GroupMember Member { get; init; }
+    public GroupMember Member { get; } = member;
 }

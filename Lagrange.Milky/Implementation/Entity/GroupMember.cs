@@ -2,36 +2,35 @@ using System.Text.Json.Serialization;
 
 namespace Lagrange.Milky.Implementation.Entity;
 
-public class GroupMember
+public class GroupMember(long groupId, long userId, string nickname, string card, string? title, string sex, int level, string role, long joinTime, long lastSentTime)
 {
-
     [JsonPropertyName("group_id")]
-    public required long GroupId { get; init; }
+    public long GroupId { get; } = groupId;
 
     [JsonPropertyName("user_id")]
-    public required long UserId { get; init; }
+    public long UserId { get; } = userId;
 
     [JsonPropertyName("nickname")]
-    public required string Nickname { get; init; }
+    public string Nickname { get; } = nickname;
 
     [JsonPropertyName("card")]
-    public required string Card { get; init; }
+    public string Card { get; } = card;
 
     [JsonPropertyName("title")]
-    public string? Title { get; init; }
+    public string? Title { get; } = title;
 
     [JsonPropertyName("sex")]
-    public required string Sex { get; init; }
+    public string Sex { get; } = sex;
 
     [JsonPropertyName("level")]
-    public required int Level { get; init; }
+    public int Level { get; } = level;
 
     [JsonPropertyName("role")]
-    public required string Role { get; init; }
+    public string Role { get; } = role;
 
     [JsonPropertyName("join_time")]
-    public required long JoinTime { get; init; }
+    public long JoinTime { get; } = joinTime;
 
     [JsonPropertyName("last_sent_time")]
-    public required long LastSentTime { get; init; }
+    public long LastSentTime { get; } = lastSentTime;
 }

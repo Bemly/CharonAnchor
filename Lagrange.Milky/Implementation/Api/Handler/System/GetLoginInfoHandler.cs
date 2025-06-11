@@ -13,19 +13,15 @@ public class GetLoginInfoHandler(BotContext bot) : IApiHandler<object, GetLoginI
     {
         if (_bot.BotInfo == null) throw new ApiException(-1, "login info is null");
 
-        return Task.FromResult(new GetLoginInfoResult
-        {
-            Uin = _bot.BotUin,
-            Nickname = _bot.BotInfo.Name,
-        });
+        return Task.FromResult(new GetLoginInfoResult(_bot.BotUin, _bot.BotInfo.Name));
     }
 }
 
-public class GetLoginInfoResult
+public class GetLoginInfoResult(long uin, string nickname)
 {
     [JsonPropertyName("uin")]
-    public required long Uin { get; init; }
+    public long Uin { get; } = uin;
 
     [JsonPropertyName("nickname")]
-    public required string Nickname { get; init; }
+    public string Nickname { get; } = nickname;
 }

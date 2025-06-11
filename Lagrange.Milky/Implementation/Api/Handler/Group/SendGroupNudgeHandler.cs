@@ -17,11 +17,13 @@ public class SendGroupNudgeHandler(BotContext bot) : IApiHandler<SendGroupNudgeP
     }
 }
 
-public class SendGroupNudgeParameter
+public class SendGroupNudgeParameter(long groupId, long userId)
 {
+    [JsonRequired]
     [JsonPropertyName("group_id")]
-    public required long GroupId { get; init; }
+    public long GroupId { get; init; } = groupId;
 
+    [JsonRequired]
     [JsonPropertyName("user_id")]
-    public required long UserId { get; init; }
+    public long UserId { get; init; } = userId;
 }

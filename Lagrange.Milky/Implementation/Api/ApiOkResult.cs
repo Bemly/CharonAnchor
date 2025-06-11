@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace Lagrange.Milky.Implementation.Api;
 
-public class ApiOkResult
+public class ApiOkResult(object data)
 {
     [JsonPropertyName("status")]
     public string Status => "ok";
@@ -11,5 +11,5 @@ public class ApiOkResult
     public long Retcode => 0;
 
     [JsonPropertyName("data")]
-    public required object Data { get; init; }
+    public object Data { get; } = data;
 }

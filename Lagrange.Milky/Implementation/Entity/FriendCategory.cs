@@ -2,11 +2,11 @@ using System.Text.Json.Serialization;
 
 namespace Lagrange.Milky.Implementation.Entity;
 
-public class FriendCategory
+public class FriendCategory(int categoryId, string categoryName)
 {
     [JsonPropertyName("category_id")]
-    public required int CategoryId { get; init; }
+    public int CategoryId { get; } = categoryId;
 
     [JsonPropertyName("category_name")]
-    public required string CategoryName { get; init; }
+    public string CategoryName { get; } = categoryName;
 }

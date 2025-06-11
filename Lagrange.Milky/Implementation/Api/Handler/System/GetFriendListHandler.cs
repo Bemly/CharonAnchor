@@ -6,28 +6,27 @@ using Lagrange.Milky.Implementation.Utility;
 namespace Lagrange.Milky.Implementation.Api.Handler.System;
 
 [Api("get_friend_list")]
-public class GetFriendListHandler(BotContext bot, Converter converter) : IApiHandler<GetFriendListParameter, GetFriendListResult>
+public class GetFriendListHandler(BotContext bot, EntityConvert convert) : IApiHandler<GetFriendListParameter, GetFriendListResult>
 {
     private readonly BotContext _bot = bot;
-    private readonly Converter _converter = converter;
+    private readonly EntityConvert _convert = convert;
 
     public async Task<GetFriendListResult> HandleAsync(GetFriendListParameter parameter, CancellationToken token)
     {
-        return new GetFriendListResult
-        {
-            Friends = (await _bot.FetchFriends(parameter.NoCache ?? false)).Select(_converter.Friend)
-        };
+        var friends = (await _bot.FetchFriends(parameter.NoCache)).Select(_convert.Friend);
+
+        return new GetFriendListResult(friends);
     }
 }
 
-public class GetFriendListParameter
+public class GetFriendListParameter(bool noCache = false)
 {
     [JsonPropertyName("no_cache")]
-    public bool? NoCache { get; init; } // false
+    public bool NoCache { get; } = noCache;
 }
 
-public class GetFriendListResult
+public class GetFriendListResult(IEnumerable<Entity.Friend> friends)
 {
     [JsonPropertyName("friends")]
-    public required IEnumerable<Entity.Friend> Friends { get; init; }
+    public IEnumerable<Entity.Friend> Friends { get; } = friends;
 }

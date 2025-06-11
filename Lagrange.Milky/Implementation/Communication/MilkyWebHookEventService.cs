@@ -12,7 +12,8 @@ public class MilkyWebHookEventService(ILogger<MilkyWebHookEventService> logger, 
 {
     private readonly ILogger<MilkyWebHookEventService> _logger = logger;
 
-    private readonly string _url = options.Value.WebHook?.Url ?? throw new Exception("Milky.WebHook.Url cannot be null");
+    private readonly string _url = options.Value.WebHook?.Url
+        ?? throw new Exception("Milky.WebHook.Url cannot be null");
 
     private readonly EventService _event = @event;
 

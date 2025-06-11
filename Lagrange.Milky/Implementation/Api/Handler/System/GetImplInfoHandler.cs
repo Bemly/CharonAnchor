@@ -1,6 +1,6 @@
-
 using System.Text.Json.Serialization;
 using Lagrange.Core;
+using Lagrange.Core.Common;
 
 namespace Lagrange.Milky.Implementation.Api.Handler.System;
 
@@ -11,39 +11,38 @@ public class GetImplInfoHandler(BotContext bot) : IApiHandler<object, GetImplInf
 
     public Task<GetImplInfoResult> HandleAsync(object parameter, CancellationToken token)
     {
-        return Task.FromResult(new GetImplInfoResult
-        {
-            ImplName = Constants.ImplementationName,
-            ImplVersion = Constants.ImplementationVersion,
-            QqProtocolVersion = _bot.AppInfo.CurrentVersion,
-            QqProtocolType = _bot.Config.Protocol switch
+        return Task.FromResult(new GetImplInfoResult(
+            Constants.ImplementationName,
+            Constants.ImplementationVersion,
+            _bot.AppInfo.CurrentVersion,
+            _bot.Config.Protocol switch
             {
-                Lagrange.Core.Common.Protocols.Windows => "windows",
-                Lagrange.Core.Common.Protocols.MacOs => "macos",
-                Lagrange.Core.Common.Protocols.Linux => "linux",
-                Lagrange.Core.Common.Protocols.AndroidPhone => "android_phone",
-                Lagrange.Core.Common.Protocols.AndroidPad => "android_pad",
+                Protocols.Windows => "windows",
+                Protocols.MacOs => "macos",
+                Protocols.Linux => "linux",
+                Protocols.AndroidPhone => "android_phone",
+                Protocols.AndroidPad => "android_pad",
                 _ => throw new NotSupportedException(),
             },
-            MilkyVersion = Constants.MilkyVersion,
-        });
+            Constants.MilkyVersion
+        ));
     }
 }
 
-public class GetImplInfoResult
+public class GetImplInfoResult(string implName, string implVersion, string qqProtocolVersion, string qqProtocolType, string milkyVersion)
 {
     [JsonPropertyName("impl_name")]
-    public required string ImplName { get; init; }
+    public string ImplName { get; } = implName;
 
     [JsonPropertyName("impl_version")]
-    public required string ImplVersion { get; init; }
+    public string ImplVersion { get; } = implVersion;
 
     [JsonPropertyName("qq_protocol_version")]
-    public required string QqProtocolVersion { get; init; }
+    public string QqProtocolVersion { get; } = qqProtocolVersion;
 
     [JsonPropertyName("qq_protocol_type")]
-    public required string QqProtocolType { get; init; }
+    public string QqProtocolType { get; } = qqProtocolType;
 
     [JsonPropertyName("milky_version")]
-    public required string MilkyVersion { get; init; }
+    public string MilkyVersion { get; } = milkyVersion;
 }
