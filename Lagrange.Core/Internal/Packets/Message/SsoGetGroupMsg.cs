@@ -12,7 +12,7 @@ internal partial class SsoGetGroupMsg
 {
     [ProtoMember(1)] public SsoGetGroupMsgInfo Info { get; set; }
     
-    [ProtoMember(2)] public bool Direction { get; set; }
+    [ProtoMember(2)] public uint Filter { get; set; } // 1 for no filter, 2 for filter of only 10 msg within 3 days
 }
 
 [ProtoPackable]

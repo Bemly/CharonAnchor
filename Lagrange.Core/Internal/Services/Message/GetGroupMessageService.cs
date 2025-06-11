@@ -20,7 +20,7 @@ internal class GetGroupMessageService : BaseService<GetGroupMessageEventReq, Get
                 StartSequence = input.StartSequence,
                 EndSequence = input.EndSequence
             },
-            Direction = true
+            Filter = 1 // 1 for no filter, 2 for filter of only 10 msg within 3 days
         };
         return ValueTask.FromResult(ProtoHelper.Serialize(packet));
     }
