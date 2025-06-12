@@ -19,8 +19,7 @@ public class SendPrivateMessageHandler(BotContext bot, EntityConvert convert) : 
 
         return new SendPrivateMessageResult(
             result.Sequence,
-            new DateTimeOffset(result.Time).ToUnixTimeSeconds(),
-            result.ClientSequence
+            new DateTimeOffset(result.Time).ToUnixTimeSeconds()
         );
     }
 }
@@ -36,14 +35,11 @@ public class SendPrivateMessageParameter(long userId, IReadOnlyList<IOutgoingSeg
     public IReadOnlyList<IOutgoingSegment> Message { get; init; } = message;
 }
 
-public class SendPrivateMessageResult(long messageSeq, long time, long clientSeq)
+public class SendPrivateMessageResult(long messageSeq, long time)
 {
     [JsonPropertyName("message_seq")]
     public long MessageSeq { get; } = messageSeq;
 
     [JsonPropertyName("time")]
     public long Time { get; } = time;
-
-    [JsonPropertyName("client_seq")]
-    public long ClientSeq { get; } = clientSeq;
 }

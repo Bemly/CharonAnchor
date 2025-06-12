@@ -21,8 +21,7 @@ public partial class EntityConvert
         message.Contact.Uin,
         message.Time.ToUnixTimeSeconds(),
         Segments(message.Entities),
-        Friend((BotFriend)message.Contact),
-        message.ClientSequence
+        Friend((BotFriend)message.Contact)
     );
 
     public GroupMessage GroupMessage(BotMessage message) => new(
