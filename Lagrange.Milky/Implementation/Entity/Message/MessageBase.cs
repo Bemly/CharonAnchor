@@ -3,6 +3,9 @@ using Lagrange.Milky.Implementation.Entity.Segment;
 
 namespace Lagrange.Milky.Implementation.Entity.Message;
 
+[JsonDerivedType(typeof(FriendMessage))]
+[JsonDerivedType(typeof(GroupMessage))]
+[JsonDerivedType(typeof(TempMessage))]
 public abstract class MessageBase(long peerId, long messageSeq, long senderId, long time, IReadOnlyList<IIncomingSegment> segments, string messageScene)
 {
     [JsonPropertyName("peer_id")]
