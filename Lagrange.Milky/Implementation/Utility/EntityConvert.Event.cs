@@ -16,12 +16,6 @@ public partial class EntityConvert
     public MessageReceiveEvent MessageReceiveEvent(LgrEventArgs.BotMessageEvent @event) => new(
         @event.Message.Time.ToUnixTimeSeconds(),
         _bot.BotUin,
-        @event.Message.Type switch
-        {
-            MessageType.Group => GroupMessage(@event.Message),
-            MessageType.Private => FriendMessage(@event.Message),
-            MessageType.Temp => TempMessage(@event.Message),
-            _ => throw new NotSupportedException(),
-        }
+        MessageBase(@event.Message)
     );
 }

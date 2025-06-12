@@ -46,6 +46,12 @@ public static partial class MilkyJsonUtility
     // send_group_message
     [JsonSerializable(typeof(SendGroupMessageParameter))]
     [JsonSerializable(typeof(SendGroupMessageResult))]
+    // get_message
+    [JsonSerializable(typeof(GetMessageParameter))]
+    [JsonSerializable(typeof(GetMessageResult))]
+    // get_history_messages
+    [JsonSerializable(typeof(GetHistoryMessagesParameter))]
+    [JsonSerializable(typeof(GetHistoryMessagesResult))]
     // == friend ==
     // send_friend_nudge
     [JsonSerializable(typeof(SendFriendNudgeParameter))]
