@@ -1,0 +1,114 @@
+using Lagrange.Core.Common.Interface;
+using Lagrange.Core.Message;
+using Lagrange.Core.Message.Entities;
+using Lagrange.Milky.Entity.Segment;
+
+namespace Lagrange.Milky.Utility;
+
+public partial class EntityConvert
+{
+    private IReadOnlyList<IIncomingSegment> Segments(MessageChain entities)
+    {
+        var segments = new List<IIncomingSegment>();
+        foreach (var entity in entities)
+        {
+            segments.Add(Segment(entity));
+        }
+        return segments;
+    }
+    public async Task<MessageChain> GroupSegmentsAsync(IReadOnlyList<IOutgoingSegment> segments, long uin, CancellationToken token)
+    {
+        var entities = new MessageChain();
+        foreach (var segment in segments)
+        {
+            entities.Add(await GroupSegmentAsync(segment, uin, token));
+        }
+        return entities;
+    }
+    public async Task<MessageChain> FriendSegmentsAsync(IReadOnlyList<IOutgoingSegment> segments, long uin, CancellationToken token)
+    {
+        var entities = new MessageChain();
+        foreach (var segment in segments)
+        {
+            entities.Add(await FriendSegmentAsync(segment, uin, token));
+        }
+        return entities;
+    }
+
+    private IIncomingSegment Segment(IMessageEntity entities) => entities switch
+    {
+        TextEntity text => new TextIncomingSegment(text.Text),
+        MentionEntity mention when mention.Uin != 0 => new MentionIncomingSegment(mention.Uin),
+        MentionEntity mention when mention.Uin == 0 => new MentionAllIncomingSegment(),
+        // ? => new FaceSegment(...),
+        ReplyEntity reply => new ReplyIncomingSegment(reply.SrcSequence),
+        ImageEntity image => new ImageIncomingSegment(
+            image.FileUuid,
+            image.FileUrl,
+            image.Summary,
+            image.SubType switch
+            {
+                0 => "normal",
+                _ => "sticker",
+            }
+        ),
+        RecordEntity record => new RecordIncomingSegment(record.FileUuid, record.FileUrl, (int)record.RecordLength),
+        VideoEntity video => new VideoIncomingSegment(video.FileUuid, video.FileUrl),
+        MultiMsgEntity multiMsg => new ForwardIncomingSegment(multiMsg.ResId!),
+        // ? => new MarketFaceSegment(...),
+        // ? => new LightAppSegment(...),
+        // ? => new XmlSegment(...),
+        _ => throw new NotSupportedException(),
+    };
+    private Task<IMessageEntity> GroupSegmentAsync(IOutgoingSegment segment, long uin, CancellationToken token) => segment switch
+    {
+        ReplyOutgoingSegment reply => ReplyGroupSegmentAsync(reply, uin, token),
+        _ => CommonSegmentAsync(segment, token),
+    };
+    private Task<IMessageEntity> FriendSegmentAsync(IOutgoingSegment segment, long uin, CancellationToken token) => segment switch
+    {
+        ReplyOutgoingSegment reply => ReplyFriendSegmentAsync(reply, uin, token),
+        _ => CommonSegmentAsync(segment, token),
+    };
+    private async Task<IMessageEntity> CommonSegmentAsync(IOutgoingSegment segment, CancellationToken token) => segment switch
+    {
+        TextOutgoingSegment text => new TextEntity(text.Data.Text),
+        MentionOutgoingSegment mention => new MentionEntity(mention.Data.UserId, null),
+        MentionAllOutgoingSegment => new MentionEntity(0, null),
+        // TODO
+        FaceOutgoingSegment => throw new NotImplementedException(),
+        // ReplySegment => 
+        ImageOutgoingSegment image => new ImageEntity(
+            await _resolver.ToMemoryStreamAsync(image.Data.Uri, token),
+            image.Data.Summary,
+            image.Data.SubType switch
+            {
+                "normal" => 0,
+                "sticker" => 1,
+                _ => throw new NotSupportedException(),
+            }
+        ),
+        RecordOutgoingSegment record => new RecordEntity(await _resolver.ToMemoryStreamAsync(record.Data.Uri, token)),
+        VideoOutgoingSegment video => new VideoEntity(
+            await _resolver.ToMemoryStreamAsync(video.Data.Uri, token),
+            video.Data.ThumbUri != null ? await _resolver.ToMemoryStreamAsync(video.Data.ThumbUri, token) : null
+        ),
+        // TODO
+        ForwardOutgoingSegment => throw new NotImplementedException(),
+        _ => throw new NotSupportedException(),
+    };
+
+    private async Task<IMessageEntity> ReplyGroupSegmentAsync(ReplyOutgoingSegment reply, long uin, CancellationToken token)
+    {
+        int sequence = (int)reply.Data.MessageSeq;
+        var messages = await _bot.GetGroupMessage(uin, sequence, sequence).WaitAsync(token);
+        if (messages.Count == 0) throw new Exception("message not found");
+
+        return new ReplyEntity(messages[0]);
+    }
+    private Task<IMessageEntity> ReplyFriendSegmentAsync(ReplyOutgoingSegment reply, long uin, CancellationToken token)
+    {
+        // TODO
+        throw new NotImplementedException();
+    }
+}
