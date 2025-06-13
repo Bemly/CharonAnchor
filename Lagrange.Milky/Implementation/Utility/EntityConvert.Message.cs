@@ -17,7 +17,7 @@ public partial class EntityConvert
 
     public FriendMessage FriendMessage(BotMessage message) => new(
         message.Contact.Uin == _bot.BotUin ? message.Contact.Uin : message.Receiver.Uin,
-        message.Sequence,
+        message.ClientSequence,
         message.Contact.Uin,
         message.Time.ToUnixTimeSeconds(),
         Segments(message.Entities),
