@@ -106,9 +106,12 @@ public partial class EntityConvert
 
         return new ReplyEntity(message);
     }
-    private Task<IMessageEntity> ReplyFriendSegmentAsync(ReplyOutgoingSegment reply, long uin, CancellationToken token)
+    private async Task<IMessageEntity> ReplyFriendSegmentAsync(ReplyOutgoingSegment reply, long uin, CancellationToken token)
     {
-        // TODO
-        throw new NotImplementedException();
+        int sequence = (int)reply.Data.MessageSeq;
+        var message = await _cache.GetMessageAsync(MessageType.Private, uin, sequence, token);
+        if (message == null) throw new Exception("message not found");
+
+        return new ReplyEntity(message);
     }
 }
