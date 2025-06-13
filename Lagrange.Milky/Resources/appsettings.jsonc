@@ -65,7 +65,7 @@
         // "AccessToken": null
 
         // Whether to enable WebSocket service
-        // "EnabledWebSocket": true, // Default
+        // "EnabledWebSocket": true,
 
         // Set to null to disable the WebHook service
         // "WebHook": null, // Default
