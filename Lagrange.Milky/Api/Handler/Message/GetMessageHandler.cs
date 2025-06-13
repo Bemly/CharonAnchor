@@ -2,31 +2,37 @@ using System.Text.Json.Serialization;
 using Lagrange.Core;
 using Lagrange.Core.Common.Interface;
 using Lagrange.Milky.Api.Exception;
+using Lagrange.Milky.Cache;
 using Lagrange.Milky.Entity.Message;
 using Lagrange.Milky.Utility;
 
 namespace Lagrange.Milky.Api.Handler.Message;
 
 [Api("get_message")]
-public class GetMessageHandler(BotContext bot, EntityConvert convert) : IApiHandler<GetMessageParameter, GetMessageResult>
+public class GetMessageHandler(BotContext bot, MessageCache cache, EntityConvert convert) : IApiHandler<GetMessageParameter, GetMessageResult>
 {
     private readonly BotContext _bot = bot;
+    private readonly MessageCache _cache = cache;
     private readonly EntityConvert _convert = convert;
 
     public async Task<GetMessageResult> HandleAsync(GetMessageParameter parameter, CancellationToken token)
     {
-        int sequence = (int)parameter.MessageSeq;
-        var messages = parameter.MessageScene switch
-        {
-            "friend" => throw new NotImplementedException(),
-            "group" => await _bot.GetGroupMessage(parameter.PeerId, sequence, sequence),
-            "temp" => throw new ApiException(-1, "temp not supported"),
-            _ => throw new NotSupportedException(),
-        };
+        var message = await _cache.GetMessageAsync(
+            parameter.MessageScene switch
+            {
+                "friend" => throw new NotSupportedException(),
+                "group" => Lagrange.Core.Message.MessageType.Group,
+                "temp" => throw new ApiException(-1, "temp not supported"),
+                _ => throw new NotSupportedException(),
+            },
+            parameter.PeerId,
+            (int)parameter.MessageSeq,
+            token
+        );
 
-        if (messages.Count == 0) throw new ApiException(-2, "message not found");
+        if (message == null) throw new ApiException(-2, "message not found");
 
-        return new GetMessageResult(_convert.MessageBase(messages[0]));
+        return new GetMessageResult(_convert.MessageBase(message));
     }
 }
 

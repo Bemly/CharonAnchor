@@ -16,7 +16,7 @@ public partial class EntityConvert
     };
 
     public FriendMessage FriendMessage(BotMessage message) => new(
-        message.Contact.Uin == _bot.BotUin ? message.Contact.Uin : message.Receiver.Uin,
+        message.Contact.Uin == _bot.BotUin ? message.Receiver.Uin : message.Contact.Uin,
         message.ClientSequence,
         message.Contact.Uin,
         message.Time.ToUnixTimeSeconds(),
@@ -35,7 +35,7 @@ public partial class EntityConvert
     );
 
     public TempMessage TempMessage(BotMessage message) => new(
-        message.Contact.Uin == _bot.BotUin ? message.Contact.Uin : message.Receiver.Uin,
+        message.Contact.Uin == _bot.BotUin ? message.Receiver.Uin : message.Contact.Uin,
         message.Sequence,
         message.Contact.Uin,
         message.Time.ToUnixTimeSeconds(),

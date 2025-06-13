@@ -101,10 +101,10 @@ public partial class EntityConvert
     private async Task<IMessageEntity> ReplyGroupSegmentAsync(ReplyOutgoingSegment reply, long uin, CancellationToken token)
     {
         int sequence = (int)reply.Data.MessageSeq;
-        var messages = await _bot.GetGroupMessage(uin, sequence, sequence).WaitAsync(token);
-        if (messages.Count == 0) throw new Exception("message not found");
+        var message = await _cache.GetMessageAsync(MessageType.Group, uin, sequence, token);
+        if (message == null) throw new Exception("message not found");
 
-        return new ReplyEntity(messages[0]);
+        return new ReplyEntity(message);
     }
     private Task<IMessageEntity> ReplyFriendSegmentAsync(ReplyOutgoingSegment reply, long uin, CancellationToken token)
     {

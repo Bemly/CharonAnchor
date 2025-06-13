@@ -13,7 +13,7 @@ public class EventService(ILogger<EventService> logger, IOptions<MilkyConfigurat
 {
     private readonly ILogger<EventService> _logger = logger;
 
-    private readonly bool _ignoreBotMessage = options.Value.IgnoreBotMessage;
+    private readonly bool _ignoreBotMessage = options.Value.Message.IgnoreBotMessage;
 
     private readonly BotContext _bot = bot;
     private readonly EntityConvert _convert = convert;

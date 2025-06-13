@@ -12,11 +12,11 @@ namespace Lagrange.Milky.Implementation.Api.Generator;
 [Generator(LanguageNames.CSharp)]
 public class MilkyApiHandlerGenerator : IIncrementalGenerator
 {
-    private const string ApiAttributeFullName = "Lagrange.Milky.Implementation.Api.ApiAttribute";
+    private const string ApiAttributeFullName = "Lagrange.Milky.Api.ApiAttribute";
 
     private const string MilkyJsonContextSyntaxName = "JsonContext";
     private const string JsonSerializableSyntaxName = "JsonSerializable";
-    private const string IApiHandlerBaseFullName = "Lagrange.Milky.Implementation.Api.IApiHandler`2";
+    private const string IApiHandlerBaseFullName = "Lagrange.Milky.Api.Handler.IApiHandler`2";
 
     // private void Check(SourceProductionContext context, (ImmutableArray<ApiHandlerInfo> Infos, ImmutableArray<IEnumerable<INamedTypeSymbol>> Symbols) tuple)
     // {
@@ -137,7 +137,7 @@ public class MilkyApiHandlerGenerator : IIncrementalGenerator
         {
             public static partial TServiceCollection AddApiHandlers<TServiceCollection>(this TServiceCollection services) where TServiceCollection : global::Microsoft.Extensions.DependencyInjection.IServiceCollection
             {
-        {{string.Join("\n", infos.Select(info => $"        global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddKeyedSingleton<global::Lagrange.Milky.Implementation.Api.IApiHandler, {info.HandlerTypeFullName}>(services, \"{info.ApiName}\");"))}}
+        {{string.Join("\n", infos.Select(info => $"        global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddKeyedSingleton<global::Lagrange.Milky.Api.Handler.IApiHandler, {info.HandlerTypeFullName}>(services, \"{info.ApiName}\");"))}}
 
                 return services;
             }

@@ -2,6 +2,7 @@ using Lagrange.Core;
 using Lagrange.Core.Common;
 using Lagrange.Core.Common.Interface;
 using Lagrange.Milky.Api;
+using Lagrange.Milky.Cache;
 using Lagrange.Milky.Configuration;
 using Lagrange.Milky.Core.Service;
 using Lagrange.Milky.Core.Service.Core;
@@ -123,6 +124,11 @@ public static class HostApplicationBuilderExtension
     public static HostApplicationBuilder ConfigureMilky(this HostApplicationBuilder builder) => builder
     .ConfigureServices(services => services
         .Configure<MilkyConfiguration>(builder.Configuration.GetSection("Milky"))
+        // MessageCache
+        .AddSingleton<MessageCache>()
+        .AddHostedService(ServiceProviderServiceExtensions.GetRequiredService<MessageCache>)
+        // ResourceResolver
+        .AddSingleton<ResourceResolver>()
         // Converter
         .AddSingleton<EntityConvert>()
         // Api Handlers
@@ -135,13 +141,13 @@ public static class HostApplicationBuilderExtension
         var configuration = builder.Configuration.GetSection("Milky").Get<MilkyConfiguration>()
             ?? throw new Exception("Milky cannot be null");
 
-        if (configuration.UseWebSocket || configuration.WebHook != null)
+        if (configuration.WebSocket != null || configuration.WebHook != null)
         {
             services.AddSingleton<EventService>();
             services.AddHostedService(ServiceProviderServiceExtensions.GetRequiredService<EventService>);
         }
 
-        if (configuration.UseWebSocket) services.AddHostedService<MilkyWebSocketEventService>();
+        if (configuration.WebSocket != null) services.AddHostedService<MilkyWebSocketEventService>();
         if (configuration.WebHook != null) services.AddHostedService<MilkyWebHookEventService>();
     });
 }

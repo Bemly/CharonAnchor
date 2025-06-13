@@ -1,8 +1,8 @@
 {
-    "$schema": "https://raw.githubusercontent.com/LagrangeDev/LagrangeV2/refs/heads/main/Lagrange.Milky/Resources/appsettings_schema.json",
+    "$schema": "https://json.schemastore.org/appsettings.json",
     "Logging": {
         "LogLevel": {
-            "Default": "Information",
+            "Default": "Trace",
         },
     },
     "Core": {
@@ -61,17 +61,29 @@
         // The path prefix that Milky service listens on
         // "Prefix": "/",
 
-        // Whether to use WebSocket service
-        // "EnableWebSocket": true,
+        // Token for verification, Set to null to disable
+        // "AccessToken": null
+
+        // Set to null to disable the WebSocket service
+        // "WebSocket": {}, // Default
+        // "WebSocket": null,
 
         // Set to null to disable the WebHook service
         // "WebHook": null, // Default
         // "WebHook": {
-        //     WebHook Target URL
+        //     // WebHook Target URL
         //     "Url": "http://127.0.0.1:3001/webhook"
         // }
 
-        // Whether to ignore messages sent by Bot
-        // "IgnoreBotMessage": false
+        // "Message": {
+        //     // Whether to ignore messages sent by Bot
+        //     "IgnoreBotMessage": true,
+        //     "Cache": {
+        //         // Cache eviction policy, supports `LRU` `FIFO`
+        //         "Policy": "LRU",
+        //         // Maximum cache capacity
+        //         "Capacity": 1000,
+        //     },
+        // },
     },
 }

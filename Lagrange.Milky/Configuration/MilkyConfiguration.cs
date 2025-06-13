@@ -8,11 +8,11 @@ public class MilkyConfiguration
 
     public string Prefix { get; set; } = "/";
 
-    public bool UseWebSocket { get; set; } = true;
-
     public string? AccessToken { get; set; }
+
+    public WebSocketConfiguration? WebSocket { get; set; } = new WebSocketConfiguration();
 
     public WebHookConfiguration? WebHook { get; set; }
 
-    public bool IgnoreBotMessage { get; set; } = false;
+    public MessageConfiguration Message { get; set; } = new MessageConfiguration();
 }
