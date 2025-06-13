@@ -19,7 +19,7 @@ public class GetGroupMemberInfoHandler(BotContext bot, EntityConvert convert) : 
             .FirstOrDefault(member => member.Uin == parameter.UserId)
             ?? throw new ApiException(-1, "group member not found");
 
-        return new GetGroupMemberInfoResult(_convert.GroupMember(member));
+        return new GetGroupMemberInfoResult(await _convert.GroupMemberAsync(member, token));
     }
 }
 

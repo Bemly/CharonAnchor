@@ -32,7 +32,7 @@ public class GetMessageHandler(BotContext bot, MessageCache cache, EntityConvert
 
         if (message == null) throw new ApiException(-2, "message not found");
 
-        return new GetMessageResult(_convert.MessageBase(message));
+        return new GetMessageResult(await _convert.MessageBaseAsync(message, token));
     }
 }
 

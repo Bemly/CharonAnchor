@@ -21,8 +21,13 @@ public class EventService(ILogger<EventService> logger, IOptions<MilkyConfigurat
     private readonly HashSet<Action<Memory<byte>>> _handlers = [];
     private readonly ReaderWriterLockSlim _lock = new();
 
+    private CancellationTokenSource? _cts;
+    private CancellationTokenSource Cts { get => _cts ?? throw new Exception("Cts not initialization"); }
+
     public Task StartAsync(CancellationToken token)
     {
+        _cts = new();
+
         _bot.EventInvoker.RegisterEvent<LgrEvents.BotOfflineEvent>(HandleOfflineEvent);
         _bot.EventInvoker.RegisterEvent<LgrEvents.BotMessageEvent>(HandleMessageEvent);
 
@@ -49,13 +54,13 @@ public class EventService(ILogger<EventService> logger, IOptions<MilkyConfigurat
         }
     }
 
-    private void HandleMessageEvent(BotContext bot, LgrEvents.BotMessageEvent @event)
+    private async void HandleMessageEvent(BotContext bot, LgrEvents.BotMessageEvent @event)
     {
         try
         {
             if (_ignoreBotMessage && @event.Message.Contact.Uin == bot.BotUin) return;
 
-            var result = _convert.MessageReceiveEvent(@event);
+            var result = await _convert.MessageReceiveEventAsync(@event, Cts.Token);
             byte[] bytes = JsonUtility.SerializeToUtf8Bytes(result.GetType(), result);
             using (_lock.UsingReadLock())
             {
@@ -75,6 +80,8 @@ public class EventService(ILogger<EventService> logger, IOptions<MilkyConfigurat
     {
         // TODO: unregister
         // _bot.EventInvoker.UnregisterEvent<BotMessageEvent>(HandleMessageEvent);
+
+        _cts?.Cancel();
 
         return Task.CompletedTask;
     }

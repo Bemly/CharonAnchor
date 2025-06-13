@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Lagrange.Milky.Entity.Event;
 using Lagrange.Milky.Extension;
 using LgrEventArgs = Lagrange.Core.Events.EventArgs;
@@ -12,9 +13,9 @@ public partial class EntityConvert
         new BotOfflineEventData($"{@event.Reason} {@event.Tips?.Tag} {@event.Tips?.Message}")
     );
 
-    public MessageReceiveEvent MessageReceiveEvent(LgrEventArgs.BotMessageEvent @event) => new(
+    public async Task<MessageReceiveEvent> MessageReceiveEventAsync(LgrEventArgs.BotMessageEvent @event, CancellationToken token) => new(
         @event.Message.Time.ToUnixTimeSeconds(),
         _bot.BotUin,
-        MessageBase(@event.Message)
+        await MessageBaseAsync(@event.Message, token)
     );
 }

@@ -14,7 +14,8 @@ public class GetGroupMemberListHandler(BotContext bot, EntityConvert convert) : 
 
     public async Task<GetGroupMemberListResult> HandleAsync(GetGroupMemberListParameter parameter, CancellationToken token)
     {
-        var members = (await _bot.FetchMembers(parameter.GroupId, parameter.NoCache)).Select(_convert.GroupMember);
+        var members = await Task.WhenAll((await _bot.FetchMembers(parameter.GroupId, parameter.NoCache))
+            .Select(member => _convert.GroupMemberAsync(member, token)));
 
         return new GetGroupMemberListResult(members);
     }
