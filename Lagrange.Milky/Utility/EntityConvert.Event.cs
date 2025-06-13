@@ -13,9 +13,9 @@ public partial class EntityConvert
         new BotOfflineEventData($"{@event.Reason} {@event.Tips?.Tag} {@event.Tips?.Message}")
     );
 
-    public async Task<MessageReceiveEvent> MessageReceiveEventAsync(LgrEventArgs.BotMessageEvent @event, CancellationToken token) => new(
+    public MessageReceiveEvent MessageReceiveEvent(LgrEventArgs.BotMessageEvent @event) => new(
         @event.Message.Time.ToUnixTimeSeconds(),
         _bot.BotUin,
-        await MessageBaseAsync(@event.Message, token)
+        MessageBase(@event.Message)
     );
 }

@@ -26,7 +26,7 @@ public class GetHistoryMessagesHandler(BotContext bot, EntityConvert convert) : 
 
         int end = start + parameter.Limit;
 
-        var coreMessages = parameter.MessageScene switch
+        var messages = parameter.MessageScene switch
         {
             "friend" => throw new NotImplementedException(),
             "group" => await _bot.GetGroupMessage(parameter.PeerId, start, end),
@@ -34,8 +34,7 @@ public class GetHistoryMessagesHandler(BotContext bot, EntityConvert convert) : 
             _ => throw new NotSupportedException(),
         };
 
-        var messages = await Task.WhenAll(coreMessages.Select(message => _convert.MessageBaseAsync(message, token)));
-        return new GetHistoryMessagesResult(messages);
+        return new GetHistoryMessagesResult(messages.Select(_convert.MessageBase));
     }
 }
 

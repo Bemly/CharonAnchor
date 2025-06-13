@@ -13,9 +13,9 @@ public class GetGroupListHandler(BotContext bot, EntityConvert convert) : IApiHa
 
     public async Task<GetGroupListResult> HandleAsync(GetGroupListParameter parameter, CancellationToken token)
     {
-        var groups = (await _bot.FetchGroups(parameter.NoCache)).Select(_convert.Group);
+        var groups = await _bot.FetchGroups(parameter.NoCache);
 
-        return new GetGroupListResult(groups);
+        return new GetGroupListResult(groups.Select(_convert.Group));
     }
 }
 

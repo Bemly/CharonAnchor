@@ -1,6 +1,5 @@
 using System.Text.Json.Serialization;
 using Lagrange.Core;
-using Lagrange.Core.Common.Interface;
 using Lagrange.Milky.Api.Exception;
 using Lagrange.Milky.Cache;
 using Lagrange.Milky.Entity.Message;
@@ -32,7 +31,7 @@ public class GetMessageHandler(BotContext bot, MessageCache cache, EntityConvert
 
         if (message == null) throw new ApiException(-2, "message not found");
 
-        return new GetMessageResult(await _convert.MessageBaseAsync(message, token));
+        return new GetMessageResult(_convert.MessageBase(message));
     }
 }
 

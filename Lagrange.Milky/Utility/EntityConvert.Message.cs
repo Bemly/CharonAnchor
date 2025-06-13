@@ -7,9 +7,9 @@ namespace Lagrange.Milky.Utility;
 
 public partial class EntityConvert
 {
-    public async Task<MessageBase> MessageBaseAsync(BotMessage message, CancellationToken token) => message.Type switch
+    public MessageBase MessageBase(BotMessage message) => message.Type switch
     {
-        MessageType.Group => await GroupMessageAsync(message, token),
+        MessageType.Group => GroupMessage(message),
         MessageType.Private => FriendMessage(message),
         MessageType.Temp => TempMessage(message),
         _ => throw new NotSupportedException(),
@@ -24,14 +24,14 @@ public partial class EntityConvert
         Friend((BotFriend)message.Contact)
     );
 
-    public async Task<GroupMessage> GroupMessageAsync(BotMessage message, CancellationToken token) => new(
+    public GroupMessage GroupMessage(BotMessage message) => new(
         ((BotGroupMember)message.Contact).Group.Uin,
         message.Sequence,
         message.Contact.Uin,
         message.Time.ToUnixTimeSeconds(),
         Segments(message.Entities),
         Group(((BotGroupMember)message.Contact).Group),
-        await GroupMemberAsync((BotGroupMember)message.Contact, token)
+        GroupMember((BotGroupMember)message.Contact)
     );
 
     public TempMessage TempMessage(BotMessage message) => new(

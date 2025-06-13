@@ -28,40 +28,29 @@ public partial class EntityConvert
 
     public Group Group(BotGroup group) => new(group.GroupUin, group.GroupName, group.MemberCount, group.MaxMember);
 
-    public async Task<GroupMember> GroupMemberAsync(BotGroupMember member, CancellationToken token)
-    {
-        var user = (await _bot.FetchFriends().WaitAsync(token)).FirstOrDefault(friend => friend.Uin == member.Uin);
-        if (user == null)
+    public GroupMember GroupMember(BotGroupMember member) => new(
+        member.Uin,
+        member.Nickname,
+        member.Gender switch
         {
-            // TODO: Fallback to the API for getting stranger information
-            // friend = ...
-        }
-
-        return new(
-            member.Uin,
-            user?.Qid ?? null,
-            member.Nickname,
-            member.Gender switch
-            {
-                BotGender.Male => "male",
-                BotGender.Female => "female",
-                BotGender.Unset or
-                BotGender.Unknown => "unknown",
-                _ => throw new NotSupportedException(),
-            },
-            member.Group.Uin,
-            member.MemberCard ?? string.Empty,
-            member.SpecialTitle,
-            member.GroupLevel,
-            member.Permission switch
-            {
-                GroupMemberPermission.Member => "member",
-                GroupMemberPermission.Owner => "owner",
-                GroupMemberPermission.Admin => "admin",
-                _ => throw new NotSupportedException(),
-            },
-            member.JoinTime.ToUnixTimeSeconds(),
-            member.LastMsgTime.ToUnixTimeSeconds()
-        );
-    }
+            BotGender.Male => "male",
+            BotGender.Female => "female",
+            BotGender.Unset or
+            BotGender.Unknown => "unknown",
+            _ => throw new NotSupportedException(),
+        },
+        member.Group.Uin,
+        member.MemberCard ?? string.Empty,
+        member.SpecialTitle,
+        member.GroupLevel,
+        member.Permission switch
+        {
+            GroupMemberPermission.Member => "member",
+            GroupMemberPermission.Owner => "owner",
+            GroupMemberPermission.Admin => "admin",
+            _ => throw new NotSupportedException(),
+        },
+        member.JoinTime.ToUnixTimeSeconds(),
+        member.LastMsgTime.ToUnixTimeSeconds()
+    );
 }

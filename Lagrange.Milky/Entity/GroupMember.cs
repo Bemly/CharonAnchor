@@ -2,14 +2,10 @@ using System.Text.Json.Serialization;
 
 namespace Lagrange.Milky.Entity;
 
-public class GroupMember(long userId, string? qid, string nickname, string sex, long groupId, string card, string? title, int level, string role, long joinTime, long lastSentTime)
+public class GroupMember(long userId, string nickname, string sex, long groupId, string card, string? title, int level, string role, long joinTime, long lastSentTime)
 {
     [JsonPropertyName("user_id")]
     public long UserId { get; } = userId;
-
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonPropertyName("qid")]
-    public string? Qid { get; } = qid;
 
     [JsonPropertyName("nickname")]
     public string Nickname { get; } = nickname;
