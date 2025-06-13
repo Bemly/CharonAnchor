@@ -141,13 +141,13 @@ public static class HostApplicationBuilderExtension
         var configuration = builder.Configuration.GetSection("Milky").Get<MilkyConfiguration>()
             ?? throw new Exception("Milky cannot be null");
 
-        if (configuration.WebSocket != null || configuration.WebHook != null)
+        if (configuration.EnabledWebSocket || configuration.WebHook != null)
         {
             services.AddSingleton<EventService>();
             services.AddHostedService(ServiceProviderServiceExtensions.GetRequiredService<EventService>);
         }
 
-        if (configuration.WebSocket != null) services.AddHostedService<MilkyWebSocketEventService>();
+        if (configuration.EnabledWebSocket) services.AddHostedService<MilkyWebSocketEventService>();
         if (configuration.WebHook != null) services.AddHostedService<MilkyWebHookEventService>();
     });
 }

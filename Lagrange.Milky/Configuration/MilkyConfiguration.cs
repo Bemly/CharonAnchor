@@ -10,7 +10,7 @@ public class MilkyConfiguration
 
     public string? AccessToken { get; set; }
 
-    public WebSocketConfiguration? WebSocket { get; set; } = new WebSocketConfiguration();
+    public bool EnabledWebSocket { get; set; } = true;
 
     public WebHookConfiguration? WebHook { get; set; }
 
