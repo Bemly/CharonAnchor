@@ -77,7 +77,7 @@
 
         // "Message": {
         //     // Whether to ignore messages sent by Bot
-        //     "IgnoreBotMessage": true,
+        //     "IgnoreBotMessage": false,
         //     "Cache": {
         //         // Cache eviction policy, supports `LRU` `FIFO`
         //         "Policy": "LRU",
