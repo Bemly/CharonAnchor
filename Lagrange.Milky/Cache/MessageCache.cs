@@ -43,7 +43,7 @@ public class MessageCache(BotContext bot, IOptions<MilkyConfiguration> options) 
             MessageType.Temp => throw new NotSupportedException(),
             _ => throw new NotSupportedException(),
         };
-        int sequence = message.Sequence;
+        int sequence = message.Type == MessageType.Private ? message.ClientSequence : message.Sequence;
 
         _cache.Put(new MessageKey(type, peer, sequence), message);
     }
