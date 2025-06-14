@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace Lagrange.Milky.Utility.Cache;
 
 public interface ICache<TKey, TValue>

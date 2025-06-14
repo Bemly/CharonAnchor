@@ -1,5 +1,3 @@
-using System.Threading.Tasks;
-using Lagrange.Core.Common.Interface;
 using Lagrange.Core.Message;
 using Lagrange.Core.Message.Entities;
 using Lagrange.Milky.Entity.Segment;
@@ -108,8 +106,7 @@ public partial class EntityConvert
             await _resolver.ToMemoryStreamAsync(video.Data.Uri, token),
             video.Data.ThumbUri != null ? await _resolver.ToMemoryStreamAsync(video.Data.ThumbUri, token) : null
         ),
-        // TODO
-        ForwardOutgoingSegment forward => await ForwardSegmentAsync(forward, token),
+        // TODO: ForwardOutgoingSegment
         _ => throw new NotSupportedException(),
     };
 
@@ -128,22 +125,5 @@ public partial class EntityConvert
         if (message == null) throw new Exception("message not found");
 
         return new ReplyEntity(message);
-    }
-
-    private async Task<IMessageEntity> ForwardSegmentAsync(ForwardOutgoingSegment forward, CancellationToken token)
-    {
-        List<BotMessage> messages = [];
-        foreach (var message in forward.Data.Messages)
-        {
-            messages.Add(BotMessage.CreateCustomFriend(
-                message.UserId,
-                message.Name,
-                message.UserId,
-                message.Name,
-                await FakeSegmentsAsync(message.Segments, token)
-            ));
-        }
-
-        return new MultiMsgEntity(messages);
     }
 }

@@ -1,6 +1,5 @@
 using Lagrange.Core.Common;
 using Lagrange.Core.Common.Entity;
-using Lagrange.Core.Common.Interface;
 using Lagrange.Milky.Entity;
 using Lagrange.Milky.Extension;
 

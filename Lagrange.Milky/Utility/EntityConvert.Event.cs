@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using Lagrange.Milky.Entity.Event;
 using Lagrange.Milky.Extension;
 using LgrEventArgs = Lagrange.Core.Events.EventArgs;
