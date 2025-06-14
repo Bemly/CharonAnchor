@@ -114,11 +114,11 @@ https://lagrangedev.github.io/Lagrange.Milky.Document
 - [x] mention
 - [x] mention_all
 - [ ] face
-- [ ] reply
+- [x] reply
 - [x] image
 - [x] record
 - [x] video
-- [ ] forward
+- [x] forward
 - [ ] market_face
 - [ ] light_app
 - [ ] xml
@@ -126,11 +126,11 @@ https://lagrangedev.github.io/Lagrange.Milky.Document
 #### outgoing
 
 - [x] text
-- [ ] mention
-- [ ] mention_all
+- [x] mention
+- [x] mention_all
 - [ ] face
 - [ ] reply
 - [x] image
 - [x] record
 - [ ] video
-- [ ] forward
+- [x] forward
