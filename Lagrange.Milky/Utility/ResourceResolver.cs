@@ -27,6 +27,7 @@ public class ResourceResolver
 
         var output = new MemoryStream();
         await response.Content.CopyToAsync(output, null, token);
+        output.Seek(0, SeekOrigin.Begin);
 
         return output;
     }
