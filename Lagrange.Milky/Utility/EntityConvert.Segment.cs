@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Lagrange.Core.Common.Interface;
 using Lagrange.Core.Message;
 using Lagrange.Core.Message.Entities;
@@ -31,6 +32,15 @@ public partial class EntityConvert
         foreach (var segment in segments)
         {
             entities.Add(await FriendSegmentAsync(segment, uin, token));
+        }
+        return entities;
+    }
+    public async Task<MessageChain> FakeSegmentsAsync(IReadOnlyList<IOutgoingSegment> segments, CancellationToken token)
+    {
+        var entities = new MessageChain();
+        foreach (var segment in segments)
+        {
+            entities.Add(await FakeSegmentAsync(segment, token));
         }
         return entities;
     }
@@ -70,6 +80,11 @@ public partial class EntityConvert
         ReplyOutgoingSegment reply => ReplyFriendSegmentAsync(reply, uin, token),
         _ => CommonSegmentAsync(segment, token),
     };
+    private Task<IMessageEntity> FakeSegmentAsync(IOutgoingSegment segment, CancellationToken token) => segment switch
+    {
+        ReplyOutgoingSegment reply => Task.FromResult<IMessageEntity>(new ReplyEntity()),
+        _ => CommonSegmentAsync(segment, token),
+    };
     private async Task<IMessageEntity> CommonSegmentAsync(IOutgoingSegment segment, CancellationToken token) => segment switch
     {
         TextOutgoingSegment text => new TextEntity(text.Data.Text),
@@ -94,7 +109,7 @@ public partial class EntityConvert
             video.Data.ThumbUri != null ? await _resolver.ToMemoryStreamAsync(video.Data.ThumbUri, token) : null
         ),
         // TODO
-        ForwardOutgoingSegment => throw new NotImplementedException(),
+        ForwardOutgoingSegment forward => await ForwardSegmentAsync(forward, token),
         _ => throw new NotSupportedException(),
     };
 
@@ -113,5 +128,22 @@ public partial class EntityConvert
         if (message == null) throw new Exception("message not found");
 
         return new ReplyEntity(message);
+    }
+
+    private async Task<IMessageEntity> ForwardSegmentAsync(ForwardOutgoingSegment forward, CancellationToken token)
+    {
+        List<BotMessage> messages = [];
+        foreach (var message in forward.Data.Messages)
+        {
+            messages.Add(BotMessage.CreateCustomFriend(
+                message.UserId,
+                message.Name,
+                message.UserId,
+                message.Name,
+                await FakeSegmentsAsync(message.Segments, token)
+            ));
+        }
+
+        return new MultiMsgEntity(messages);
     }
 }
