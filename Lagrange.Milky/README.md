@@ -134,3 +134,15 @@ https://lagrangedev.github.io/Lagrange.Milky.Document
 - [x] record
 - [ ] video
 - [x] forward
+
+#### forward
+
+- [x] text
+<!-- - [ ] mention -->
+<!-- - [ ] mention_all -->
+- [ ] face
+- [ ] reply
+- [ ] image
+- [ ] record
+- [ ] video
+- [ ] forward
