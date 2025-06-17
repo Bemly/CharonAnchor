@@ -102,15 +102,16 @@ internal class HighwayContext
 
                 bool end = currentBlockOffset + payload >= fileSize;
                 var upload = ArrayPool<byte>.Shared.Rent(1 + 1 + 4 + 4 + headProto.Length + (int)payload);
+                var uploadSpan = upload.AsSpan(0, 1 + 1 + 4 + 4 + headProto.Length + (int)payload);
 
-                upload[0] = 0x28;
-                BinaryPrimitives.WriteUInt32BigEndian(upload.AsSpan(1), (uint)headProto.Length);
-                BinaryPrimitives.WriteUInt32BigEndian(upload.AsSpan(5), (uint)payload);
-                headProto.Span.CopyTo(upload.AsSpan(9));
-                buffer.AsSpan(0, (int)payload).CopyTo(upload.AsSpan(9 + headProto.Length));
-                upload[^1] = 0x29;
+                uploadSpan[0] = 0x28;
+                BinaryPrimitives.WriteUInt32BigEndian(uploadSpan[1..], (uint)headProto.Length);
+                BinaryPrimitives.WriteUInt32BigEndian(uploadSpan[5..], (uint)payload);
+                headProto.Span.CopyTo(uploadSpan[9..]);
+                buffer.AsSpan(0, (int)payload).CopyTo(uploadSpan[(9 + headProto.Length)..]);
+                uploadSpan[^1] = 0x29;
 
-                var content = new ByteArrayContent(upload);
+                var content = new ByteArrayContent(upload[..(1 + 1 + 4 + 4 + headProto.Length + (int)payload)]);
                 var request = new HttpRequestMessage(HttpMethod.Post, $"http://{_url}")
                 {
                     Content = content, Headers = { { "Connection", end ? "close" : "keep-alive" } }
