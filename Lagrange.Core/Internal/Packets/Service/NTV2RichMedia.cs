@@ -121,6 +121,14 @@ internal static class NTV2RichMedia
                 info.Type = new FileType { Type = 2, PicFormat = (uint)type };
                 info.Width = (uint)size.X;
                 info.Height = (uint)size.Y;
+                info.FileName = $"{md5}.{type switch
+                {
+                    ImageFormat.Jpeg => "jpg",
+                    ImageFormat.Png => "png",
+                    ImageFormat.Gif => "gif",
+                    ImageFormat.Bmp => "bmp",
+                    _ => "unknown"
+                }}";
                 break;
             }
             case RecordEntity:
@@ -138,11 +146,19 @@ internal static class NTV2RichMedia
                     AudioFormat.SilkV3 => (uint)AudioHelper.GetSilkTime(payload),
                     _ => 0
                 };
+                info.FileName = $"{md5}.{type switch
+                {
+                    AudioFormat.TenSilkV3 => "silk",
+                    AudioFormat.SilkV3 => "silk",
+                    AudioFormat.Mp3 => "mp3",
+                    _ => "unknown"
+                }}";
                 break;
             }
             case VideoEntity:
             {
                 info.Type.Type = 2; // unable to determine video type, skip
+                info.FileName = $"{md5}.mp4"; // default to mp4
                 break;
             }
         }
