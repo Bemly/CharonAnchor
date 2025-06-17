@@ -43,7 +43,7 @@ internal class HighwaySessionService : BaseService<HighwaySessionEventReq, Highw
             var addresses = new List<string>();
             foreach (var addr in srvAddr.Addrs)
             {
-                addresses.Add($"{ProtocolHelper.UInt32ToIPV4Addr(addr.Ip)}:{addr.Port}");
+                addresses.Add($"{ProtocolHelper.UInt32ToIPV4Addr(addr.Ip)}:{addr.Port}/cgi-bin/httpconn?htcmd=0x6FF0087&uin={context.Keystore.Uin}");
             }
             
             servers[srvAddr.ServiceType] = addresses;
