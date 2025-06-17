@@ -118,7 +118,7 @@ internal static class NTV2RichMedia
                 stream.Seek(0, SeekOrigin.Begin);
 
                 var type = ImageHelper.Resolve(fileHead, out var size);
-                info.Type = new FileType { Type = 2, PicFormat = (uint)type };
+                info.Type = new FileType { Type = 1, PicFormat = (uint)type };
                 info.Width = (uint)size.X;
                 info.Height = (uint)size.Y;
                 info.FileName = $"{md5}.{type switch
@@ -129,6 +129,7 @@ internal static class NTV2RichMedia
                     ImageFormat.Bmp => "bmp",
                     _ => "unknown"
                 }}";
+                info.Original = 1;
                 break;
             }
             case RecordEntity:
@@ -139,7 +140,7 @@ internal static class NTV2RichMedia
                 stream.Seek(0, SeekOrigin.Begin);
                 
                 var type = AudioHelper.DetectAudio(payload);
-                info.Type = new FileType { Type = 1, VoiceFormat = 1 };
+                info.Type = new FileType { Type = 3, VoiceFormat = 1 };
                 info.Time = type switch
                 {
                     AudioFormat.TenSilkV3 => (uint)AudioHelper.GetTenSilkTime(payload),

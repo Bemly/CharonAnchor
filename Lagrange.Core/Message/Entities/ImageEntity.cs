@@ -57,11 +57,11 @@ public class ImageEntity : RichMediaEntityBase
     public override string ToPreviewString() => Summary;
     internal override Elem[] Build()
     {
-        if (_compat == null)
+        if (_compat != null)
         {
             var compatElem = IsGroup
-                ? new Elem { NotOnlineImage = ProtoHelper.Deserialize<NotOnlineImage>(_compat) }
-                : new Elem { CustomFace = ProtoHelper.Deserialize<CustomFace>(_compat) };
+                ? new Elem { CustomFace = ProtoHelper.Deserialize<CustomFace>(_compat) }
+                : new Elem { NotOnlineImage = ProtoHelper.Deserialize<NotOnlineImage>(_compat) };
             
             return
             [
