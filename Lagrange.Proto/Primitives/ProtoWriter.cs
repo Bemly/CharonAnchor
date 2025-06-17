@@ -171,8 +171,6 @@ public class ProtoWriter : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private unsafe void EncodeVarIntUnsafe<T>(T value) where T : unmanaged, INumberBase<T>
     {
-        if (!Sse2.IsSupported) throw new PlatformNotSupportedException();
-        
         ulong v = ulong.CreateTruncating(value);
 
         if (sizeof(T) <= 4)

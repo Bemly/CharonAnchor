@@ -1,4 +1,5 @@
 ﻿using System.Buffers;
+using System.Runtime.Intrinsics.X86;
 using Lagrange.Proto.Primitives;
 
 namespace Lagrange.Proto.Test;
@@ -72,6 +73,8 @@ public class EncoderTest
     [Test]
     public void TestReadTwoInt()
     {
+        if (!Sse3.IsSupported) Assert.Ignore("SSE3 is not supported on this platform.");
+
         var reader = new ProtoReader(_twoInt);
         var (number1, number2) = reader.DecodeVarIntUnsafe<int, int>(_twoInt);
         
@@ -85,6 +88,8 @@ public class EncoderTest
     [Test]
     public void TestReadLongInt()
     {
+        if (!Sse3.IsSupported) Assert.Ignore("SSE3 is not supported on this platform.");
+        
         var reader = new ProtoReader(_longInt);
         var (number1, number2) = reader.DecodeVarIntUnsafe<long, int>(_longInt);
         
@@ -98,6 +103,8 @@ public class EncoderTest
     [Test]
     public void TestUnsafeRead()
     {
+        if (!Sse3.IsSupported) Assert.Ignore("SSE3 is not supported on this platform.");
+
         Span<byte> longerBuffer = stackalloc byte[256];
         _longInt.AsSpan().CopyTo(longerBuffer);
         
