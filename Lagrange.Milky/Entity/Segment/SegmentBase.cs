@@ -5,7 +5,6 @@ namespace Lagrange.Milky.Entity.Segment;
 public abstract class IncomingSegmentBase<TSegmentData>(TSegmentData data) : IIncomingSegment where TSegmentData : notnull
 {
     object? IIncomingSegment.Data => Data;
-    [JsonRequired]
     [JsonPropertyName("data")]
     public TSegmentData Data { get; init; } = data;
 }
