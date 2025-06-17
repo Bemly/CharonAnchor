@@ -22,6 +22,15 @@ internal class MessagingLogic(BotContext context) : ILogic
         return messages;
     }
 
+    public async Task<List<BotMessage>> GetRoamMessage(long peerUin, uint time, uint count)
+    {
+        string peerUid = context.CacheContext.ResolveCachedUid(peerUin) ?? throw new InvalidTargetException(peerUin);
+        var result = await context.EventContext.SendEvent<GetRoamMessageEventResp>(new GetRoamMessageEventReq(peerUid, time, count));
+        var messages = new List<BotMessage>(result.Chains.Count);
+        foreach (var chain in result.Chains) messages.Add(await Parse(chain));
+        return messages;
+    }
+
     public async Task<BotMessage> SendFriendMessage(long friendUin, MessageChain chain)
     {
         var friend = await context.CacheContext.ResolveFriend(friendUin) ?? throw new InvalidTargetException(friendUin);

@@ -13,6 +13,16 @@ public static class MessageExt
     
     public static Task<List<BotMessage>> GetGroupMessage(this BotContext context, long groupUin, int startSequence, int endSequence)
         => context.EventContext.GetLogic<MessagingLogic>().GetGroupMessage(groupUin, startSequence, endSequence);
+    
+    public static Task<List<BotMessage>> GetRoamMessage(this BotContext context, long friendUin, uint timestamp, uint count)
+        => context.EventContext.GetLogic<MessagingLogic>().GetRoamMessage(friendUin, timestamp, count);
+    
+    public static Task<List<BotMessage>> GetRoamMessage(this BotContext context, BotMessage target, uint count)
+    {
+        uint timestamp = (uint)new DateTimeOffset(target.Time).ToUnixTimeSeconds();
+        return context.EventContext.GetLogic<MessagingLogic>().GetRoamMessage(target.Contact.Uin, timestamp, count);
+    }
+
 
     public static Task<bool> SendFriendFile(this BotContext context, long targetUin, Stream fileStream, string? fileName = null)
         => context.EventContext.GetLogic<OperationLogic>().SendFriendFile(targetUin, fileStream, fileName);
