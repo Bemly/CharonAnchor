@@ -154,7 +154,7 @@ internal readonly ref struct AesGcmImpl
             }
             else if (System.Runtime.Intrinsics.Arm.Aes.IsSupported)
             {
-                var block = AdvSimd.LoadVector128(pInput);
+                /*var block = AdvSimd.LoadVector128(pInput);
                 var state = AdvSimd.LoadVector128(pRoundKey);
 
                 state = AdvSimd.Xor(block, state);
@@ -163,30 +163,20 @@ internal readonly ref struct AesGcmImpl
                 {
                     var roundKey = AdvSimd.LoadVector128(pRoundKey + round * BlockSize);
                     state = System.Runtime.Intrinsics.Arm.Aes.Encrypt(state, roundKey);
-
-                    state = MixColumnsVector128(state);
+                    state = System.Runtime.Intrinsics.Arm.Aes.MixColumns(state);
                 }
 
                 var lastRoundKey = AdvSimd.LoadVector128(pRoundKey + Nr * BlockSize);
                 state = System.Runtime.Intrinsics.Arm.Aes.Encrypt(state, lastRoundKey);
 
-                AdvSimd.Store(pOutput, state);
+                AdvSimd.Store(pOutput, state);*/
+                TransformBlockSoftware(input, output); // Fallback to software implementation if ARM AES is not supported
             }
             else
             {
                 TransformBlockSoftware(input, output);
             }
         }
-    }
-    
-    private static Vector128<byte> MixColumnsVector128(Vector128<byte> state)
-    {
-        Span<byte> s = stackalloc byte[16];
-        Unsafe.WriteUnaligned(ref Unsafe.AsRef(ref s[0]), state);
-
-        MixColumns(s);
-
-        return Unsafe.ReadUnaligned<Vector128<byte>>(ref Unsafe.As<byte, byte>(ref s[0]));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
