@@ -71,7 +71,7 @@ internal class HighwayContext
                     Uin = _context.Keystore.Uin.ToString(),
                     Command = "PicUp.DataUp",
                     Seq = (uint)sequence,
-                    AppId = (uint)_context.AppInfo.SubAppId,
+                    AppId = (uint)_context.AppInfo.AppId,
                     DataFlag = 16,
                     CommandId = (uint)commandId,
                 };
