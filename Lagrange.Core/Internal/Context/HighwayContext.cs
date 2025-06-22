@@ -102,16 +102,16 @@ internal class HighwayContext
 
                 bool end = currentBlockOffset + payload >= fileSize;
                 var upload = ArrayPool<byte>.Shared.Rent(1 + 1 + 4 + 4 + headProto.Length + (int)payload);
-                var uploadSpan = upload.AsSpan(0, 1 + 1 + 4 + 4 + headProto.Length + (int)payload);
+                var memory = upload.AsMemory(0, 1 + 1 + 4 + 4 + headProto.Length + (int)payload);
 
-                uploadSpan[0] = 0x28;
-                BinaryPrimitives.WriteUInt32BigEndian(uploadSpan[1..], (uint)headProto.Length);
-                BinaryPrimitives.WriteUInt32BigEndian(uploadSpan[5..], (uint)payload);
-                headProto.Span.CopyTo(uploadSpan[9..]);
-                buffer.AsSpan(0, (int)payload).CopyTo(uploadSpan[(9 + headProto.Length)..]);
-                uploadSpan[^1] = 0x29;
+                memory.Span[0] = 0x28;
+                BinaryPrimitives.WriteUInt32BigEndian(memory.Span[1..], (uint)headProto.Length);
+                BinaryPrimitives.WriteUInt32BigEndian(memory.Span[5..], (uint)payload);
+                headProto.Span.CopyTo(memory.Span[9..]);
+                buffer.AsSpan(0, (int)payload).CopyTo(memory.Span[(9 + headProto.Length)..]);
+                memory.Span[^1] = 0x29;
 
-                var content = new ByteArrayContent(upload[..(1 + 1 + 4 + 4 + headProto.Length + (int)payload)]);
+                var content = new ReadOnlyMemoryContent(memory);
                 var request = new HttpRequestMessage(HttpMethod.Post, $"http://{_url}")
                 {
                     Content = content, Headers = { { "Connection", end ? "close" : "keep-alive" } }
