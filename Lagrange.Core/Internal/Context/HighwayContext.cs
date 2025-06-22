@@ -63,6 +63,7 @@ internal class HighwayContext
             ulong currentBlockOffset = offset;
             var task = Task.Run(async () => // closure
             {
+                var bufferSpan = buffer.AsSpan(0, (int)payload);
                 int sequence = GetNewSequence();
 
                 var head = new DataHighwayHead
@@ -81,7 +82,7 @@ internal class HighwayContext
                     DataOffset = currentBlockOffset,
                     DataLength = (uint)payload,
                     ServiceTicket = _ticket.Value.Item1,
-                    Md5 = MD5.HashData(buffer.AsSpan(0, (int)payload)),
+                    Md5 = MD5.HashData(bufferSpan),
                     FileMd5 = fileMd5,
                 };
                 var loginHead = new LoginSigHead
@@ -108,13 +109,12 @@ internal class HighwayContext
                 BinaryPrimitives.WriteUInt32BigEndian(memory.Span[1..], (uint)headProto.Length);
                 BinaryPrimitives.WriteUInt32BigEndian(memory.Span[5..], (uint)payload);
                 headProto.Span.CopyTo(memory.Span[9..]);
-                buffer.AsSpan(0, (int)payload).CopyTo(memory.Span[(9 + headProto.Length)..]);
+                bufferSpan.CopyTo(memory.Span[(9 + headProto.Length)..]);
                 memory.Span[^1] = 0x29;
 
-                var content = new ReadOnlyMemoryContent(memory);
                 var request = new HttpRequestMessage(HttpMethod.Post, $"http://{_url}")
                 {
-                    Content = content, Headers = { { "Connection", end ? "close" : "keep-alive" } }
+                    Content = new ReadOnlyMemoryContent(memory), Headers = { { "Connection", end ? "close" : "keep-alive" } }
                 };
 
                 try
@@ -145,13 +145,15 @@ internal class HighwayContext
                 }
                 finally
                 {
+                    ArrayPool<byte>.Shared.Return(buffer);
                     ArrayPool<byte>.Shared.Return(upload);
                     request.Dispose();
-                    content.Dispose();
+                    new ReadOnlyMemoryContent(memory).Dispose();
                 }
 
                 return false;
             });
+            offset += payload;
 
             tasks.Add(task);
             if (tasks.Count == (_concurrent))
@@ -160,9 +162,7 @@ internal class HighwayContext
                 foreach (bool t in successBlocks) result &= t;
                 tasks.Clear();
             }
-
-            offset += payload;
-
+            
             if (tasks.Count != 0)
             {
                 var finalBlocks = await Task.WhenAll(tasks);
