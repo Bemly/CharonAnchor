@@ -64,10 +64,7 @@ internal class CacheContext(BotContext context)
 
     public async Task<(BotGroup, BotGroupMember)?> ResolveMember(long groupUin, long memberUin)
     {
-        if (_groups == null) Interlocked.Exchange(ref _groups, await FetchGroups());
-        var groups = _groups;
-        
-        var group = groups.FirstOrDefault(g => g.GroupUin == groupUin);
+        var group = await ResolveGroup(groupUin);
         if (group == null) return null;
 
         if (!_members.TryGetValue(groupUin, out var members))
