@@ -124,7 +124,7 @@ internal class OperationLogic(BotContext context) : ILogic
         return fileName;
     }
 
-    public async Task<bool> SendGroupFile(long groupUin, Stream fileStream, string? fileName, string parentDirectory)
+    public async Task<string> SendGroupFile(long groupUin, Stream fileStream, string? fileName, string parentDirectory)
     {
         fileName = ResolveFileName(fileStream, fileName);
 
@@ -185,13 +185,13 @@ internal class OperationLogic(BotContext context) : ILogic
             };
             
             bool success = await context.HighwayContext.UploadFile(fileStream, 71, ProtoHelper.Serialize(ext));
-            if (!success) return false;
+            if (!success) throw new OperationException(-1, "File upload failed");
         }
         
         uint random = (uint)Random.Shared.Next();
         var feedResult = await context.EventContext.SendEvent<GroupFileSendEventResp>(new GroupFileSendEventReq(groupUin, uploadResp.FileId, random));
         if (feedResult.RetCode != 0) throw new OperationException(feedResult.RetCode, feedResult.RetMsg);
 
-        return true; // TODO: Random
+        return uploadResp.FileId;
     }
 }
