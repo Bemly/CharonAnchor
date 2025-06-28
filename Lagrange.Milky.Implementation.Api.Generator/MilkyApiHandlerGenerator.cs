@@ -150,6 +150,9 @@ public class MilkyApiHandlerGenerator : IIncrementalGenerator
         return context.SemanticModel
             .GetDeclaredSymbol(((AttributeSyntax)context.Node).GetAnnotatedClass()!)!
             .GetAttributes()
+            .Where(a =>
+                a.AttributeClass?.Name == JsonSerializableSyntaxName + "Attribute" &&
+                a.AttributeClass?.ContainingNamespace.ToString() == "System.Text.Json.Serialization")
             .Select(a => (INamedTypeSymbol)a.ConstructorArguments[0].Value!);
     }
 
