@@ -22,13 +22,14 @@ public class GetHistoryMessagesHandler(BotContext bot, EntityConvert convert) : 
             "older" => (int)parameter.StartMessageSeq.Value - parameter.Limit,
             _ => throw new NotSupportedException(),
         };
+        // TODO: No start sequence
         else throw new NotImplementedException();
 
         int end = start + parameter.Limit;
 
         var messages = parameter.MessageScene switch
         {
-            "friend" => throw new NotImplementedException(),
+            "friend" => await _bot.GetC2CMessage(parameter.PeerId, start, end),
             "group" => await _bot.GetGroupMessage(parameter.PeerId, start, end),
             "temp" => throw new ApiException(-1, "temp not supported"),
             _ => throw new NotSupportedException(),
