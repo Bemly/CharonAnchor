@@ -36,7 +36,7 @@ internal partial class CopyFromReqBody
 [ProtoPackable]
 internal partial class CopyFromRspBody
 {
-    [ProtoMember(1)] public int RetCode { get; set; }
+    [ProtoMember(1)] public long RetCode { get; set; }
     
     [ProtoMember(2)] public string RetMsg { get; set; }
     
@@ -76,7 +76,7 @@ internal partial class CopyToReqBody
 [ProtoPackable]
 internal partial class CopyToRspBody
 {
-    [ProtoMember(1)] public int RetCode { get; set; }
+    [ProtoMember(1)] public long RetCode { get; set; }
     
     [ProtoMember(2)] public string RetMsg { get; set; }
     
@@ -104,7 +104,7 @@ internal partial class FeedsReqBody
 [ProtoPackable]
 internal partial class FeedsRspBody
 {
-    [ProtoMember(1)] public int RetCode { get; set; }
+    [ProtoMember(1)] public long RetCode { get; set; }
     
     [ProtoMember(2)] public string RetMsg { get; set; }
     
@@ -154,7 +154,7 @@ internal partial class TransFileReqBody
 [ProtoPackable]
 internal partial class TransFileRspBody
 {
-    [ProtoMember(1)] public int RetCode { get; set; }
+    [ProtoMember(1)] public long RetCode { get; set; }
     
     [ProtoMember(2)] public string RetMsg { get; set; }
     

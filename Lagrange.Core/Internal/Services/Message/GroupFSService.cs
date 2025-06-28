@@ -40,7 +40,7 @@ internal class GroupFSUploadService : OidbService<GroupFSUploadEventReq, GroupFS
     private protected override Task<GroupFSUploadEventResp> ProcessResponse(D6D6RspBody response, BotContext context)
     {
         var upload = response.UploadFileRsp;
-        if (upload.Int32RetCode != 0) throw new OperationException(upload.Int32RetCode, upload.StrRetMsg);
+        if (upload.Int32RetCode != 0) throw new OperationException((int)upload.Int32RetCode, upload.StrRetMsg);
         
         return Task.FromResult(new GroupFSUploadEventResp(upload.BoolFileExist, upload.StrFileId, upload.BytesFileKey, upload.BytesCheckKey, (upload.StrUploadIp, upload.Uint32UploadPort)));
     }
@@ -71,7 +71,7 @@ internal class GroupFSDownloadService : OidbService<GroupFSDownloadEventReq, Gro
     private protected override Task<GroupFSDownloadEventResp> ProcessResponse(D6D6RspBody response, BotContext context)
     {
         var download = response.DownloadFileRsp;
-        if (download.Int32RetCode != 0) throw new OperationException(download.Int32RetCode, download.StrRetMsg);
+        if (download.Int32RetCode != 0) throw new OperationException((int)download.Int32RetCode, download.StrRetMsg);
         
         string url = $"https://{download.StrDownloadDns}/ftn_handler/{Convert.ToHexString(download.BytesDownloadUrl)}/?fname=";
         return Task.FromResult(new GroupFSDownloadEventResp(url));
@@ -105,7 +105,7 @@ internal class
     private protected override Task<GroupFSDeleteEventResp> ProcessResponse(D6D6RspBody response, BotContext context)
     {
         var delete = response.DeleteFileRsp;
-        if (delete.Int32RetCode != 0) throw new OperationException(delete.Int32RetCode, delete.StrRetMsg);
+        if (delete.Int32RetCode != 0) throw new OperationException((int)delete.Int32RetCode, delete.StrRetMsg);
 
         return Task.FromResult(new GroupFSDeleteEventResp());
     }
@@ -137,7 +137,7 @@ internal class GroupFSMoveService : OidbService<GroupFSMoveEventReq, GroupFSMove
     private protected override Task<GroupFSMoveEventResp> ProcessResponse(D6D6RspBody response, BotContext context)
     {
         var move = response.MoveFileRsp;
-        if (move.Int32RetCode != 0) throw new OperationException(move.Int32RetCode, move.StrRetMsg);
+        if (move.Int32RetCode != 0) throw new OperationException((int)move.Int32RetCode, move.StrRetMsg);
 
         return Task.FromResult(new GroupFSMoveEventResp());
     }

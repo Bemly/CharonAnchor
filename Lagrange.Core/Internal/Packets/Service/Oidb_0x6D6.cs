@@ -25,7 +25,7 @@ internal partial class DeleteFileReqBody
 [ProtoPackable]
 internal partial class DeleteFileRspBody
 {
-    [ProtoMember(1)] public int Int32RetCode { get; set; }
+    [ProtoMember(1)] public long Int32RetCode { get; set; }
     
     [ProtoMember(2)] public string StrRetMsg { get; set; }
     
@@ -55,7 +55,7 @@ internal partial class DownloadFileReqBody
 [ProtoPackable]
 internal partial class DownloadFileRspBody
 {
-    [ProtoMember(1)] public int Int32RetCode { get; set; }
+    [ProtoMember(1)] public long Int32RetCode { get; set; }
     
     [ProtoMember(2)] public string StrRetMsg { get; set; }
     
@@ -103,7 +103,7 @@ internal partial class MoveFileReqBody
 [ProtoPackable]
 internal partial class MoveFileRspBody
 {
-    [ProtoMember(1)] public int Int32RetCode { get; set; }
+    [ProtoMember(1)] public long Int32RetCode { get; set; }
     
     [ProtoMember(2)] public string StrRetMsg { get; set; }
     
@@ -131,7 +131,7 @@ internal partial class RenameFileReqBody
 [ProtoPackable]
 internal partial class RenameFileRspBody
 {
-    [ProtoMember(1)] public int Int32RetCode { get; set; }
+    [ProtoMember(1)] public long Int32RetCode { get; set; }
     
     [ProtoMember(2)] public string StrRetMsg { get; set; }
     
@@ -171,7 +171,7 @@ internal partial class ResendReqBody
 [ProtoPackable]
 internal partial class ResendRspBody
 {
-    [ProtoMember(1)] public int Int32RetCode { get; set; }
+    [ProtoMember(1)] public long Int32RetCode { get; set; }
     
     [ProtoMember(2)] public string StrRetMsg { get; set; }
     
@@ -231,7 +231,7 @@ internal partial class UploadFileReqBody
 [ProtoPackable]
 internal partial class UploadFileRspBody
 {
-    [ProtoMember(1)] public int Int32RetCode { get; set; }
+    [ProtoMember(1)] public long Int32RetCode { get; set; }
     
     [ProtoMember(2)] public string StrRetMsg { get; set; }
     

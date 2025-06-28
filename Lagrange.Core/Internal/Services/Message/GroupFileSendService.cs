@@ -29,6 +29,6 @@ internal class GroupFileSendService : OidbService<GroupFileSendEventReq, GroupFi
 
     private protected override Task<GroupFileSendEventResp> ProcessResponse(D6D9RspBody response, BotContext context)
     {
-        return Task.FromResult(new GroupFileSendEventResp(response.FeedsInfoRsp.RetCode, response.FeedsInfoRsp.RetMsg));
+        return Task.FromResult(new GroupFileSendEventResp((int)response.FeedsInfoRsp.RetCode, response.FeedsInfoRsp.RetMsg));
     }
 }
