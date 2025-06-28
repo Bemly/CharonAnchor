@@ -23,8 +23,8 @@ public static class MessageExt
         return context.EventContext.GetLogic<MessagingLogic>().GetRoamMessage(target.Contact.Uin, timestamp, count);
     }
     
-    public static Task<List<BotMessage>> GetC2CMessage(this BotContext context, string friendUid, uint startSequence, uint endSequence)
-        => context.EventContext.GetLogic<MessagingLogic>().GetC2CMessage(friendUid, startSequence, endSequence);
+    public static Task<List<BotMessage>> GetC2CMessage(this BotContext context, long peerUin, uint startSequence, uint endSequence)
+        => context.EventContext.GetLogic<MessagingLogic>().GetC2CMessage(peerUin, startSequence, endSequence);
 
     public static Task<bool> SendFriendFile(this BotContext context, long targetUin, Stream fileStream, string? fileName = null)
         => context.EventContext.GetLogic<OperationLogic>().SendFriendFile(targetUin, fileStream, fileName);
