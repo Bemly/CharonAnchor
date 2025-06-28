@@ -52,7 +52,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Publish
-        run: dotnet publish Lagrange.Milky -c Release -r ${{ matrix.rid }} -p:PublishAot=false -p:PublishSingleFile=true
+        run: dotnet publish Lagrange.Milky -c Release -r ${{ matrix.rid }}
 
       - name: Upload artifacts
         if: github.event_name != 'pull_request'
