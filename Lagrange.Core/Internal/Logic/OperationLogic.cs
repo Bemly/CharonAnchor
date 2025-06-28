@@ -39,7 +39,7 @@ internal class OperationLogic(BotContext context) : ILogic
 
     public async Task GroupFSDelete(long groupUin, string fileId) => await context.EventContext.SendEvent<GroupFSDeleteEventResp>(new GroupFSDeleteEventReq(groupUin, fileId));
 
-    public async Task<bool> SendFriendFile(long targetUin, Stream fileStream, string? fileName)
+    public async Task<(int, DateTime)> SendFriendFile(long targetUin, Stream fileStream, string? fileName)
     {
         fileName = ResolveFileName(fileStream, fileName);
 
@@ -94,7 +94,7 @@ internal class OperationLogic(BotContext context) : ILogic
             };
 
             bool success = await context.HighwayContext.UploadFile(fileStream, 95, ProtoHelper.Serialize(ext));
-            if (!success) return false;
+            if (!success) throw new OperationException(-1, "File upload failed");
         }
 
         int sequence = Random.Shared.Next(10000, 99999);
@@ -102,7 +102,7 @@ internal class OperationLogic(BotContext context) : ILogic
         var sendResult = await context.EventContext.SendEvent<SendMessageEventResp>(new SendFriendFileEventReq(friend, request, result, sequence, random));
         if (sendResult.Result != 0) throw new OperationException(sendResult.Result);
 
-        return true;
+        return (sequence, DateTimeOffset.FromUnixTimeSeconds(sendResult.SendTime).UtcDateTime);
     }
 
     private static string ResolveFileName(Stream fileStream, string? fileName)
