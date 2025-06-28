@@ -17,9 +17,9 @@ public class BotGroupMember(
     
     public override long Uin { get; } = uin;
 
-    public override string Uid { get; } = uid;
+    public override string Uid { get; } = uid ?? string.Empty;
 
-    public override string Nickname { get; } = nickname;
+    public override string Nickname { get; } = nickname ?? string.Empty;
     
     public int Age { get; init; }
     

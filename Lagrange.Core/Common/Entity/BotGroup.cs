@@ -12,7 +12,7 @@ public class BotGroup(
 {
     public long GroupUin { get; } = groupUin;
 
-    public string GroupName { get; } = groupName;
+    public string GroupName { get; } = groupName ?? string.Empty;
 
     public int MemberCount { get; } = memberCount;
 
