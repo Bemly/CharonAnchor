@@ -16,6 +16,7 @@ public class MilkyApiHandlerGenerator : IIncrementalGenerator
 
     private const string MilkyJsonContextSyntaxName = "JsonContext";
     private const string JsonSerializableSyntaxName = "JsonSerializable";
+    private const string JsonSerializableAttributeName = "JsonSerializableAttribute";
     private const string IApiHandlerBaseFullName = "Lagrange.Milky.Api.Handler.IApiHandler`2";
 
     // private void Check(SourceProductionContext context, (ImmutableArray<ApiHandlerInfo> Infos, ImmutableArray<IEnumerable<INamedTypeSymbol>> Symbols) tuple)
@@ -151,7 +152,7 @@ public class MilkyApiHandlerGenerator : IIncrementalGenerator
             .GetDeclaredSymbol(((AttributeSyntax)context.Node).GetAnnotatedClass()!)!
             .GetAttributes()
             .Where(a =>
-                a.AttributeClass?.Name == JsonSerializableSyntaxName + "Attribute" &&
+                a.AttributeClass?.Name == JsonSerializableAttributeName &&
                 a.AttributeClass?.ContainingNamespace.ToString() == "System.Text.Json.Serialization")
             .Select(a => (INamedTypeSymbol)a.ConstructorArguments[0].Value!);
     }
