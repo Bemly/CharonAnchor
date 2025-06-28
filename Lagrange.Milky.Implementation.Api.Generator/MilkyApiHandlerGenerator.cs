@@ -16,53 +16,7 @@ public class MilkyApiHandlerGenerator : IIncrementalGenerator
 
     private const string MilkyJsonContextSyntaxName = "JsonContext";
     private const string JsonSerializableSyntaxName = "JsonSerializable";
-    private const string JsonSerializableAttributeName = "JsonSerializableAttribute";
     private const string IApiHandlerBaseFullName = "Lagrange.Milky.Api.Handler.IApiHandler`2";
-
-    // private void Check(SourceProductionContext context, (ImmutableArray<ApiHandlerInfo> Infos, ImmutableArray<IEnumerable<INamedTypeSymbol>> Symbols) tuple)
-    // {
-    //     var types = tuple.Symbols.SelectMany(@as => @as).ToArray();
-
-    //     foreach (var info in tuple.Infos)
-    //     {
-    //         var iApiHandlerGSymbol = info.SemanticModel.Compilation.GetTypeByMetadataName(IApiHandlerGFullName)
-    //                     ?? throw new NullReferenceException($"{IApiHandlerGFullName} INamedSymbol not found");
-    //         var iApiHandlerSymbol = info.TargetSymbol.AllInterfaces.FirstOrDefault(s => s.OriginalDefinition.SEquals(iApiHandlerGSymbol));
-    //         if (iApiHandlerSymbol == null)
-    //         {
-    //             context.ReportDiagnostic(Diagnostic.Create(
-    //                 DiagnosticDescriptors.NotImplementIApiHandler,
-    //                 info.TargetNode.GetLocation(),
-    //                 info.TargetNode.Identifier.Text
-    //             ));
-    //             continue;
-    //         }
-
-    //         var parameterSymbol = iApiHandlerSymbol.TypeArguments[0];
-    //         bool hasParameterSymbol = parameterSymbol.SEquals(info.SemanticModel.Compilation.ObjectType);
-    //         if (!hasParameterSymbol)
-    //         {
-    //             hasParameterSymbol = types.Contains(parameterSymbol, SymbolEqualityComparer.Default);
-    //         }
-    //         if (!hasParameterSymbol) context.ReportDiagnostic(Diagnostic.Create(
-    //             DiagnosticDescriptors.NotUsedJsonSerializable,
-    //             info.TargetNode.GetLocation(),
-    //             parameterSymbol
-    //         ));
-
-    //         var resultSymbol = iApiHandlerSymbol.TypeArguments[1];
-    //         bool hasResultSymbol = resultSymbol.SEquals(info.SemanticModel.Compilation.ObjectType);
-    //         if (!hasResultSymbol)
-    //         {
-    //             hasResultSymbol = types.Contains(resultSymbol, SymbolEqualityComparer.Default);
-    //         }
-    //         if (!hasResultSymbol) context.ReportDiagnostic(Diagnostic.Create(
-    //             DiagnosticDescriptors.NotUsedJsonSerializable,
-    //             info.TargetNode.GetLocation(),
-    //             resultSymbol
-    //         ));
-    //     }
-    // }
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -74,9 +28,9 @@ public class MilkyApiHandlerGenerator : IIncrementalGenerator
         context.RegisterSourceOutput(apisAndTargets, Check);
     }
 
-    private void Check(SourceProductionContext context, (ImmutableArray<ApiHandlerInfo> Apis, ImmutableArray<IEnumerable<INamedTypeSymbol>> Targets) apisAndTargets)
+    private void Check(SourceProductionContext context, (ImmutableArray<ApiHandlerInfo> Apis, ImmutableArray<INamedTypeSymbol> Targets) apisAndTargets)
     {
-        var types = apisAndTargets.Targets.SelectMany(@as => @as).ToArray();
+        var types = apisAndTargets.Targets;
 
         foreach (var info in apisAndTargets.Apis)
         {
@@ -146,15 +100,11 @@ public class MilkyApiHandlerGenerator : IIncrementalGenerator
         """);
     }
 
-    private IEnumerable<INamedTypeSymbol> GetJsonSerializableTarget(GeneratorSyntaxContext context, CancellationToken token)
+    private INamedTypeSymbol GetJsonSerializableTarget(GeneratorSyntaxContext context, CancellationToken token)
     {
-        return context.SemanticModel
-            .GetDeclaredSymbol(((AttributeSyntax)context.Node).GetAnnotatedClass()!)!
-            .GetAttributes()
-            .Where(a =>
-                a.AttributeClass?.Name == JsonSerializableAttributeName &&
-                a.AttributeClass?.ContainingNamespace.ToString() == "System.Text.Json.Serialization")
-            .Select(a => (INamedTypeSymbol)a.ConstructorArguments[0].Value!);
+        var argument = ((AttributeSyntax)context.Node).ArgumentList!.Arguments.First();
+        var type = ((TypeOfExpressionSyntax)argument.Expression).Type;
+        return (INamedTypeSymbol)context.SemanticModel.GetSymbolInfo(type).Symbol!;
     }
 
     private bool JsonSerializableFilter(SyntaxNode node, CancellationToken token)

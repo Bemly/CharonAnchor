@@ -13,6 +13,8 @@ namespace Lagrange.Milky.Utility;
 
 public static partial class JsonUtility
 {
+    [JsonSourceGenerationOptions(AllowOutOfOrderMetadataProperties = true)]
+    
     // BotContext
     [JsonSerializable(typeof(BotKeystore))]
     [JsonSerializable(typeof(BotAppInfo))]
@@ -90,9 +92,6 @@ public static partial class JsonUtility
     [JsonSerializable(typeof(BotOfflineEvent))]
     // message_receive
     [JsonSerializable(typeof(MessageReceiveEvent))]
-
-    [JsonSourceGenerationOptions(
-        AllowOutOfOrderMetadataProperties = true)]
     private partial class JsonContext : JsonSerializerContext;
 
     public static string Serialize<T>(T value) where T : class
