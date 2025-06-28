@@ -30,6 +30,14 @@ internal class MessagingLogic(BotContext context) : ILogic
         foreach (var chain in result.Chains) messages.Add(await Parse(chain));
         return messages;
     }
+    
+    public async Task<List<BotMessage>> GetC2CMessage(string friendUid, uint startSequence, uint endSequence)
+    {
+        var result = await context.EventContext.SendEvent<GetC2CMessageEventResp>(new GetC2CMessageEventReq(friendUid, startSequence, endSequence));
+        var messages = new List<BotMessage>(result.Chains.Count);
+        foreach (var chain in result.Chains) messages.Add(await Parse(chain));
+        return messages;
+    }
 
     public async Task<BotMessage> SendFriendMessage(long friendUin, MessageChain chain)
     {
