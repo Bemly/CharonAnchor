@@ -76,6 +76,9 @@ public static partial class JsonUtility
     // upload_group_file
     [JsonSerializable(typeof(UploadGroupFileParameter))]
     [JsonSerializable(typeof(UploadGroupFileResult))]
+    // upload_private_file
+    [JsonSerializable(typeof(UploadPrivateFileParameter))]
+    [JsonSerializable(typeof(UploadPrivateFileResult))]
     // get_group_file_download_url
     [JsonSerializable(typeof(GetGroupFileDownloadUrlParameter))]
     [JsonSerializable(typeof(GetGroupFileDownloadUrlResult))]
