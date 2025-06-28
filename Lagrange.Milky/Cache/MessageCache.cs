@@ -65,7 +65,7 @@ public class MessageCache(BotContext bot, IOptions<MilkyConfiguration> options) 
             var messages = type switch
             {
                 MessageType.Group => await _bot.GetGroupMessage(peer, sequence, sequence).WaitAsync(token),
-                MessageType.Private => throw new NotImplementedException(),
+                MessageType.Private => await _bot.GetC2CMessage(peer, sequence, sequence).WaitAsync(token),
                 MessageType.Temp => throw new NotSupportedException(),
                 _ => throw new NotSupportedException(),
             };

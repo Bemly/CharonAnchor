@@ -31,7 +31,7 @@ internal class MessagingLogic(BotContext context) : ILogic
         return messages;
     }
     
-    public async Task<List<BotMessage>> GetC2CMessage(long peerUin, uint startSequence, uint endSequence)
+    public async Task<List<BotMessage>> GetC2CMessage(long peerUin, int startSequence, int endSequence)
     {
         string peerUid = context.CacheContext.ResolveCachedUid(peerUin) ?? throw new InvalidTargetException(peerUin);
         var result = await context.EventContext.SendEvent<GetC2CMessageEventResp>(new GetC2CMessageEventReq(peerUid, startSequence, endSequence));

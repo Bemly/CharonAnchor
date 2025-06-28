@@ -2,13 +2,13 @@ using Lagrange.Core.Internal.Packets.Message;
 
 namespace Lagrange.Core.Internal.Events.Message;
 
-internal class GetC2CMessageEventReq(string peerUid, uint startSequence, uint endSequence) : ProtocolEvent
+internal class GetC2CMessageEventReq(string peerUid, int startSequence, int endSequence) : ProtocolEvent
 {
     public string PeerUid { get; } = peerUid;
 
-    public uint StartSequence { get; } = startSequence;
+    public int StartSequence { get; } = startSequence;
 
-    public uint EndSequence { get; } = endSequence;
+    public int EndSequence { get; } = endSequence;
 }
 
 internal class GetC2CMessageEventResp(List<CommonMessage> chains) : ProtocolEvent
