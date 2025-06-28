@@ -51,8 +51,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Publish with Native AOT
-        run: dotnet publish Lagrange.Milky -c Release -r ${{ matrix.rid }}
+      - name: Publish
+        run: dotnet publish Lagrange.Milky -c Release -r ${{ matrix.rid }} -p:PublishAot=false -p:PublishSingleFile=true
 
       - name: Upload artifacts
         if: github.event_name != 'pull_request'
