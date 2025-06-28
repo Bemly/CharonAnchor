@@ -74,7 +74,7 @@ https://lagrangedev.github.io/Lagrange.Milky.Document
 #### file
 
 - [ ] /upload_private_file
-- [ ] /upload_group_file
+- [x] /upload_group_file
 - [ ] /get_private_file_download_url
 - [x] /get_group_file_download_url
 - [ ] /get_group_files

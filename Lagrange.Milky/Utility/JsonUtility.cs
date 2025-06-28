@@ -73,6 +73,9 @@ public static partial class JsonUtility
     // send_group_nudge
     [JsonSerializable(typeof(SendGroupNudgeParameter))]
     // == file ==
+    // upload_group_file
+    [JsonSerializable(typeof(UploadGroupFileParameter))]
+    [JsonSerializable(typeof(UploadGroupFileResult))]
     // get_group_file_download_url
     [JsonSerializable(typeof(GetGroupFileDownloadUrlParameter))]
     [JsonSerializable(typeof(GetGroupFileDownloadUrlResult))]
