@@ -19,7 +19,7 @@ public class GetMessageHandler(BotContext bot, MessageCache cache, EntityConvert
         var message = await _cache.GetMessageAsync(
             parameter.MessageScene switch
             {
-                "friend" => throw new NotSupportedException(),
+                "friend" => Lagrange.Core.Message.MessageType.Private,
                 "group" => Lagrange.Core.Message.MessageType.Group,
                 "temp" => throw new ApiException(-1, "temp not supported"),
                 _ => throw new NotSupportedException(),
