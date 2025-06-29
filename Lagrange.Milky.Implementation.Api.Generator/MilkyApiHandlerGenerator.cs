@@ -17,6 +17,8 @@ public class MilkyApiHandlerGenerator : IIncrementalGenerator
     private const string MilkyJsonContextSyntaxName = "JsonContext";
     private const string JsonSerializableSyntaxName = "JsonSerializable";
     private const string IApiHandlerBaseFullName = "Lagrange.Milky.Api.Handler.IApiHandler`2";
+    private const string IEmptyParameterApiHandlerBaseFullName = "Lagrange.Milky.Api.Handler.IEmptyParameterApiHandler`1";
+    private const string IEmptyResultApiHandlerBaseFullName = "Lagrange.Milky.Api.Handler.IEmptyResultApiHandler`1";
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -47,6 +49,21 @@ public class MilkyApiHandlerGenerator : IIncrementalGenerator
             }
 
             var parameterSymbol = iApiHandlerSymbol.TypeArguments[0];
+            var parameterIsObject = parameterSymbol.SEquals(info.SemanticModel.Compilation.ObjectType);
+            if (parameterIsObject)
+            {
+                var compilation = info.SemanticModel.Compilation;
+                var iEmptyParameterApiHandlerGSymbol = compilation.GetTypeByMetadataName(IEmptyParameterApiHandlerBaseFullName);
+                var interfaces = info.TargetSymbol.AllInterfaces;
+                if (interfaces.FirstOrDefault(s => s.OriginalDefinition.SEquals(iEmptyParameterApiHandlerGSymbol)) == null)
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(
+                        DiagnosticDescriptors.NotImplementIEmptyParameterApiHandler,
+                        info.TargetNode.GetLocation(),
+                        info.TargetNode.Identifier.Text
+                    ));
+                }
+            }
             bool hasParameterSymbol = parameterSymbol.SEquals(info.SemanticModel.Compilation.ObjectType);
             if (!hasParameterSymbol)
             {
@@ -59,11 +76,22 @@ public class MilkyApiHandlerGenerator : IIncrementalGenerator
             ));
 
             var resultSymbol = iApiHandlerSymbol.TypeArguments[1];
-            bool hasResultSymbol = resultSymbol.SEquals(info.SemanticModel.Compilation.ObjectType);
-            if (!hasResultSymbol)
+            var resultIsObject = resultSymbol.SEquals(info.SemanticModel.Compilation.ObjectType);
+            if (resultIsObject)
             {
-                hasResultSymbol = types.Contains(resultSymbol, SymbolEqualityComparer.Default);
+                var compilation = info.SemanticModel.Compilation;
+                var iEmptyResultApiHandlerGSymbol = compilation.GetTypeByMetadataName(IEmptyResultApiHandlerBaseFullName);
+                var interfaces = info.TargetSymbol.AllInterfaces;
+                if (interfaces.FirstOrDefault(s => s.OriginalDefinition.SEquals(iEmptyResultApiHandlerGSymbol)) == null)
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(
+                        DiagnosticDescriptors.NotImplementIEmptyResultApiHandler,
+                        info.TargetNode.GetLocation(),
+                        info.TargetNode.Identifier.Text
+                    ));
+                }
             }
+            bool hasResultSymbol = resultIsObject || types.Contains(resultSymbol, SymbolEqualityComparer.Default);
             if (!hasResultSymbol) context.ReportDiagnostic(Diagnostic.Create(
                 DiagnosticDescriptors.NotUsedJsonSerializable,
                 info.TargetNode.GetLocation(),
