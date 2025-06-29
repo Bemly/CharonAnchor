@@ -130,7 +130,9 @@ public class MilkyHttpApiService(ILogger<MilkyHttpApiService> logger, IOptions<M
 
         string? authorization = context.Request.Headers["Authorization"];
         if (authorization == null) return false;
-        if (!authorization.StartsWith("Bearer ")) return false;
+        if (!authorization.StartsWith("Bearer")) return false;
+
+        if (_token == string.Empty && authorization.Length == 6) return true;
 
         return authorization[7..] == _token;
     }
