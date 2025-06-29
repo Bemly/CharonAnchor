@@ -5,8 +5,8 @@ namespace Lagrange.Milky.Utility.Cache;
 public sealed class LruCache<TKey, TValue>(int capacity) : ICache<TKey, TValue> where TKey : notnull
 {
     private readonly int _capacity = capacity;
-    private readonly Dictionary<TKey, LinkedListNode<LruCacheNode>> _cache = [];
-    private readonly LinkedList<LruCacheNode> _sorted = [];
+    private readonly Dictionary<TKey, LinkedListNode<KeyValuePair<TKey, TValue>>> _cache = [];
+    private readonly LinkedList<KeyValuePair<TKey, TValue>> _sorted = [];
 
     private readonly ReaderWriterLockSlim _lock = new();
 
@@ -14,7 +14,7 @@ public sealed class LruCache<TKey, TValue>(int capacity) : ICache<TKey, TValue> 
     {
         using (_lock.UsingUpgradeableReadLock())
         {
-            if (!_cache.TryGetValue(key, out LinkedListNode<LruCacheNode>? node)) return default;
+            if (!_cache.TryGetValue(key, out LinkedListNode<KeyValuePair<TKey, TValue>>? node)) return default;
 
             using (_lock.UsingWriteLock())
             {
@@ -30,27 +30,19 @@ public sealed class LruCache<TKey, TValue>(int capacity) : ICache<TKey, TValue> 
     {
         using (_lock.UsingWriteLock())
         {
-            if (_cache.TryGetValue(key, out LinkedListNode<LruCacheNode>? node))
+            if (_cache.TryGetValue(key, out LinkedListNode<KeyValuePair<TKey, TValue>>? node))
             {
-                node.Value.Value = value;
                 _sorted.Remove(node);
-                _sorted.AddFirst(node);
+                _sorted.AddFirst(new LinkedListNode<KeyValuePair<TKey, TValue>>(new(key, value)));
             }
             else
             {
                 if (_cache.Count == _capacity) _sorted.RemoveLast();
 
-                LruCacheNode item = new(key, value);
+                KeyValuePair<TKey, TValue> item = new(key, value);
                 node = _sorted.AddFirst(item);
                 _cache.Add(key, node);
             }
         }
-    }
-
-    private sealed class LruCacheNode(TKey key, TValue value)
-    {
-        public TKey Key { get; } = key;
-
-        public TValue Value { get; set; } = value;
     }
 }
