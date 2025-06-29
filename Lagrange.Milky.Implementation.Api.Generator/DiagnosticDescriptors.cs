@@ -14,7 +14,7 @@ public static class DiagnosticDescriptors
     );
 
     public static DiagnosticDescriptor NotImplementIEmptyParameterApiHandler = new(
-        id: "MA001",
+        id: "MA002",
         title: "Please implement IEmptyParameterApiHandler<TResult> for {0}",
         messageFormat: "Please implement IEmptyParameterApiHandler<TResult> for {0}",
         category: "Usage",
@@ -22,7 +22,7 @@ public static class DiagnosticDescriptors
         isEnabledByDefault: true
     );
     public static DiagnosticDescriptor NotImplementIEmptyResultApiHandler = new(
-        id: "MA001",
+        id: "MA003",
         title: "Please implement IEmptyResultApiHandler<TResult> for {0}",
         messageFormat: "Please implement IEmptyResultApiHandler<TResult> for {0}",
         category: "Usage",
@@ -31,7 +31,7 @@ public static class DiagnosticDescriptors
     );
 
     public static DiagnosticDescriptor NotUsedJsonSerializable = new(
-        id: "MA002",
+        id: "MA004",
         title: "{0} is not used in MilkyJsonContext [JsonSerializable(typeof({0}))]",
         messageFormat: "{0} is not used in MilkyJsonContext [JsonSerializable(typeof({0}))]",
         category: "Usage",
