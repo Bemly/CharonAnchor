@@ -5,15 +5,13 @@ using Lagrange.Core.Common.Interface;
 namespace Lagrange.Milky.Api.Handler.Group;
 
 [Api("send_group_nudge")]
-public class SendGroupNudgeHandler(BotContext bot) : IApiHandler<SendGroupNudgeParameter, object>
+public class SendGroupNudgeHandler(BotContext bot) : IEmptyResultApiHandler<SendGroupNudgeParameter>
 {
     private readonly BotContext _bot = bot;
 
-    public async Task<object> HandleAsync(SendGroupNudgeParameter parameter, CancellationToken token)
+    public async Task HandleAsync(SendGroupNudgeParameter parameter, CancellationToken token)
     {
         await _bot.SendGroupNudge(parameter.GroupId, parameter.UserId);
-
-        return new object();
     }
 }
 

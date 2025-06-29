@@ -5,11 +5,11 @@ using Lagrange.Milky.Api.Exception;
 namespace Lagrange.Milky.Api.Handler.System;
 
 [Api("get_login_info")]
-public class GetLoginInfoHandler(BotContext bot) : IApiHandler<object, GetLoginInfoResult>
+public class GetLoginInfoHandler(BotContext bot) : IEmptyParameterApiHandler<GetLoginInfoResult>
 {
     private readonly BotContext _bot = bot;
 
-    public Task<GetLoginInfoResult> HandleAsync(object parameter, CancellationToken token)
+    public Task<GetLoginInfoResult> HandleAsync(CancellationToken token)
     {
         if (_bot.BotInfo == null) throw new ApiException(-1, "login info is null");
 

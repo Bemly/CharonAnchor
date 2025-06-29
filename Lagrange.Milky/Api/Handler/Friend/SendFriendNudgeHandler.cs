@@ -5,15 +5,13 @@ using Lagrange.Core.Common.Interface;
 namespace Lagrange.Milky.Api.Handler.Friend;
 
 [Api("send_friend_nudge")]
-public class SendFriendNudgeHandler(BotContext bot) : IApiHandler<SendFriendNudgeParameter, object>
+public class SendFriendNudgeHandler(BotContext bot) : IEmptyResultApiHandler<SendFriendNudgeParameter>
 {
     private readonly BotContext _bot = bot;
 
-    public async Task<object> HandleAsync(SendFriendNudgeParameter parameter, CancellationToken token)
+    public async Task HandleAsync(SendFriendNudgeParameter parameter, CancellationToken token)
     {
         await _bot.SendFriendNudge(parameter.UserId, parameter.IsSelf ? _bot.BotUin : parameter.UserId);
-
-        return new object();
     }
 }
 

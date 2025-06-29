@@ -5,15 +5,13 @@ using Lagrange.Core.Common.Interface;
 namespace Lagrange.Milky.Api.Handler.File;
 
 [Api("delete_group_file")]
-public class DeleteGroupFileHandler(BotContext bot) : IApiHandler<DeleteGroupFileParameter, object>
+public class DeleteGroupFileHandler(BotContext bot) : IEmptyResultApiHandler<DeleteGroupFileParameter>
 {
     private readonly BotContext _bot = bot;
 
-    public async Task<object> HandleAsync(DeleteGroupFileParameter parameter, CancellationToken token)
+    public async Task HandleAsync(DeleteGroupFileParameter parameter, CancellationToken token)
     {
         await _bot.GroupFSDelete(parameter.GroupId, parameter.FileId);
-
-        return new object();
     }
 }
 

@@ -5,11 +5,11 @@ using Lagrange.Core.Common;
 namespace Lagrange.Milky.Api.Handler.System;
 
 [Api("get_impl_info")]
-public class GetImplInfoHandler(BotContext bot) : IApiHandler<object, GetImplInfoResult>
+public class GetImplInfoHandler(BotContext bot) : IEmptyParameterApiHandler<GetImplInfoResult>
 {
     private readonly BotContext _bot = bot;
 
-    public Task<GetImplInfoResult> HandleAsync(object parameter, CancellationToken token)
+    public Task<GetImplInfoResult> HandleAsync(CancellationToken token)
     {
         return Task.FromResult(new GetImplInfoResult(
             Constants.ImplementationName,
