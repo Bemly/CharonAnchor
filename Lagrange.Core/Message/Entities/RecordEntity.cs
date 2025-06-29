@@ -35,7 +35,6 @@ public class RecordEntity : RichMediaEntityBase
         {
             await context.HighwayContext.UploadFile(Stream.Value, message.IsGroup() ? 1008 : 1007, ProtoHelper.Serialize(result.Ext));
         }      
-        await Stream.Value.DisposeAsync();
     }
 
     public override async Task Postprocess(BotContext context, BotMessage message)

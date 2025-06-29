@@ -66,9 +66,6 @@ public class VideoEntity : RichMediaEntityBase
                 await context.HighwayContext.UploadFile(ThumbnailStream.Value, 1006, ProtoHelper.Serialize(result.SubExt));
             }
         }
-
-        await Stream.Value.DisposeAsync();
-        await ThumbnailStream.Value.DisposeAsync();
     }
 
     public override async Task Postprocess(BotContext context, BotMessage message)
