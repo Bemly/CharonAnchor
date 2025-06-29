@@ -15,4 +15,6 @@ public class MilkyConfiguration
     public WebHookConfiguration? WebHook { get; set; }
 
     public MessageConfiguration Message { get; set; } = new MessageConfiguration();
+
+    public bool Debug { get; set; } = false;
 }

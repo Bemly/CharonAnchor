@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Lagrange.Core.Common;
+using Lagrange.Milky.Api.Handler.Debug;
 using Lagrange.Milky.Api.Handler.File;
 using Lagrange.Milky.Api.Handler.Friend;
 using Lagrange.Milky.Api.Handler.Group;
@@ -86,6 +87,9 @@ public static partial class JsonUtility
     [JsonSerializable(typeof(GetGroupFileDownloadUrlResult))]
     // delete_group_file
     [JsonSerializable(typeof(DeleteGroupFileParameter))]
+    // === debug ===
+    [JsonSerializable(typeof(SendPacketParameter))]
+    [JsonSerializable(typeof(SendPacketResult))]
 
     // === event ===
     // bot_offline

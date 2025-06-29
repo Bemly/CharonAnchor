@@ -131,9 +131,15 @@ public static class HostApplicationBuilderExtension
         .AddSingleton<ResourceResolver>()
         // Converter
         .AddSingleton<EntityConvert>()
-        // Api Handlers
-        .AddApiHandlers()
     )
+    .ConfigureServices(services =>
+    {
+        var configuration = builder.Configuration.GetSection("Milky").Get<MilkyConfiguration>()
+            ?? throw new Exception("Milky cannot be null");
+
+        // Api Handlers
+        services.AddApiHandlers(configuration.Debug);
+    })
     .ConfigureServices(services =>
     {
         services.AddHostedService<MilkyHttpApiService>();

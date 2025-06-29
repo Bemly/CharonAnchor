@@ -13,9 +13,12 @@ namespace Lagrange.Milky.Implementation.Api.Generator;
 public class MilkyApiHandlerGenerator : IIncrementalGenerator
 {
     private const string ApiAttributeFullName = "Lagrange.Milky.Api.ApiAttribute";
+    private const string ApiAttributeNameName = "Name";
+    private const string ApiAttributeDebugName = "Debug";
 
     private const string MilkyJsonContextSyntaxName = "JsonContext";
     private const string JsonSerializableSyntaxName = "JsonSerializable";
+
     private const string IApiHandlerBaseFullName = "Lagrange.Milky.Api.Handler.IApiHandler`2";
     private const string IEmptyParameterApiHandlerBaseFullName = "Lagrange.Milky.Api.Handler.IEmptyParameterApiHandler`1";
     private const string IEmptyResultApiHandlerBaseFullName = "Lagrange.Milky.Api.Handler.IEmptyResultApiHandler`1";
@@ -102,11 +105,14 @@ public class MilkyApiHandlerGenerator : IIncrementalGenerator
 
     private ApiHandlerInfo ToApiHandlerInfo(GeneratorAttributeSyntaxContext context, CancellationToken token)
     {
+        int length = context.Attributes[0].ConstructorArguments.Length;
+
         return new ApiHandlerInfo(
             (ClassDeclarationSyntax)context.TargetNode,
             (INamedTypeSymbol)context.TargetSymbol,
             context.SemanticModel,
             (string)context.Attributes[0].ConstructorArguments[0].Value!,
+            (bool)(length == 2 ? context.Attributes[0].ConstructorArguments[1].Value! : false),
             context.TargetSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
         );
     }
@@ -118,9 +124,9 @@ public class MilkyApiHandlerGenerator : IIncrementalGenerator
 
         public static partial class ServiceCollectionExtension
         {
-            public static partial TServiceCollection AddApiHandlers<TServiceCollection>(this TServiceCollection services) where TServiceCollection : global::Microsoft.Extensions.DependencyInjection.IServiceCollection
+            public static partial TServiceCollection AddApiHandlers<TServiceCollection>(this TServiceCollection services, bool debug) where TServiceCollection : global::Microsoft.Extensions.DependencyInjection.IServiceCollection
             {
-        {{string.Join("\n", infos.Select(info => $"        global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddKeyedSingleton<global::Lagrange.Milky.Api.Handler.IApiHandler, {info.HandlerTypeFullName}>(services, \"{info.ApiName}\");"))}}
+        {{string.Join("\n", infos.Select(info => $"        {(info.Debug ? "if (debug) " : "")}global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddKeyedSingleton<global::Lagrange.Milky.Api.Handler.IApiHandler, {info.HandlerTypeFullName}>(services, \"{info.ApiName}\");"))}}
 
                 return services;
             }
