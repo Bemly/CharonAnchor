@@ -7,7 +7,7 @@ namespace Lagrange.Milky.Extension;
 
 public static class BotContextExtension
 {
-    private delegate ValueTask<(int RetCode, string Extra, ReadOnlyMemory<byte> Data)> SendPacketDelegate(BotContext bot, string cmd, int sequence, ReadOnlyMemory<byte> data);
+    private delegate ValueTask<(int RetCode, string Extra, ReadOnlyMemory<byte> Data)> SendPacketDelegate(BotContext bot, string cmd, int sequence, byte[] data);
 
     private const string SsoPacketFullName = "Lagrange.Core.Internal.Packets.Struct.SsoPacket";
     private const string RequestTypeFullName = "Lagrange.Core.Internal.Packets.Struct.RequestType";
@@ -38,7 +38,7 @@ public static class BotContextExtension
             var bot = Expression.Parameter(typeof(BotContext));
             var cmd = Expression.Parameter(typeof(string));
             var sequence = Expression.Parameter(typeof(int));
-            var dataInput = Expression.Parameter(typeof(ReadOnlyMemory<byte>));
+            var dataInput = Expression.Parameter(typeof(byte[]));
 
             // Get PacketContext
             var context = Expression.Property(bot, "PacketContext");
@@ -86,23 +86,24 @@ public static class BotContextExtension
             var extra = Expression.Property(taskResult, "Extra");
             var dataResult = Expression.Property(taskResult, "Data");
 
-            MethodCallExpression result;
+            NewExpression result;
             {
-                var ctor = typeof(Task<(int, string, ReadOnlyMemory<byte>)>).GetConstructor([typeof(int), typeof(string), typeof(ReadOnlyMemory<byte>)]);
+                var type = typeof((int, string, ReadOnlyMemory<byte>));
+                var ctor = type.GetConstructor([typeof(int), typeof(string), typeof(ReadOnlyMemory<byte>)]);
                 if (ctor == null) throw new Exception("Ctor((int, string, ReadOnlyMemory<byte>)) not found");
-                var newResult = Expression.New(ctor, [retcode, extra, dataInput]);
+                var newResult = Expression.New(ctor, [retcode, extra, dataResult]);
 
-                var method = typeof(ValueTask).GetMethod("FromResult", BindingFlags.Static);
-                if (method == null) throw new Exception("Method(ValueTask.FromResult<>) not found");
+                var method = typeof(ValueTask<(int, string, ReadOnlyMemory<byte>)>).GetConstructor([type]);
+                if (method == null) throw new Exception("Ctor(ValueTask((int, string, ReadOnlyMemory<byte>))) not found");
 
-                result = Expression.Call(method.MakeGenericMethod(typeof((int, string, ReadOnlyMemory<byte>))), newResult);
+                result = Expression.New(method, [newResult]);
             }
 
             return Expression.Lambda<SendPacketDelegate>(result, [bot, cmd, sequence, dataInput]).Compile();
         }
     });
 
-    public static ValueTask<(int RetCode, string Extra, ReadOnlyMemory<byte> Data)> SendPacket(this BotContext bot, string cmd, int sequence, ReadOnlyMemory<byte> data)
+    public static ValueTask<(int RetCode, string Extra, ReadOnlyMemory<byte> Data)> SendPacket(this BotContext bot, string cmd, int sequence, byte[] data)
     {
         return _sendPacket.Value(bot, cmd, sequence, data);
     }
