@@ -11,13 +11,13 @@ public class SendPacketHandler(BotContext bot) : IApiHandler<SendPacketParameter
 
     public async Task<SendPacketResult> HandleAsync(SendPacketParameter parameter, CancellationToken token)
     {
-        var (data, command, sequence, retCode, extra) = await _bot.SendPacket(
+        var (retCode, extra, data) = await _bot.SendPacket(
             parameter.Cmd,
-            Convert.FromHexString(parameter.Payload),
-            parameter.Seq
+            parameter.Seq,
+            Convert.FromHexString(parameter.Payload)
         );
 
-        return new SendPacketResult(Convert.ToHexString(data.Span), command, extra, retCode, sequence);
+        return new SendPacketResult(retCode, extra, Convert.ToHexString(data.Span));
     }
 }
 
@@ -28,28 +28,22 @@ public class SendPacketParameter(string cmd, int seq, string payload)
     public string Cmd { get; init; } = cmd;
 
     [JsonRequired]
-    [JsonPropertyName("seq")]
+    [JsonPropertyName("sequence")]
     public int Seq { get; init; } = seq;
 
     [JsonRequired]
-    [JsonPropertyName("payload")]
+    [JsonPropertyName("data")]
     public string Payload { get; init; } = payload;
 }
 
-public class SendPacketResult(string data, string command, string extra, int retCode, int sequence)
+public class SendPacketResult(int retCode, string extra, string data)
 {
-    [JsonPropertyName("data")]
-    public string Data { get; } = data;
-
-    [JsonPropertyName("command")]
-    public string Command { get; } = command;
+    [JsonPropertyName("ret_code")]
+    public int RetCode { get; } = retCode;
 
     [JsonPropertyName("extra")]
     public string Extra { get; } = extra;
 
-    [JsonPropertyName("ret_code")]
-    public int RetCode { get; } = retCode;
-
-    [JsonPropertyName("sequence")]
-    public int Sequence { get; } = sequence;
+    [JsonPropertyName("data")]
+    public string Data { get; } = data;
 }
