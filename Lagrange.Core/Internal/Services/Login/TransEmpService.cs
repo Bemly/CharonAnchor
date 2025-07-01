@@ -8,8 +8,8 @@ using Lagrange.Core.Utility.Binary;
 
 namespace Lagrange.Core.Internal.Services.Login;
 
-[EventSubscribe<TransEmp31EventReq>(Protocols.PC)]
-[EventSubscribe<TransEmp12EventReq>(Protocols.PC)]
+[EventSubscribe<TransEmp31EventReq>(Protocols.PC | Protocols.AndroidWatch)]
+[EventSubscribe<TransEmp12EventReq>(Protocols.PC | Protocols.AndroidWatch)]
 [Service("wtlogin.trans_emp", RequestType.D2Auth, EncryptType.EncryptEmpty)]
 internal class TransEmpService : BaseService<ProtocolEvent, ProtocolEvent>
 {

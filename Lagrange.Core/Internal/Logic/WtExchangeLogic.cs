@@ -118,9 +118,9 @@ internal class WtExchangeLogic : ILogic, IDisposable
     
     private async Task<bool> ManualLogin(long uin, string? password)
     {
-        if (string.IsNullOrEmpty(password) && _context.Config.Protocol.IsAndroid())
+        if (string.IsNullOrEmpty(password) && (_context.Config.Protocol.IsAndroid() && _context.Config.Protocol is not Protocols.AndroidWatch)) // watch can use QRLogin
         {
-            _context.LogCritical(Tag, "Android Platform can not use QRLogin, Please fill in password");
+            _context.LogCritical(Tag, "Android Platform (except AndroidWatch) can not use QRLogin, Please fill in password");
             return false;
         }
 
@@ -135,6 +135,12 @@ internal class WtExchangeLogic : ILogic, IDisposable
         }
         else
         {
+            if (_context.Config.Protocol is Protocols.AndroidWatch)
+            {
+                _context.LogError(Tag, "AndroidWatch can not use password login");
+                return false;
+            }
+            
             _context.LogInfo(Tag, "Password is filled, try to login");
 
             return _context.Config.Protocol.IsAndroid()
