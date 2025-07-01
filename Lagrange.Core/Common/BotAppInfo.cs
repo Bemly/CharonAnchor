@@ -138,6 +138,27 @@ public class BotAppInfo
         },
         AppClientVersion = 0
     };
+
+    private static readonly BotAppInfo AndroidWatch = new()
+    {
+        Os = "Android",
+        CurrentVersion = "testrevision",
+        PtVersion = "9.0.5",
+        AppId = 16,
+        SubAppId = 537258298,
+        SsoVersion = 22,
+        PackageName = "com.tencent.qqlite",
+        ApkSignatureMd5 = [0xA6, 0xB7, 0x45, 0xBF, 0x24, 0xA2, 0xC2, 0x77, 0x52, 0x77, 0x16, 0xF6, 0xF3, 0x6E, 0xB6, 0x8D],
+        SdkInfo = new WtLoginSdkInfo
+        {
+            SdkBuildTime = 1724730201,
+            SdkVersion = "6.0.0.2564",
+            MiscBitMap = 150470524,
+            SubSigMap = 66560,
+            MainSigMap = Sig.WLOGIN_A5 | Sig.WLOGIN_RESERVED | Sig.WLOGIN_STWEB | Sig.WLOGIN_A2 | Sig.WLOGIN_ST | Sig.WLOGIN_LSKEY | Sig.WLOGIN_SKEY | Sig.WLOGIN_SIG64 | Sig.WLOGIN_VKEY | Sig.WLOGIN_D2 | Sig.WLOGIN_SID | Sig.WLOGIN_PSKEY | Sig.WLOGIN_AQSIG | Sig.WLOGIN_LHSIG | Sig.WLOGIN_PAYTOKEN | (Sig)65536
+        },
+        AppClientVersion = 0
+    };
     
     public static readonly Dictionary<Protocols, BotAppInfo> ProtocolToAppInfo = new()
     {
@@ -145,7 +166,8 @@ public class BotAppInfo
         { Protocols.Linux, Linux },
         { Protocols.MacOs, MacOs },
         { Protocols.AndroidPhone, AndroidPhone },
-        { Protocols.AndroidPad, AndroidPad }
+        { Protocols.AndroidPad, AndroidPad },
+        { Protocols.AndroidWatch, AndroidWatch }
     };
 }
 
