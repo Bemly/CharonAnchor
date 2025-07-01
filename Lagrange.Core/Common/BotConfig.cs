@@ -68,6 +68,6 @@ public enum Protocols : byte
     AndroidWatch = 0b00100000,
     
     PC           = Windows | MacOs | Linux,
-    Android      = AndroidPhone | AndroidPad,
-    All          = Windows | MacOs | Linux | AndroidPhone | AndroidPad,
+    Android      = AndroidPhone | AndroidPad | AndroidWatch,
+    All          = Windows | MacOs | Linux | AndroidPhone | AndroidPad | AndroidWatch,
 }
