@@ -74,7 +74,7 @@ internal class MessagingLogic(BotContext context) : ILogic
     private async Task<BotMessage> BuildMessage(MessageChain chain, BotContact contact, BotContact receiver)
     {
         uint random = (uint)Random.Shared.Next();
-        var message = new BotMessage(chain, contact, receiver)
+        var message = new BotMessage(chain, contact, receiver, DateTime.Now)
         {
             Random = random,
             MessageId = (0x10000000ul << 32) | random
