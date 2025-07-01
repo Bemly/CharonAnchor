@@ -1,10 +1,12 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Formats.Asn1;
+using System.Text;
 using Lagrange.Core.Common.Entity;
-using Lagrange.Core.Exceptions;
 using Lagrange.Core.Internal.Events.System;
 using Lagrange.Core.Internal.Packets.Message;
 using Lagrange.Core.Message.Entities;
 using Lagrange.Core.Utility;
+using Lagrange.Core.Utility.Binary;
 using Lagrange.Core.Utility.Extension;
 
 
@@ -41,7 +43,7 @@ internal class MessagePacker
 
         var contact = await ResolveContact(contentHead.Type, routingHead);
         var receiver = await ResolveReceiver(contentHead.Type, routingHead);
-        var message = new BotMessage(contact, receiver)
+        var message = new BotMessage(contact, receiver, DateTime.Now)
         {
             MessageId = contentHead.MsgUid, // MsgUid & 0xFFFFFFFF are the same to random
             Time = DateTimeOffset.FromUnixTimeSeconds(contentHead.Time).DateTime,
@@ -50,14 +52,21 @@ internal class MessagePacker
             Random = contentHead.Random
         };
         
-        foreach (var elem in elems)
+        if (ParsePttRichText(msg.MessageBody.RichText) is { } record) 
         {
-            foreach (var factory in _factory)
+            message.Entities.Add(record);
+        }
+        else
+        {
+            foreach (var elem in elems)
             {
-                if (factory.Parse(elems, elem) is not { } entity) continue;
+                foreach (var factory in _factory)
+                {
+                    if (factory.Parse(elems, elem) is not { } entity) continue;
 
-                message.Entities.Add(entity);
-                break;
+                    message.Entities.Add(entity);
+                    break;
+                }
             }
         }
 
@@ -265,5 +274,47 @@ internal class MessagePacker
         }
 
         return Task.FromResult(proto);
+    }
+
+    private RecordEntity? ParsePttRichText(RichText richText)
+    {
+        if (richText.Ptt is not { } ptt) return null;
+        
+        var kv = new BinaryPacket(stackalloc byte[100]);
+        kv.Write("filetype", Prefix.Int32 | Prefix.LengthOnly);
+        kv.Write("0", Prefix.Int32 | Prefix.LengthOnly);
+        kv.Write("codec", Prefix.Int32 | Prefix.LengthOnly);
+        kv.Write("1", Prefix.Int32 | Prefix.LengthOnly);
+            
+        Span<byte> innerSpan = stackalloc byte[200];
+        Span<byte> outerSpan = stackalloc byte[300];
+            
+        var inner = new AsnWriter(AsnEncodingRules.DER);
+        inner.PushSequence();
+        inner.WriteInteger(1);
+        inner.WriteInteger(0);
+        inner.WriteInteger((int)(_context.BotUin < 0x8000_0000 ? _context.BotUin : _context.BotUin - 0x1_0000_0000));
+        inner.WriteOctetString(ptt.GroupFileKey ?? ptt.FileUuid ?? ReadOnlySpan<byte>.Empty);
+        inner.WriteInteger(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+        inner.WriteOctetString(kv.CreateReadOnlySpan());
+        inner.PopSequence();
+        inner.TryEncode(innerSpan, out int length);
+
+        var outer = new AsnWriter(AsnEncodingRules.DER);
+        outer.PushSequence();
+        outer.WriteInteger(1); // version
+        outer.WriteOctetString(innerSpan[..length]); // inner
+        outer.WriteOctetString(ReadOnlySpan<byte>.Empty);   // “empty”
+        outer.PopSequence();
+            
+        outer.TryEncode(outerSpan, out length);
+            
+        return new RecordEntity
+        {
+            FileUrl = $"https://grouptalk.c2c.qq.com/?ver=2&rkey={Convert.ToHexString(outerSpan[..length])}&voice_codec=1&filetype=0",
+            FileName = ptt.FileName,
+            FileSize = ptt.FileSize,
+            FileMd5 = Convert.ToHexString(ptt.FileMd5 ?? [])
+        };
     }
 }

@@ -39,11 +39,14 @@ public class RecordEntity : RichMediaEntityBase
 
     public override async Task Postprocess(BotContext context, BotMessage message)
     {
-        NTV2RichMediaDownloadEventResp result = message.IsGroup()
-            ? await context.EventContext.SendEvent<RecordGroupDownloadEventResp>(new RecordGroupDownloadEventReq(message, this))
-            : await context.EventContext.SendEvent<RecordDownloadEventResp>(new RecordDownloadEventReq(message, this));
-        
-        FileUrl = result.Url;
+        if (string.IsNullOrEmpty(FileUrl))
+        {
+            NTV2RichMediaDownloadEventResp result = message.IsGroup()
+                ? await context.EventContext.SendEvent<RecordGroupDownloadEventResp>(new RecordGroupDownloadEventReq(message, this))
+                : await context.EventContext.SendEvent<RecordDownloadEventResp>(new RecordDownloadEventReq(message, this));
+
+            FileUrl = result.Url;
+        }
     }
 
     public override string ToPreviewString() => $"[语音] {RecordLength}\"";

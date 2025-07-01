@@ -205,7 +205,7 @@ internal partial class Ptt
 
     [ProtoMember(4)] public byte[]? FileMd5 { get; set; }
 
-    [ProtoMember(5)] public byte[]? FileName { get; set; }
+    [ProtoMember(5)] public string FileName { get; set; }
 
     [ProtoMember(6)] public uint FileSize { get; set; }
 
@@ -223,7 +223,7 @@ internal partial class Ptt
 
     [ProtoMember(13)] public byte[]? Shortcut { get; set; }
 
-    [ProtoMember(14)] public byte[]? FileKey { get; set; }
+    [ProtoMember(14)] public string? FileKey { get; set; }
 
     [ProtoMember(15)] public uint MagicPttIndex { get; set; }
 
