@@ -19,10 +19,11 @@ public class VideoEntity : RichMediaEntityBase
     
     public VideoEntity() { }
     
-    public VideoEntity(Stream stream, Stream? thumbnailStream = null)
+    public VideoEntity(Stream stream, Stream? thumbnailStream = null, bool disposeOnCompletion = false)
     {
         Stream = new Lazy<Stream>(() => stream);
         ThumbnailStream = new Lazy<Stream>(() => thumbnailStream ?? new MemoryStream(DefaultThumbnail));
+        DisposeOnCompletion = disposeOnCompletion;
     }
     
     public override async Task Preprocess(BotContext context, BotMessage message)
@@ -32,38 +33,51 @@ public class VideoEntity : RichMediaEntityBase
 
         ThumbnailEntity = new ImageEntity(ThumbnailStream.Value);
 
-        if (message.IsGroup())
+        try
         {
-            IsGroup = true;
-            
-            var result = await context.EventContext.SendEvent<VideoGroupUploadEventResp>(new VideoGroupUploadEventReq(message, this));
-            _compat = result.Compat;
-            MsgInfo = result.Info;
-            
-            if (result.Ext != null)
+            if (message.IsGroup())
             {
-                result.Ext.Hash.FileSha1 = CalculateStreamBytes(Stream.Value);
-                await context.HighwayContext.UploadFile(Stream.Value, 1001, ProtoHelper.Serialize(result.Ext));
+                IsGroup = true;
+
+                var result = await context.EventContext.SendEvent<VideoGroupUploadEventResp>(new VideoGroupUploadEventReq(message, this));
+                _compat = result.Compat;
+                MsgInfo = result.Info;
+
+                if (result.Ext != null)
+                {
+                    result.Ext.Hash.FileSha1 = CalculateStreamBytes(Stream.Value);
+                    await context.HighwayContext.UploadFile(Stream.Value, 1001, ProtoHelper.Serialize(result.Ext));
+                }
+
+                if (result.SubExt != null)
+                {
+                    await context.HighwayContext.UploadFile(ThumbnailStream.Value, 1002, ProtoHelper.Serialize(result.SubExt));
+                }
             }
-            if (result.SubExt != null)
-            { 
-                await context.HighwayContext.UploadFile(ThumbnailStream.Value, 1002, ProtoHelper.Serialize(result.SubExt));
+            else
+            {
+                var result = await context.EventContext.SendEvent<VideoUploadEventResp>(new VideoUploadEventReq(message, this));
+                _compat = result.Compat;
+                MsgInfo = result.Info;
+
+                if (result.Ext != null)
+                {
+                    result.Ext.Hash.FileSha1 = CalculateStreamBytes(Stream.Value);
+                    await context.HighwayContext.UploadFile(Stream.Value, 1005, ProtoHelper.Serialize(result.Ext));
+                }
+
+                if (result.SubExt != null)
+                {
+                    await context.HighwayContext.UploadFile(ThumbnailStream.Value, 1006, ProtoHelper.Serialize(result.SubExt));
+                }
             }
         }
-        else
+        finally
         {
-            var result = await context.EventContext.SendEvent<VideoUploadEventResp>(new VideoUploadEventReq(message, this));
-            _compat = result.Compat;
-            MsgInfo = result.Info;
-            
-            if (result.Ext != null)
+            if (DisposeOnCompletion)
             {
-                result.Ext.Hash.FileSha1 = CalculateStreamBytes(Stream.Value);
-                await context.HighwayContext.UploadFile(Stream.Value, 1005, ProtoHelper.Serialize(result.Ext));
-            }
-            if (result.SubExt != null)
-            {
-                await context.HighwayContext.UploadFile(ThumbnailStream.Value, 1006, ProtoHelper.Serialize(result.SubExt));
+                await Stream.Value.DisposeAsync();
+                await ThumbnailStream.Value.DisposeAsync();
             }
         }
     }

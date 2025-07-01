@@ -29,6 +29,8 @@ public abstract class RichMediaEntityBase : IMessageEntity
         } 
     }
     
+    private protected bool DisposeOnCompletion;
+
     internal abstract Lazy<Stream>? Stream { get; }
 
     public string FileUuid { get; internal set; } = string.Empty;

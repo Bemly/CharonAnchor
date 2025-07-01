@@ -40,57 +40,57 @@ public class MessageBuilder
 
     public MessageBuilder Image(string path, string? summary = "[图片]", int subType = 0)
     {
-        using var fs = new FileStream(path, FileMode.Open, FileAccess.Read);
-        return Image(fs, summary, subType);
+        var fs = new FileStream(path, FileMode.Open, FileAccess.Read);
+        return Image(fs, summary, subType, true);
     }
 
     public MessageBuilder Image(byte[] image, string? summary = "[图片]", int subType = 0)
     {
-        using var ms = new MemoryStream(image);
-        return Image(ms, summary, subType);
+        var ms = new MemoryStream(image);
+        return Image(ms, summary, subType, true);
     }
 
-    public MessageBuilder Image(Stream stream, string? summary = "[图片]", int subType = 0)
+    public MessageBuilder Image(Stream stream, string? summary = "[图片]", int subType = 0, bool disposeOnCompletion = false)
     {
-        _entities.Add(new ImageEntity(stream, summary, subType));
+        _entities.Add(new ImageEntity(stream, summary, subType, disposeOnCompletion));
         return this;
     }
 
     public MessageBuilder Record(string path)
     {
-        using var fs = new FileStream(path, FileMode.Open, FileAccess.Read);
-        return Record(fs);
+        var fs = new FileStream(path, FileMode.Open, FileAccess.Read);
+        return Record(fs, true);
     }
 
     public MessageBuilder Record(byte[] record)
     {
-        using var ms = new MemoryStream(record);
-        return Record(ms);
+        var ms = new MemoryStream(record);
+        return Record(ms, true);
     }
 
-    public MessageBuilder Record(Stream stream)
+    public MessageBuilder Record(Stream stream, bool disposeOnCompletion = false)
     {
-        _entities.Add(new RecordEntity(stream));
+        _entities.Add(new RecordEntity(stream, disposeOnCompletion));
         return this;
     }
 
     public MessageBuilder Video(string path, string? thumbnail)
-    {
-        using var videoFs = new FileStream(path, FileMode.Open, FileAccess.Read);
-        using var thumbnailFs = thumbnail != null ? new FileStream(thumbnail, FileMode.Open, FileAccess.Read) : null;
-        return Video(videoFs, thumbnailFs);
+    { 
+        var videoFs = new FileStream(path, FileMode.Open, FileAccess.Read);
+        var thumbnailFs = thumbnail != null ? new FileStream(thumbnail, FileMode.Open, FileAccess.Read) : null;
+        return Video(videoFs, thumbnailFs, true);
     }
 
     public MessageBuilder Video(byte[] video, byte[]? thumbnail)
     {
-        using var videoStream = new MemoryStream(video);
-        using var thumbnailStream = thumbnail != null ? new MemoryStream(thumbnail) : null;
-        return Video(videoStream, thumbnailStream);
+        var videoStream = new MemoryStream(video);
+        var thumbnailStream = thumbnail != null ? new MemoryStream(thumbnail) : null;
+        return Video(videoStream, thumbnailStream, true);
     }
 
-    public MessageBuilder Video(Stream video, Stream? thumbnail)
+    public MessageBuilder Video(Stream video, Stream? thumbnail = null, bool disposeOnCompletion = false)
     {
-        _entities.Add(new VideoEntity(video, thumbnail));
+        _entities.Add(new VideoEntity(video, thumbnail, disposeOnCompletion));
         return this;
     }
     

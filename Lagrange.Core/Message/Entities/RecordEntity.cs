@@ -14,27 +14,35 @@ public class RecordEntity : RichMediaEntityBase
     
     public RecordEntity() { }
     
-    public RecordEntity(Stream stream)
+    public RecordEntity(Stream stream, bool disposeOnCompletion = false)
     {
-        Stream = new Lazy<Stream>(() => stream);
+        Stream = new Lazy<Stream>(() => stream, disposeOnCompletion);
+        DisposeOnCompletion = disposeOnCompletion;
     }
     
     public override async Task Preprocess(BotContext context, BotMessage message)
     {
         ArgumentNullException.ThrowIfNull(Stream);
 
-        IsGroup = message.IsGroup();
-        NTV2RichMediaUploadEventResp result = IsGroup
-            ? await context.EventContext.SendEvent<RecordGroupUploadEventResp>(new RecordGroupUploadEventReq(message, this))
-            : await context.EventContext.SendEvent<RecordUploadEventResp>(new RecordUploadEventReq(message, this));
-
-        _compat = result.Compat;
-        MsgInfo = result.Info;
-
-        if (result.Ext != null)
+        try
         {
-            await context.HighwayContext.UploadFile(Stream.Value, message.IsGroup() ? 1008 : 1007, ProtoHelper.Serialize(result.Ext));
-        }      
+            IsGroup = message.IsGroup();
+            NTV2RichMediaUploadEventResp result = IsGroup
+                ? await context.EventContext.SendEvent<RecordGroupUploadEventResp>(new RecordGroupUploadEventReq(message, this))
+                : await context.EventContext.SendEvent<RecordUploadEventResp>(new RecordUploadEventReq(message, this));
+
+            _compat = result.Compat;
+            MsgInfo = result.Info;
+
+            if (result.Ext != null)
+            {
+                await context.HighwayContext.UploadFile(Stream.Value, message.IsGroup() ? 1008 : 1007, ProtoHelper.Serialize(result.Ext));
+            }
+        }  
+        finally
+        {
+            if (DisposeOnCompletion) await Stream.Value.DisposeAsync();
+        }
     }
 
     public override async Task Postprocess(BotContext context, BotMessage message)

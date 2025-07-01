@@ -19,29 +19,37 @@ public class ImageEntity : RichMediaEntityBase
 
     public ImageEntity() { }
     
-    public ImageEntity(Stream stream, string? summary = "[图片]", int subType = 0)
+    public ImageEntity(Stream stream, string? summary = "[图片]", int subType = 0, bool disposeOnCompletion = false)
     {
         Stream = new Lazy<Stream>(() => stream);
         Summary = summary ?? "[图片]";
         SubType = subType;
+        DisposeOnCompletion = disposeOnCompletion;
     }
     
     public override async Task Preprocess(BotContext context, BotMessage message)
     { 
         ArgumentNullException.ThrowIfNull(Stream);
 
-        IsGroup = message.IsGroup();
-        NTV2RichMediaUploadEventResp result = IsGroup
-            ? await context.EventContext.SendEvent<ImageGroupUploadEventResp>(new ImageGroupUploadEventReq(message, this))
-            : await context.EventContext.SendEvent<ImageUploadEventResp>(new ImageUploadEventReq(message, this));
-
-        _compat = result.Compat;
-        MsgInfo = result.Info;
-
-        if (result.Ext != null)
+        try
         {
-            await context.HighwayContext.UploadFile(Stream.Value, message.IsGroup() ? 1004 : 1003, ProtoHelper.Serialize(result.Ext));
-        }      
+            IsGroup = message.IsGroup();
+            NTV2RichMediaUploadEventResp result = IsGroup
+                ? await context.EventContext.SendEvent<ImageGroupUploadEventResp>(new ImageGroupUploadEventReq(message, this))
+                : await context.EventContext.SendEvent<ImageUploadEventResp>(new ImageUploadEventReq(message, this));
+
+            _compat = result.Compat;
+            MsgInfo = result.Info;
+
+            if (result.Ext != null)
+            {
+                await context.HighwayContext.UploadFile(Stream.Value, message.IsGroup() ? 1004 : 1003, ProtoHelper.Serialize(result.Ext));
+            }
+        }
+        finally
+        {
+            if (DisposeOnCompletion) await Stream.Value.DisposeAsync();
+        }
     }
 
     public override async Task Postprocess(BotContext context, BotMessage message)
