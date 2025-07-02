@@ -47,6 +47,9 @@ public static class MessageExt
     public static Task SendGroupNudge(this BotContext context, long peerUin, long targetUin)
         => context.EventContext.GetLogic<OperationLogic>().SendNudge(true, peerUin, targetUin);
 
+    public static Task GroupSetSpecialTitle(this BotContext context, long groupUin, long targetUin, string title)
+        => context.EventContext.GetLogic<OperationLogic>().GroupSetSpecialTitle(groupUin, targetUin, title);
+
     public static Task GroupRename(this BotContext context, long groupUin, string name)
         => context.EventContext.GetLogic<OperationLogic>().GroupRename(groupUin, name);
 }
