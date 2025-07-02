@@ -46,12 +46,13 @@ public static class HostApplicationBuilderExtension
             var coreConfiguration = services.GetRequiredService<IOptions<CoreConfiguration>>().Value;
             var signer = services.GetRequiredService<Signer>();
 
-            var platform = signer.GetAppInfo().Result.Os switch
+            var platform = signer.GetAppInfo().Result switch
             {
-                "Linux" => Protocols.Linux,
-                "Mac" => Protocols.MacOs,
-                "Windows" => Protocols.Windows,
-                "Android" => Protocols.AndroidPhone,
+                { Os: "Linux" } => Protocols.Linux,
+                { Os: "Mac" } => Protocols.MacOs,
+                { Os: "Windows" } => Protocols.Windows,
+                { Os: "Android", PackageName: "com.tencent.mobileqq" } => Protocols.AndroidPhone,
+                { Os: "Android", PackageName: "com.tencent.qqlite" } => Protocols.AndroidWatch,
                 _ => throw new NotSupportedException(),
             };
 

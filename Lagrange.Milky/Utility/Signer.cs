@@ -201,7 +201,7 @@ public class Signer : IAndroidBotSignProvider, IDisposable
 
     private readonly Lazy<BotContext> _bot;
 
-    private readonly BotAppInfo? _info;
+    private BotAppInfo? _info;
     private readonly SemaphoreSlim _semaphore;
 
     public Signer(ILogger<Signer> logger, IOptions<CoreConfiguration> options, Lazy<BotContext> bot)
@@ -377,6 +377,7 @@ public class Signer : IAndroidBotSignProvider, IDisposable
             var result = JsonUtility.Deserialize<BotAppInfo>(await response.Content.ReadAsStreamAsync());
             if (result == null) throw new NullReferenceException("Result is null");
 
+            _info = result;
             return result;
         }
         finally
