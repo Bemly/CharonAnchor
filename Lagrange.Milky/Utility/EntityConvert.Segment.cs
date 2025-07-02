@@ -99,12 +99,17 @@ public partial class EntityConvert
                 "normal" => 0,
                 "sticker" => 1,
                 _ => throw new NotSupportedException(),
-            }
+            },
+            disposeOnCompletion: true
         ),
-        RecordOutgoingSegment record => new RecordEntity(await _resolver.ToMemoryStreamAsync(record.Data.Uri, token)),
+        RecordOutgoingSegment record => new RecordEntity(
+            await _resolver.ToMemoryStreamAsync(record.Data.Uri, token),
+            disposeOnCompletion: true
+        ),
         VideoOutgoingSegment video => new VideoEntity(
             await _resolver.ToMemoryStreamAsync(video.Data.Uri, token),
-            video.Data.ThumbUri != null ? await _resolver.ToMemoryStreamAsync(video.Data.ThumbUri, token) : null
+            video.Data.ThumbUri != null ? await _resolver.ToMemoryStreamAsync(video.Data.ThumbUri, token) : null,
+            disposeOnCompletion: true
         ),
         // TODO: ForwardOutgoingSegment
         _ => throw new NotSupportedException(),

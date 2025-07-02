@@ -13,7 +13,7 @@ public class UploadGroupFileHandler(BotContext bot, ResourceResolver resolver) :
 
     public async Task<UploadGroupFileResult> HandleAsync(UploadGroupFileParameter parameter, CancellationToken token)
     {
-        var stream = await _resolver.ToMemoryStreamAsync(parameter.FileUri, token);
+        using var stream = await _resolver.ToMemoryStreamAsync(parameter.FileUri, token);
         var id = await _bot.SendGroupFile(parameter.GroupId, stream, parameter.FileName, parameter.ParentFolderId);
 
         return new UploadGroupFileResult(id);
