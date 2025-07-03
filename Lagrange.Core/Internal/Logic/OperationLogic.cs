@@ -42,6 +42,16 @@ internal class OperationLogic(BotContext context) : ILogic
         }
         await context.EventContext.SendEvent<GroupSetSpecialTitleEventResp>(new GroupSetSpecialTitleEventReq(groupUin, uid, title));
     }
+    
+    public async Task GroupMemberRename(long groupUin, long targetUin, string name)
+    {
+        if (context.CacheContext.ResolveCachedUid(targetUin) is not { } uid)
+        {
+            await context.CacheContext.GetMemberList(groupUin, true);
+            uid = context.CacheContext.ResolveCachedUid(targetUin) ?? throw new InvalidTargetException(targetUin);
+        }
+        await context.EventContext.SendEvent<GroupMemberRenameEventResp>(new GroupMemberRenameEventReq(groupUin, uid, name));
+    }
 
     public async Task<string> GroupFSDownload(long groupUin, string fileId)
     {
