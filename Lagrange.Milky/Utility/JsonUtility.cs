@@ -77,6 +77,8 @@ public static partial class JsonUtility
     [JsonSerializable(typeof(SendGroupNudgeParameter))]
     // set_group_name
     [JsonSerializable(typeof(SetGroupNameParameter))]
+    // set_group_member_card
+    [JsonSerializable(typeof(SetGroupMemberCardParameter))]
     // set_group_member_special_title
     [JsonSerializable(typeof(SetGroupMemberSpecialTitleParameter))]
     // == file ==
