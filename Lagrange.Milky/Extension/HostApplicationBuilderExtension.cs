@@ -4,8 +4,7 @@ using Lagrange.Core.Common.Interface;
 using Lagrange.Milky.Api;
 using Lagrange.Milky.Cache;
 using Lagrange.Milky.Configuration;
-using Lagrange.Milky.Core.Service;
-using Lagrange.Milky.Core.Service.Core;
+using Lagrange.Milky.Core;
 using Lagrange.Milky.Event;
 using Lagrange.Milky.Utility;
 using Lagrange.Milky.Utility.CaptchaResolver;
@@ -113,14 +112,12 @@ public static class HostApplicationBuilderExtension
                 : ActivatorUtilities.CreateInstance<ManualCaptchaResolver>(services);
         })
 
-        // CoreLoggerService
+        // Logger
         .AddHostedService<CoreLoggerService>()
-    );
 
-    public static HostApplicationBuilder ConfigureCoreLogin(this HostApplicationBuilder builder) => builder
-        .ConfigureServices(services => services
-            .AddHostedService<CoreLoginService>()
-        );
+        // Login
+        .AddHostedService<CoreLoginService>()
+    );
 
     public static HostApplicationBuilder ConfigureMilky(this HostApplicationBuilder builder) => builder
     .ConfigureServices(services => services

@@ -10,7 +10,7 @@ using Microsoft.Extensions.Options;
 using static Lagrange.Core.Events.EventArgs.BotQrCodeQueryEvent;
 using MSLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
-namespace Lagrange.Milky.Core.Service;
+namespace Lagrange.Milky.Core;
 
 public class CoreLoginService(ILogger<CoreLoginService> logger, IOptions<CoreConfiguration> options, IHost host, BotContext bot, ICaptchaResolver captchaResolver) : IHostedService
 {

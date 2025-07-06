@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 using CoreLogLevel = Lagrange.Core.Events.EventArgs.LogLevel;
 using MSLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
-namespace Lagrange.Milky.Core.Service.Core;
+namespace Lagrange.Milky.Core;
 
 public partial class CoreLoggerService(ILogger<CoreLoggerService> logger, IOptionsMonitor<LoggerFilterOptions> loggerOptions, ILoggerFactory loggerFactory, BotContext bot) : IHostedService, IDisposable
 {

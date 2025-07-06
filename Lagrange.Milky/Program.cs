@@ -22,7 +22,6 @@ internal static class Program
             )
             .ConfigureCore()
             .ConfigureMilky()
-            .ConfigureCoreLogin()
             .Build()
             .RunAsync();
     }
