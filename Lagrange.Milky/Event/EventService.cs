@@ -1,10 +1,14 @@
 using Lagrange.Core;
+using Lagrange.Core.Common.Entity;
+using Lagrange.Core.Message;
 using Lagrange.Milky.Configuration;
+using Lagrange.Milky.Entity;
 using Lagrange.Milky.Extension;
 using Lagrange.Milky.Utility;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using static Lagrange.Core.Events.EventArgs.BotOfflineEvent;
 using LgrEvents = Lagrange.Core.Events.EventArgs;
 
 namespace Lagrange.Milky.Event;
@@ -33,6 +37,8 @@ public class EventService(ILogger<EventService> logger, IOptions<MilkyConfigurat
     {
         try
         {
+            _logger.LogOffline(@event.Reason, @event.Tips?.Tag, @event.Tips?.Message);
+
             var result = _convert.BotOfflineEvent(@event);
             byte[] bytes = JsonUtility.SerializeToUtf8Bytes(result.GetType(), result);
             using (_lock.UsingReadLock())
@@ -53,6 +59,26 @@ public class EventService(ILogger<EventService> logger, IOptions<MilkyConfigurat
     {
         try
         {
+            switch (@event.Message.Type)
+            {
+                case MessageType.Group:
+                    _logger.LogGroupMessage(
+                        @event.Message.Type,
+                        ((BotGroupMember)@event.Message.Contact).Group.Uin,
+                        @event.Message.Contact.Uin,
+                        @event.Message.Entities.ToDebugString()
+                    );
+                    break;
+                case MessageType.Private:
+                case MessageType.Temp:
+                    _logger.LogPrivateMessage(
+                        @event.Message.Type,
+                        @event.Message.Contact.Uin,
+                        @event.Message.Entities.ToDebugString()
+                    );
+                    break;
+            }
+
             if (_ignoreBotMessage && @event.Message.Contact.Uin == bot.BotUin) return;
 
             var result = _convert.MessageReceiveEvent(@event);
@@ -98,6 +124,15 @@ public class EventService(ILogger<EventService> logger, IOptions<MilkyConfigurat
 
 public static partial class EventServiceLoggerExtension
 {
+    [LoggerMessage(EventId = 0, Level = LogLevel.Debug, Message = "BotOfflineEvent {{ {reason} {tag} {message} }}")]
+    public static partial void LogOffline(this ILogger<EventService> logger, Reasons reason, string? tag, string? message);
+
+    [LoggerMessage(EventId = 1, Level = LogLevel.Debug, Message = "BotMessageEvent {{ {type} {group} {sender} {entities} }}")]
+    public static partial void LogGroupMessage(this ILogger<EventService> logger, MessageType type, long group, long sender, string entities);
+
+    [LoggerMessage(EventId = 2, Level = LogLevel.Debug, Message = "BotMessageEvent {{ {type} {sender} {entities} }}")]
+    public static partial void LogPrivateMessage(this ILogger<EventService> logger, MessageType type, long sender, string entities);
+
     [LoggerMessage(EventId = 999, Level = LogLevel.Error, Message = "Handle {event} exception")]
     public static partial void LogHandleEventException(this ILogger<EventService> logger, string @event, Exception e);
 }
