@@ -1,4 +1,5 @@
 using Lagrange.Core;
+using Lagrange.Core.Common;
 using Lagrange.Core.Common.Interface;
 using Lagrange.Core.Events.EventArgs;
 using Lagrange.Milky.Configuration;
@@ -41,6 +42,7 @@ public class CoreLoginService(ILogger<CoreLoginService> logger, IOptions<CoreCon
             _logger.LogLoginFailed();
             _ = _host.StopAsync(CancellationToken.None);
         }
+        _logger.LogLoginSuccessful(_bot.BotUin, _bot.Config.Protocol, _bot.AppInfo.CurrentVersion);
     }
 
     private void HandleNewDeviceVerify(BotContext _, BotNewDeviceVerifyEvent @event)
@@ -130,6 +132,9 @@ public static partial class CoreLoginServiceLoggerExtension
 
     [LoggerMessage(EventId = 3, Level = MSLogLevel.Information, Message = "NewDevice verify required, please scan the QrCode with the device that has already logged in with uin {uin}")]
     public static partial void LogNewDeviceVerify(this ILogger<CoreLoginService> logger, long uin);
+
+    [LoggerMessage(EventId = 4, Level = MSLogLevel.Information, Message = "{uin} successfully logged in via {protocol} {version}")]
+    public static partial void LogLoginSuccessful(this ILogger<CoreLoginService> logger, long uin, Protocols protocol, string version);
 
     [LoggerMessage(EventId = 998, Level = MSLogLevel.Critical, Message = "Login failed")]
     public static partial void LogLoginFailed(this ILogger<CoreLoginService> logger);
