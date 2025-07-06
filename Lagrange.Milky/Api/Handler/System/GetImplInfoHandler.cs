@@ -22,6 +22,7 @@ public class GetImplInfoHandler(BotContext bot) : IEmptyParameterApiHandler<GetI
                 Protocols.Linux => "linux",
                 Protocols.AndroidPhone => "android_phone",
                 Protocols.AndroidPad => "android_pad",
+                Protocols.AndroidWatch => "watch",
                 _ => throw new NotSupportedException(),
             },
             Constants.MilkyVersion
