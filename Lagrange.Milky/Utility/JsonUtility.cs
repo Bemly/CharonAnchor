@@ -104,6 +104,8 @@ public static partial class JsonUtility
     [JsonSerializable(typeof(BotOfflineEvent))]
     // message_receive
     [JsonSerializable(typeof(MessageReceiveEvent))]
+    // group_nudge
+    [JsonSerializable(typeof(GroupNudgeEvent))]
     private partial class JsonContext : JsonSerializerContext;
 
     public static string Serialize<T>(T value) where T : class

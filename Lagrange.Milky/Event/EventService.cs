@@ -29,6 +29,7 @@ public class EventService(ILogger<EventService> logger, IOptions<MilkyConfigurat
     {
         _bot.EventInvoker.RegisterEvent<LgrEvents.BotOfflineEvent>(HandleOfflineEvent);
         _bot.EventInvoker.RegisterEvent<LgrEvents.BotMessageEvent>(HandleMessageEvent);
+        _bot.EventInvoker.RegisterEvent<LgrEvents.BotGroupNudgeEvent>(HandleGroupNudgeEvent);
 
         return Task.CompletedTask;
     }
@@ -96,6 +97,31 @@ public class EventService(ILogger<EventService> logger, IOptions<MilkyConfigurat
             _logger.LogHandleEventException(nameof(LgrEvents.BotMessageEvent), e);
         }
     }
+    
+    private void HandleGroupNudgeEvent(BotContext bot, LgrEvents.BotGroupNudgeEvent @event)
+    {
+        try
+        {
+            _logger.LogGroupNudgeEvent(
+                @event.GroupUin,
+                @event.OperatorUin,
+                @event.TargetUin
+            );
+            var result = _convert.GroupNudgeEvent(@event);
+            byte[] bytes = JsonUtility.SerializeToUtf8Bytes(result.GetType(), result);
+            using (_lock.UsingReadLock())
+            {
+                foreach (var handler in _handlers)
+                {
+                    handler(bytes);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            _logger.LogHandleEventException(nameof(LgrEvents.BotGroupNudgeEvent), e);
+        }
+    }
 
     public Task StopAsync(CancellationToken token)
     {
@@ -132,6 +158,9 @@ public static partial class EventServiceLoggerExtension
 
     [LoggerMessage(EventId = 2, Level = LogLevel.Debug, Message = "BotMessageEvent {{ {type} {sender} {entities} }}")]
     public static partial void LogPrivateMessage(this ILogger<EventService> logger, MessageType type, long sender, string entities);
+    
+    [LoggerMessage(EventId = 3, Level = LogLevel.Debug, Message = "BotGroupNudgeEvent {{ group: {group}, sender: {sender} target: {target} }}")]
+    public static partial void LogGroupNudgeEvent(this ILogger<EventService> logger, long group, long sender, long target);
 
     [LoggerMessage(EventId = 999, Level = LogLevel.Error, Message = "Handle {event} exception")]
     public static partial void LogHandleEventException(this ILogger<EventService> logger, string @event, Exception e);

@@ -17,4 +17,10 @@ public partial class EntityConvert
         _bot.BotUin,
         MessageBase(@event.Message)
     );
+    
+    public GroupNudgeEvent GroupNudgeEvent(LgrEventArgs.BotGroupNudgeEvent @event) => new(
+        @event.EventTime.ToUnixTimeSeconds(),
+        _bot.BotUin,
+        new GroupNudgeEventData(@event.GroupUin, @event.OperatorUin, @event.TargetUin)
+    );
 }
