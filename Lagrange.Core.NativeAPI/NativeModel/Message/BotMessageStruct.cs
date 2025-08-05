@@ -42,13 +42,13 @@ namespace Lagrange.Core.NativeAPI.NativeModel.Message
 
                     switch (message.Receiver)
                     {
-                        case BotGroup:
+                        case BotGroup group:
                             receiver = Marshal.AllocHGlobal(Marshal.SizeOf<BotGroupStruct>());
-                            Marshal.StructureToPtr((BotGroupStruct)(BotGroup)message.Receiver, receiver, false);
+                            Marshal.StructureToPtr((BotGroupStruct)group, receiver, false);
                             break;
-                        case BotGroupMember:
+                        case BotGroupMember member:
                             receiver = Marshal.AllocHGlobal(Marshal.SizeOf<BotGroupMemberStruct>());
-                            Marshal.StructureToPtr((BotGroupMemberStruct)(BotGroupMember)message.Receiver, receiver, false);
+                            Marshal.StructureToPtr((BotGroupMemberStruct)member, receiver, false);
                             break;
                     }
 
@@ -145,7 +145,12 @@ namespace Lagrange.Core.NativeAPI.NativeModel.Message
             {
                 Contact = contact,
                 Receiver = receiver,
-                // Group = message.Group ?? new BotGroupStruct(),
+                Group = message.Receiver switch
+                {
+                    BotGroup group => (BotGroupStruct)group,
+                    BotGroupMember member => member.Group,
+                    _ => new BotGroupStruct(),
+                },
                 Type = type,
                 Time = Encoding.UTF8.GetBytes(message.Time.ToString("O")),
                 Entities = entitiesPtr,
