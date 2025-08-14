@@ -25,14 +25,14 @@ public class ImageIncomingSegmentData(string resourceId, string tempUrl, string 
     public string SubType { get; } = subType;
 }
 
-public class ImageOutgoingSegmentData(string uri, string? summary, string subType)
+public class ImageOutgoingSegmentData(string uri, string summary, string subType)
 {
     [JsonRequired]
     [JsonPropertyName("uri")]
     public string Uri { get; init; } = uri;
 
     [JsonPropertyName("summary")]
-    public string? Summary { get; init; } = summary;
+    public string Summary { get; init; } = summary;
 
     [JsonRequired]
     [JsonPropertyName("sub_type")]
