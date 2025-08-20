@@ -174,7 +174,7 @@ internal class PushLogic(BotContext context) : ILogic
                     case Event0x2DCSubType.GroupGreyTipNotice20 when messageEvent.MsgPush.CommonMessage.MessageBody.MsgContent is { } content:
                     {
                         var packet = new BinaryPacket(content);
-                        Int64 groupUin = packet.Read<Int32>(); // group uin
+                        long groupUin = packet.Read<int>(); // group uin
                         _ = packet.Read<byte>(); // unknown byte
                         var proto = packet.ReadBytes(Prefix.Int16 | Prefix.LengthOnly);
                         var greyTip = ProtoHelper.Deserialize<NotifyMessageBody>(proto);

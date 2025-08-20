@@ -25,7 +25,7 @@ internal partial class ContentHead
     
     [ProtoMember(4)] public uint Random { get; set; }
     
-    [ProtoMember(5)] public int Sequence { get; set; } // msg_seq
+    [ProtoMember(5)] public ulong Sequence { get; set; } // msg_seq
     
     [ProtoMember(6)] public long Time { get; set; }
     
