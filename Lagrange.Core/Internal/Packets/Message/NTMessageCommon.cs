@@ -37,7 +37,7 @@ internal partial class ContentHead
     
     [ProtoMember(10)] public int AutoReply { get; set; }
     
-    [ProtoMember(11)] public int ClientSequence { get; set; } // nt_msg_seq
+    [ProtoMember(11)] public ulong ClientSequence { get; set; } // nt_msg_seq
     
     [ProtoMember(12)] public ulong MsgUid { get; set; }
 }

@@ -70,7 +70,7 @@ internal class OperationLogic(BotContext context) : ILogic
 
     public async Task GroupFSDelete(long groupUin, string fileId) => await context.EventContext.SendEvent<GroupFSDeleteEventResp>(new GroupFSDeleteEventReq(groupUin, fileId));
 
-    public async Task<(int, DateTime)> SendFriendFile(long targetUin, Stream fileStream, string? fileName)
+    public async Task<(ulong, DateTime)> SendFriendFile(long targetUin, Stream fileStream, string? fileName)
     {
         fileName = ResolveFileName(fileStream, fileName);
 
@@ -128,7 +128,7 @@ internal class OperationLogic(BotContext context) : ILogic
             if (!success) throw new OperationException(-1, "File upload failed");
         }
 
-        int sequence = Random.Shared.Next(10000, 99999);
+        ulong sequence = (ulong)Random.Shared.NextInt64(10000, 99999);
         uint random = (uint)Random.Shared.Next();
         var sendResult = await context.EventContext.SendEvent<SendMessageEventResp>(new SendFriendFileEventReq(friend, request, result, sequence, random));
         if (sendResult.Result != 0) throw new OperationException(sendResult.Result);

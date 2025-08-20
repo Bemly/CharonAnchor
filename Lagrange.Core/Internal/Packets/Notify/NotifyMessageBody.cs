@@ -23,7 +23,7 @@ internal partial class NotifyMessageBody
 
     [ProtoMember(33)] public EssenceMessage EssenceMessage;
 
-    [ProtoMember(37)] public long MsgSequence { get; set; }
+    [ProtoMember(37)] public ulong MsgSequence { get; set; }
 
     [ProtoMember(39)] public uint Field39 { get; set; }
 
