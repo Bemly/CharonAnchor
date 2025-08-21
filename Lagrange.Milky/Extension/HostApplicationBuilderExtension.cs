@@ -35,9 +35,8 @@ public static class HostApplicationBuilderExtension
         .ConfigureServices(services => services
         .Configure<CoreConfiguration>(builder.Configuration.GetSection("Core"))
 
-        .AddSingleton(services => ActivatorUtilities.CreateInstance<Signer>(services,
-            new Lazy<BotContext>(services.GetRequiredService<BotContext>)
-        ))
+        // Signer
+        .AddSingleton<Signer>()
         // BotConfig
         .AddSingleton(services =>
         {
