@@ -27,20 +27,21 @@ public partial class EntityConvert
     public GroupMemberDecreaseEvent GroupMemberDecreaseEvent(LgrEventArgs.BotGroupMemberDecreaseEvent @event) => new(
         @event.EventTime.ToUnixTimeSeconds(),
         _bot.BotUin,
-        new GroupMemberDecreaseEventData(@event.GroupUin, @event.UserUin, @event.OperatorUin == 0 ? null : @event.OperatorUin)
+        new GroupMemberDecreaseEventData(
+            @event.GroupUin,
+            @event.UserUin,
+            @event.OperatorUin == 0 ? null : @event.OperatorUin
+        )
     );
     
     public FriendRequestEvent FriendRequestEvent(LgrEventArgs.BotFriendRequestEvent @event) => new(
         @event.EventTime.ToUnixTimeSeconds(),
         _bot.BotUin,
-        new FriendRequestEventData(@event.InitiatorUid, @event.InitiatorUin, 
-            @event.Message, @event.Source)
-    );
-    
-    public GroupInvitationEvent GroupInvitationEvent(LgrEventArgs.BotGroupInviteSelfEvent @event) => new(
-        @event.EventTime.ToUnixTimeSeconds(),
-        _bot.BotUin,
-        new GroupInvitationEventData(@event.InvitationSeq,
-            @event.InitiatorUin, @event.GroupUin)
+        new FriendRequestEventData(
+            @event.InitiatorUid,
+            @event.InitiatorUin,
+            @event.Message,
+            @event.Source
+        )
     );
 }

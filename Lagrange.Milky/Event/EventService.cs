@@ -2,7 +2,6 @@ using Lagrange.Core;
 using Lagrange.Core.Common.Entity;
 using Lagrange.Core.Message;
 using Lagrange.Milky.Configuration;
-using Lagrange.Milky.Entity;
 using Lagrange.Milky.Extension;
 using Lagrange.Milky.Utility;
 using Microsoft.Extensions.Hosting;
@@ -32,7 +31,6 @@ public class EventService(ILogger<EventService> logger, IOptions<MilkyConfigurat
         _bot.EventInvoker.RegisterEvent<LgrEvents.BotGroupNudgeEvent>(HandleGroupNudgeEvent);
         _bot.EventInvoker.RegisterEvent<LgrEvents.BotGroupMemberDecreaseEvent>(HandleGroupMemberDecreaseEvent);
         _bot.EventInvoker.RegisterEvent<LgrEvents.BotFriendRequestEvent>(HandleFriendRequestEvent);
-        _bot.EventInvoker.RegisterEvent<LgrEvents.BotGroupInviteSelfEvent>(HandleGroupInvitationEvent);
 
         return Task.CompletedTask;
     }
@@ -174,31 +172,6 @@ public class EventService(ILogger<EventService> logger, IOptions<MilkyConfigurat
         catch (Exception e)
         {
             _logger.LogHandleEventException(nameof(LgrEvents.BotFriendRequestEvent), e);
-        }
-    }
-    
-    private void HandleGroupInvitationEvent(BotContext bot, LgrEvents.BotGroupInviteSelfEvent @event)
-    {
-        try
-        {
-            _logger.LogGroupInvitationEvent(
-                @event.InvitationSeq,
-                @event.InitiatorUin,
-                @event.GroupUin
-            );
-            var result = _convert.GroupInvitationEvent(@event);
-            byte[] bytes = JsonUtility.SerializeToUtf8Bytes(result.GetType(), result);
-            using (_lock.UsingReadLock())
-            {
-                foreach (var handler in _handlers)
-                {
-                    handler(bytes);
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            _logger.LogHandleEventException(nameof(LgrEvents.BotGroupInviteSelfEvent), e);
         }
     }
 

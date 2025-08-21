@@ -36,12 +36,19 @@ internal class PushLogic(BotContext context) : ILogic
                     string url = root.GetProperty("meta").GetProperty("news").GetProperty("jumpUrl").GetString() ?? throw new Exception("sb tx! Is this 'com.tencent.qun.invite' or 'com.tencent.tuwen.lua'?");
                     var query = HttpUtility.ParseQueryString(new Uri(url).Query);
                     long groupUin = uint.Parse(query["groupcode"] ?? throw new Exception("sb tx! Is this '/group/invite_join'?"));
-                    long sequence = long.Parse(query["msgseq"] ?? throw new Exception("sb tx! Is this '/group/invite_join'?"));
-                    context.EventInvoker.PostEvent(new BotGroupInviteSelfEvent(
+                    ulong sequence = ulong.Parse(query["msgseq"] ?? throw new Exception("sb tx! Is this '/group/invite_join'?"));
+                    context.EventInvoker.PostEvent(new BotGroupInviteNotificationEvent(new BotGroupInviteNotification(
+                        groupUin,
                         sequence,
+                        context.BotUin,
+                        context.CacheContext.ResolveCachedUid(context.BotUin) ?? string.Empty,
+                        BotGroupNotificationState.Wait,
+                        null,
+                        null,
                         message.Contact.Uin,
-                        groupUin
-                    ));
+                        message.Contact.Uid,
+                        false
+                    )));
                     break;
                 }
                 context.EventInvoker.PostEvent(new BotMessageEvent(message, messageEvent.Raw));
