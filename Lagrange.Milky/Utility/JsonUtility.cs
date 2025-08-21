@@ -38,6 +38,9 @@ public static partial class JsonUtility
     [JsonSerializable(typeof(GetLoginInfoResult))]
     // get_impl_info
     [JsonSerializable(typeof(GetImplInfoResult))]
+    // get_user_profile
+    [JsonSerializable(typeof(GetUserProfileParameter))]
+    [JsonSerializable(typeof(GetUserProfileResult))]
     // get_friend_list
     [JsonSerializable(typeof(GetFriendListParameter))]
     [JsonSerializable(typeof(GetFriendListResult))]

@@ -1,6 +1,6 @@
 namespace Lagrange.Core.Common.Entity;
 
-public class BotStranger(long uin, string nickname, string uid, string personalSign, string remark, ulong level, BotGender gender, DateTime registrationTime, DateTime? birthday, ulong age, string qID) : BotContact
+public class BotStranger(long uin, string nickname, string uid, string personalSign, string remark, ulong level, BotGender gender, DateTime registrationTime, DateTime? birthday, ulong age, string qID, string country, string city, string? school) : BotContact
 {
     public override long Uin { get; } = uin;
 
@@ -26,6 +26,12 @@ public class BotStranger(long uin, string nickname, string uid, string personalS
 
     public long Source { get; init; }
 
+    public string Country { get; init; } = country;
+
+    public string City { get; init; } = city;
+
+    public string? School { get; init; } = school;
+
     internal BotStranger CloneWithSource(long source) => new(
         Uin,
         Nickname,
@@ -37,7 +43,10 @@ public class BotStranger(long uin, string nickname, string uid, string personalS
         RegistrationTime,
         Birthday,
         Age,
-        QID
+        QID,
+        Country,
+        City,
+        School
     )
     { Source = source };
 }

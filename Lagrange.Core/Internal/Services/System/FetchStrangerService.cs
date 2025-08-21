@@ -108,7 +108,10 @@ internal class FetchStrangerService : BaseService<FetchStrangerEventReqBase, Fet
             DateTimeOffset.FromUnixTimeSeconds((long)numbers[20026]).DateTime,
             month != 0 && day != 0 ? new DateTime(year != 0 ? year : 1, month, day) : null,
             numbers[20037],
-            Encoding.UTF8.GetString(bytes[27394])
+            Encoding.UTF8.GetString(bytes[27394]),
+            Encoding.UTF8.GetString(bytes[20003]),
+            Encoding.UTF8.GetString(bytes[20004]),
+            bytes.TryGetValue(200021, out byte[]? value) ? Encoding.UTF8.GetString(value) : null
         )));
     }
 }
