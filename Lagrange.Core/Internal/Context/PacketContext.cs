@@ -42,7 +42,7 @@ internal class PacketContext
         Task.Run(async () => // Schedule the task to the ThreadPool
         {
             ReadOnlyMemory<byte> frame;
-            
+
             switch (options.RequestType)
             {
                 case RequestType.D2Auth:
@@ -72,10 +72,10 @@ internal class PacketContext
                     throw new InvalidOperationException($"Unknown RequestType: {options.RequestType}");
                 }
             }
-            
+          
             await _context.SocketContext.Send(frame);
         });
-        
+
         return new ValueTask<SsoPacket>(tcs, 0);
     }
 
@@ -83,7 +83,7 @@ internal class PacketContext
     {
         var service = _servicePacker.Parse(buffer);
         var sso = _ssoPacker.Parse(service);
-        
+
         if (_pendingTasks.TryRemove(sso.Sequence, out var tcs))
         {
             if (sso is { RetCode: not 0, Extra: var extra })
@@ -98,7 +98,7 @@ internal class PacketContext
         }
         else
         {
-            _ = _context.EventContext.HandleServerPacket(sso);
+            Task.Run(() => _context.EventContext.HandleServerPacket(sso));
         }
     }
 }
