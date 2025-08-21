@@ -191,20 +191,25 @@ internal class PushLogic(BotContext context) : ILogic
                         _ = packet.Read<byte>(); // unknown byte
                         var proto = packet.ReadBytes(Prefix.Int16 | Prefix.LengthOnly);
                         var greyTip = ProtoHelper.Deserialize<NotifyMessageBody>(proto);
-                        var templates = greyTip.GeneralGrayTip.MsgTemplParam.ToDictionary(x => x.Name, x => x.Value);
 
-                        if (!templates.TryGetValue("action_str", out var actionStr) && !templates.TryGetValue("alt_str1", out actionStr))
+                        switch ((Event0x2DCSubType20SubType)greyTip.SubType)
                         {
-                            actionStr = string.Empty;
-                        }
+                            case Event0x2DCSubType20SubType.GroupNudgeNotice:
+                            {
+                                var @params = greyTip.GeneralGrayTip.MsgTemplParam.ToDictionary(x => x.Name, x => x.Value);
 
-                        if (greyTip.GeneralGrayTip.BusiType == 12) // poke
-                        {
-                            context.EventInvoker.PostEvent(new BotGroupNudgeEvent(
-                                groupUin,
-                                uint.Parse(templates["uin_str1"]),
-                                uint.Parse(templates["uin_str2"]))
-                            );
+                                if (greyTip.GeneralGrayTip.BusiType == 12) // poke
+                                {
+                                    context.EventInvoker.PostEvent(new BotGroupNudgeEvent(
+                                        groupUin,
+                                        long.Parse(@params["uin_str1"]),
+                                        @params["action_str"],
+                                        long.Parse(@params["uin_str2"]),
+                                        @params["suffix_str"]
+                                    ));
+                                }
+                                break;
+                            }
                         }
                         break;
                     }
@@ -294,6 +299,11 @@ internal class PushLogic(BotContext context) : ILogic
     private enum Event0x2DCSubType16SubType
     {
         GroupReactionNotice = 35,
+    }
+
+    private enum Event0x2DCSubType20SubType
+    {
+        GroupNudgeNotice = 19,
     }
 
     private enum Event0x210SubType
