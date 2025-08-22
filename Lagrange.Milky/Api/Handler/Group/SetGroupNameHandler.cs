@@ -11,17 +11,17 @@ public class SetGroupNameHandler(BotContext bot) : IEmptyResultApiHandler<SetGro
 
     public async Task HandleAsync(SetGroupNameParameter parameter, CancellationToken token)
     {
-        await _bot.GroupRename(parameter.GroupId, parameter.Name);
+        await _bot.GroupRename(parameter.GroupId, parameter.NewGroupName);
     }
 }
 
-public class SetGroupNameParameter(long groupId, string name)
+public class SetGroupNameParameter(long groupId, string newGroupName)
 {
     [JsonRequired]
     [JsonPropertyName("group_id")]
     public long GroupId { get; init; } = groupId;
 
     [JsonRequired]
-    [JsonPropertyName("name")]
-    public string Name { get; init; } = name;
+    [JsonPropertyName("new_group_name")]
+    public string NewGroupName { get; init; } = newGroupName;
 }

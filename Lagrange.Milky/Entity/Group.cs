@@ -2,14 +2,13 @@ using System.Text.Json.Serialization;
 
 namespace Lagrange.Milky.Entity;
 
-public class Group(long groupId, string name, long memberCount, long maxMemberCount)
+public class Group(long groupId, string groupName, long memberCount, long maxMemberCount)
 {
-
     [JsonPropertyName("group_id")]
     public long GroupId { get; } = groupId;
 
-    [JsonPropertyName("name")]
-    public string Name { get; } = name;
+    [JsonPropertyName("group_name")]
+    public string GroupName { get; } = groupName;
 
     [JsonPropertyName("member_count")]
     public long MemberCount { get; } = memberCount;
