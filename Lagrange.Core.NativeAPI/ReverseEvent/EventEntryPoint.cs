@@ -15,7 +15,6 @@ namespace Lagrange.Core.NativeAPI.ReverseEvent
                 BotCaptchaEventCount = Program.Contexts[index].EventInvoker.BotCaptchaEvent.Events.Count,
                 BotFriendRequestEventCount = Program.Contexts[index].EventInvoker.BotFriendRequestEvent.Events.Count,
                 BotGroupInviteNotificationEventCount = Program.Contexts[index].EventInvoker.BotGroupInviteNotificationEvent.Events.Count,
-                BotGroupInviteSelfEventCount = Program.Contexts[index].EventInvoker.BotGroupInviteSelfEvent.Events.Count,
                 BotGroupJoinNotificationEventCount = Program.Contexts[index].EventInvoker.BotGroupJoinNotificationEvent.Events.Count,
                 BotGroupMemberDecreaseEventCount = Program.Contexts[index].EventInvoker.BotGroupMemberDecreaseEvent.Events.Count,
                 BotGroupNudgeEventCount = Program.Contexts[index].EventInvoker.BotGroupNudgeEvent.Events.Count,
@@ -78,21 +77,6 @@ namespace Lagrange.Core.NativeAPI.ReverseEvent
             var botGroupInviteNotificationEvent = Program.Contexts[index].EventInvoker.BotGroupInviteNotificationEvent;
 
             IntPtr eventPtr = GetEventStructPtr<BotGroupInviteNotificationEventStruct>(botGroupInviteNotificationEvent);
-
-            return eventPtr;
-        }
-
-        [UnmanagedCallersOnly(EntryPoint = "GetBotGroupInviteSelfEvent")]
-        public static IntPtr GetBotGroupInviteSelfEvent(int index)
-        {
-            if (index >= Program.Contexts.Count)
-            {
-                return IntPtr.Zero;
-            }
-
-            var botGroupInviteSelfEvent = Program.Contexts[index].EventInvoker.BotGroupInviteSelfEvent;
-
-            IntPtr eventPtr = GetEventStructPtr<BotGroupInviteSelfEventStruct>(botGroupInviteSelfEvent);
 
             return eventPtr;
         }

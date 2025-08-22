@@ -22,6 +22,9 @@ namespace Lagrange.Core.NativeAPI.NativeModel.Message
         public ulong Age = 0;
         public ByteArrayNative QID = new();
         public long Source = 0;
+        public ByteArrayNative Country = new();
+        public ByteArrayNative City = new();
+        public ByteArrayNative School = new();
 
         public static implicit operator BotStranger(BotStrangerStruct stranger)
         {
@@ -36,7 +39,10 @@ namespace Lagrange.Core.NativeAPI.NativeModel.Message
                 DateTimeOffset.FromUnixTimeSeconds(stranger.RegistrationTime).LocalDateTime,
                 DateTimeOffset.FromUnixTimeSeconds(stranger.Birthday).LocalDateTime,
                 stranger.Age,
-                Encoding.UTF8.GetString(stranger.QID)
+                Encoding.UTF8.GetString(stranger.QID),
+                Encoding.UTF8.GetString(stranger.Country),
+                Encoding.UTF8.GetString(stranger.City),
+                Encoding.UTF8.GetString(stranger.School)
             );
         }
 
@@ -54,7 +60,10 @@ namespace Lagrange.Core.NativeAPI.NativeModel.Message
                 RegistrationTime = new DateTimeOffset(stranger.RegistrationTime).ToUnixTimeSeconds(),
                 Birthday = new DateTimeOffset(stranger.Birthday ?? new()).ToUnixTimeSeconds(),
                 Age = stranger.Age,
-                QID = Encoding.UTF8.GetBytes(stranger.QID)
+                QID = Encoding.UTF8.GetBytes(stranger.QID),
+                Country = Encoding.UTF8.GetBytes(stranger.Country),
+                City = Encoding.UTF8.GetBytes(stranger.City),
+                School = Encoding.UTF8.GetBytes(stranger.School ?? string.Empty)
             };
         }
     }

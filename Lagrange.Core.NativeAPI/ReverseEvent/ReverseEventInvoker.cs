@@ -9,7 +9,6 @@ namespace Lagrange.Core.NativeAPI.ReverseEvent
             BotCaptchaEvent.RegisterEventHandler(context);
             BotFriendRequestEvent.RegisterEventHandler(context);
             BotGroupInviteNotificationEvent.RegisterEventHandler(context);
-            BotGroupInviteSelfEvent.RegisterEventHandler(context);
             BotGroupJoinNotificationEvent.RegisterEventHandler(context);
             BotGroupMemberDecreaseEvent.RegisterEventHandler(context);
             BotGroupNudgeEvent.RegisterEventHandler(context);
@@ -29,8 +28,6 @@ namespace Lagrange.Core.NativeAPI.ReverseEvent
         public BotFriendRequestReverseEvent BotFriendRequestEvent { get; } = new();
 
         public BotGroupInviteNotificationReverseEvent BotGroupInviteNotificationEvent { get; } = new();
-
-        public BotGroupInviteSelfReverseEvent BotGroupInviteSelfEvent { get; } = new();
 
         public BotGroupJoinNotificationReverseEvent BotGroupJoinNotificationEvent { get; } = new();
 
