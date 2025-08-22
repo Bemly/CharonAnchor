@@ -97,7 +97,7 @@ public partial class EntityConvert
         TextOutgoingSegment text => new TextEntity(text.Data.Text),
         MentionOutgoingSegment mention => new MentionEntity(mention.Data.UserId, null),
         MentionAllOutgoingSegment => new MentionEntity(0, "@全体成员"),
-        // TODO
+        // TODO: no FaceEntity
         FaceOutgoingSegment => throw new NotImplementedException(),
         // ReplySegment => 
         ImageOutgoingSegment image => new ImageEntity(

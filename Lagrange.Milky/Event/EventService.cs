@@ -98,7 +98,7 @@ public class EventService(ILogger<EventService> logger, IOptions<MilkyConfigurat
             _logger.LogHandleEventException(nameof(LgrEvents.BotMessageEvent), e);
         }
     }
-    
+
     private void HandleGroupNudgeEvent(BotContext bot, LgrEvents.BotGroupNudgeEvent @event)
     {
         try
@@ -123,7 +123,7 @@ public class EventService(ILogger<EventService> logger, IOptions<MilkyConfigurat
             _logger.LogHandleEventException(nameof(LgrEvents.BotGroupNudgeEvent), e);
         }
     }
-    
+
     private void HandleGroupMemberDecreaseEvent(BotContext bot, LgrEvents.BotGroupMemberDecreaseEvent @event)
     {
         try
@@ -177,8 +177,11 @@ public class EventService(ILogger<EventService> logger, IOptions<MilkyConfigurat
 
     public Task StopAsync(CancellationToken token)
     {
-        // TODO: unregister
-        // _bot.EventInvoker.UnregisterEvent<BotMessageEvent>(HandleMessageEvent);
+        _bot.EventInvoker.UnregisterEvent<LgrEvents.BotMessageEvent>(HandleMessageEvent);
+        _bot.EventInvoker.UnregisterEvent<LgrEvents.BotMessageEvent>(HandleMessageEvent);
+        _bot.EventInvoker.UnregisterEvent<LgrEvents.BotGroupNudgeEvent>(HandleGroupNudgeEvent);
+        _bot.EventInvoker.UnregisterEvent<LgrEvents.BotGroupMemberDecreaseEvent>(HandleGroupMemberDecreaseEvent);
+        _bot.EventInvoker.UnregisterEvent<LgrEvents.BotFriendRequestEvent>(HandleFriendRequestEvent);
 
         return Task.CompletedTask;
     }
@@ -210,16 +213,16 @@ public static partial class EventServiceLoggerExtension
 
     [LoggerMessage(EventId = 2, Level = LogLevel.Debug, Message = "BotMessageEvent {{ {type} {sender} {entities} }}")]
     public static partial void LogPrivateMessage(this ILogger<EventService> logger, MessageType type, long sender, string entities);
-    
+
     [LoggerMessage(EventId = 3, Level = LogLevel.Debug, Message = "BotGroupNudgeEvent {{ group: {group}, sender: {sender} target: {target} }}")]
     public static partial void LogGroupNudgeEvent(this ILogger<EventService> logger, long group, long sender, long target);
-    
+
     [LoggerMessage(EventId = 4, Level = LogLevel.Debug, Message = "BotGroupMemberDecreaseEvent {{ group: {group}, user: {user}, operator: {operator} }}")]
     public static partial void LogGroupMemberDecreaseEvent(this ILogger<EventService> logger, long group, long user, long? @operator);
-    
+
     [LoggerMessage(EventId = 5, Level = LogLevel.Debug, Message = "BotFriendRequestEvent {{ request: {request}, user: {user}, message: {message}, source: {source} }}")]
     public static partial void LogBotFriendRequestEvent(this ILogger<EventService> logger, string request, long user, string? message, string? source);
-    
+
     [LoggerMessage(EventId = 6, Level = LogLevel.Debug, Message = "BotGroupInviteEvent {{ request: {request}, user: {user}, group: {group} }}")]
     public static partial void LogGroupInvitationEvent(this ILogger<EventService> logger, long request, long user, long group);
 

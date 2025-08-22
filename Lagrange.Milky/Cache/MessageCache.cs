@@ -49,8 +49,7 @@ public class MessageCache(BotContext bot, IOptions<MilkyConfiguration> options) 
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        // TODO
-        // _bot.EventInvoker.UnregisterEvent<BotMessageEvent>(HandleBotMessageEvent);
+        _bot.EventInvoker.UnregisterEvent<BotMessageEvent>(HandleBotMessageEvent);
 
         return Task.CompletedTask;
     }

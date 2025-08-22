@@ -107,13 +107,12 @@ public class CoreLoginService(ILogger<CoreLoginService> logger, IOptions<CoreCon
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        // TODO: unregister
-        // _bot.EventInvoker.UnregisterEvent<BotQrCodeEvent>(HandleQrCode);
-        // _bot.EventInvoker.UnregisterEvent<BotQrCodeQueryEvent>(HandleQrCodeQuery);
-        // _bot.EventInvoker.UnregisterEvent<BotRefreshKeystoreEvent>(HandleRefreshKeystore);
-        // _bot.EventInvoker.UnregisterEvent<BotCaptchaEvent>(HandleCaptcha);
-        // _bot.EventInvoker.UnregisterEvent<BotSMSEvent>(HandleSMS);
-        // _bot.EventInvoker.UnregisterEvent<BotNewDeviceVerifyEvent>(HandleNewDeviceVerify);
+        _bot.EventInvoker.UnregisterEvent<BotQrCodeEvent>(HandleQrCode);
+        _bot.EventInvoker.UnregisterEvent<BotQrCodeQueryEvent>(HandleQrCodeQuery);
+        _bot.EventInvoker.UnregisterEvent<BotRefreshKeystoreEvent>(HandleRefreshKeystore);
+        _bot.EventInvoker.UnregisterEvent<BotCaptchaEvent>(HandleCaptcha);
+        _bot.EventInvoker.UnregisterEvent<BotSMSEvent>(HandleSms);
+        _bot.EventInvoker.UnregisterEvent<BotNewDeviceVerifyEvent>(HandleNewDeviceVerify);
 
         await _bot.Logout();
     }

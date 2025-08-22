@@ -23,35 +23,42 @@ https://lagrangedev.github.io/Lagrange.Milky.Document
 
 - [x] /get_login_info
 - [x] /get_impl_info
+- [x] /get_user_profile
 - [x] /get_friend_list
 - [x] /get_friend_info
 - [x] /get_group_list
 - [x] /get_group_info
 - [x] /get_group_member_list
 - [x] /get_group_member_info
+- [x] /get_cookies
+- [ ] /get_csrf_token
 
 #### message
 
 - [x] /send_private_message
 - [x] /send_group_message
 - [x] /get_message
-- [ ] /get_history_messages
+- [x] /get_history_messages - not supported start_message_seq eql null
 - [ ] /get_resource_temp_url
 - [ ] /get_forwarded_messages
 - [ ] /recall_private_message
 - [ ] /recall_group_message
+- [ ] /mark_message_as_read
 
 #### friend
 
 - [x] /send_friend_nudge
 - [ ] /send_profile_like
+- [ ] /get_friend_requests
+- [ ] /accept_friend_request
+- [ ] /reject_friend_request
 
 #### group
 
-- [ ] /set_group_name
+- [x] /set_group_name
 - [ ] /set_group_avatar
-- [ ] /set_group_member_card
-- [ ] /set_group_member_special_title
+- [x] /set_group_member_card
+- [x] /set_group_member_special_title
 - [ ] /set_group_member_admin
 - [ ] /set_group_member_mute
 - [ ] /set_group_whole_mute
@@ -59,21 +66,20 @@ https://lagrangedev.github.io/Lagrange.Milky.Document
 - [ ] /get_group_announcement_list
 - [ ] /send_group_announcement
 - [ ] /delete_group_announcement
-- [ ] /quit_group
-- [ ] /send_group_message_reaction
+- [ ] /get_group_essence_messages
+- [ ] /set_group_essence_message
+- [x] /quit_group
+- [x] /send_group_message_reaction
 - [x] /send_group_nudge
-
-#### request
-
-- [ ] /get_friend_requests
-- [ ] /get_group_requests
-- [ ] /get_group_invitations
-- [ ] /accept_request
-- [ ] /reject_request
+- [x] /get_group_notifications
+- [ ] /accept_group_request
+- [ ] /reject_group_request
+- [ ] /accept_group_invitation
+- [ ] /reject_group_invitation
 
 #### file
 
-- [ ] /upload_private_file
+- [x] /upload_private_file - No return value
 - [x] /upload_group_file
 - [ ] /get_private_file_download_url
 - [x] /get_group_file_download_url
@@ -90,20 +96,21 @@ https://lagrangedev.github.io/Lagrange.Milky.Document
 - [x] bot_offline
 - [x] message_receive
 - [ ] message_recall
-- [ ] friend_request
-- [ ] group_request
+- [x] friend_request
+- [ ] group_join_request
+- [ ] group_invited_join_request
 - [ ] group_invitation
 - [ ] friend_nudge
 - [ ] friend_file_upload
 - [ ] group_admin_change
 - [ ] group_essence_message_change
 - [ ] group_member_increase
-- [ ] group_member_decrease
+- [x] group_member_decrease
 - [ ] group_name_change
 - [ ] group_message_reaction
 - [ ] group_mute
 - [ ] group_whole_mute
-- [ ] group_nudge
+- [x] group_nudge
 - [ ] group_file_upload
 
 ### segment

@@ -15,7 +15,7 @@ namespace Lagrange.Milky.Utility;
 public static partial class JsonUtility
 {
     [JsonSourceGenerationOptions(AllowOutOfOrderMetadataProperties = true)]
-    
+
     // BotContext
     [JsonSerializable(typeof(BotKeystore))]
     [JsonSerializable(typeof(BotAppInfo))]
@@ -59,6 +59,9 @@ public static partial class JsonUtility
     // get_group_member_info
     [JsonSerializable(typeof(GetGroupMemberInfoParameter))]
     [JsonSerializable(typeof(GetGroupMemberInfoResult))]
+    // get_cookies
+    [JsonSerializable(typeof(GetCookiesParameter))]
+    [JsonSerializable(typeof(GetCookiesResult))]
     // == message ==
     // send_private_message
     [JsonSerializable(typeof(SendPrivateMessageParameter))]
@@ -86,6 +89,11 @@ public static partial class JsonUtility
     [JsonSerializable(typeof(SetGroupMemberSpecialTitleParameter))]
     // quit_group
     [JsonSerializable(typeof(QuitGroupParameter))]
+    // send_group_message_reaction
+    [JsonSerializable(typeof(SendGroupMessageReactionParameter))]
+    // get_group_notifications
+    [JsonSerializable(typeof(GetGroupNotificationsParameter))]
+    [JsonSerializable(typeof(GetGroupNotificationsResult))]
     // == file ==
     // upload_group_file
     [JsonSerializable(typeof(UploadGroupFileParameter))]
