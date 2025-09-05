@@ -53,6 +53,8 @@
     "Milky": {
         // The host that Milky service listens on
         // Look https://learn.microsoft.com/zh-cn/dotnet/fundamentals/runtime-libraries/system-net-httplistener
+        // If you use * to expose your data to all networks, please ensure proper security settings
+        // e.g. setting a access token, configuring a firewall
         "Host": "127.0.0.1",
 
         // The port that the Milky service listens on
