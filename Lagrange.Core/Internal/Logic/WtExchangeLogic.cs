@@ -527,89 +527,61 @@ internal class WtExchangeLogic : ILogic, IDisposable
         }
     });
 
+    private static readonly Dictionary<ushort, Action<byte[], BotContext>> WLoginSigDelegates = new()
+    {
+        { 0x103, (value, context) => context.Keystore.WLoginSigs.StWeb = value },
+        { 0x143, (value, context) => context.Keystore.WLoginSigs.D2 = value },
+        { 0x108, (value, context) => context.Keystore.WLoginSigs.Ksid = value },
+        { 0x10A, (value, context) => context.Keystore.WLoginSigs.A2 = value },
+        { 0x10C, (value, context) => context.Keystore.WLoginSigs.A1Key = value },
+        { 0x10D, (value, context) => context.Keystore.WLoginSigs.A2Key = value },
+        { 0x10E, (value, context) => context.Keystore.WLoginSigs.StKey = value },
+        { 0x114, (value, context) => context.Keystore.WLoginSigs.St = value },
+        { 0x11A, (value, context) => {
+            var reader = new BinaryPacket(value.AsSpan());
+            reader.Read<ushort>(); // FaceId
+            byte age = reader.Read<byte>();
+            byte gender = reader.Read<byte>();
+            string nickname = reader.ReadString(Prefix.Int8 | Prefix.LengthOnly);
+            context.Keystore.BotInfo = new BotInfo(age, gender, nickname);
+        }},
+        { 0x120, (value, context) => context.Keystore.WLoginSigs.SKey = value },
+        { 0x133, (value, context) => context.Keystore.WLoginSigs.WtSessionTicket = value },
+        { 0x134, (value, context) => context.Keystore.WLoginSigs.WtSessionTicketKey = value },
+        { 0x305, (value, context) => context.Keystore.WLoginSigs.D2Key = value },
+        { 0x106, (value, context) => context.Keystore.WLoginSigs.A1 = value },
+        { 0x16A, (value, context) => context.Keystore.WLoginSigs.NoPicSig = value },
+        { 0x16D, (value, context) => context.Keystore.WLoginSigs.SuperKey = value },
+        { 0x512, (value, context) => {
+            context.Keystore.WLoginSigs.PsKey.Clear();
+            
+            var reader = new BinaryPacket(value.AsSpan());
+            short domainCount = reader.Read<short>();
+            for (int i = 0; i < domainCount; i++)
+            {
+                string domain = reader.ReadString(Prefix.Int16 | Prefix.LengthOnly);
+                string key = reader.ReadString(Prefix.Int16 | Prefix.LengthOnly);
+                string pt4Token = reader.ReadString(Prefix.Int16 | Prefix.LengthOnly);
+                context.Keystore.WLoginSigs.PsKey[domain] = key;
+            }
+        }},
+        { 0x543, (value, context) => {
+            var resp = ProtoHelper.Deserialize<ThirdPartyLoginResponse>(value);
+            context.Keystore.Uid = resp.CommonInfo.RspNT.Uid;
+        }}
+    };
+
     private void ReadWLoginSigs(Dictionary<ushort, byte[]> tlvs)
     {
         foreach (var (tag, value) in tlvs)
         {
-            switch (tag)
+            if (WLoginSigDelegates.TryGetValue(tag, out var handler))
             {
-                case 0x103:
-                    _context.Keystore.WLoginSigs.StWeb = value;
-                    break;
-                case 0x143:
-                    _context.Keystore.WLoginSigs.D2 = value;
-                    break;
-                case 0x108:
-                    _context.Keystore.WLoginSigs.Ksid = value;
-                    break;
-                case 0x10A:
-                    _context.Keystore.WLoginSigs.A2 = value;
-                    break;
-                case 0x10C:
-                    _context.Keystore.WLoginSigs.A1Key = value;
-                    break;
-                case 0x10D:
-                    _context.Keystore.WLoginSigs.A2Key = value;
-                    break;
-                case 0x10E:
-                    _context.Keystore.WLoginSigs.StKey = value;
-                    break;
-                case 0x114:
-                    _context.Keystore.WLoginSigs.St = value;
-                    break;
-                case 0x11A:
-                {
-                    var reader = new BinaryPacket(value.AsSpan());
-                    reader.Read<ushort>(); // FaceId
-                    byte age = reader.Read<byte>();
-                    byte gender = reader.Read<byte>();
-                    string nickname = reader.ReadString(Prefix.Int8 | Prefix.LengthOnly);
-                    _context.Keystore.BotInfo = new BotInfo(age, gender, nickname);
-                    break;
-                }
-                case 0x120:
-                    _context.Keystore.WLoginSigs.SKey = value;
-                    break;
-                case 0x133:
-                    _context.Keystore.WLoginSigs.WtSessionTicket = value;
-                    break;
-                case 0x134:
-                    _context.Keystore.WLoginSigs.WtSessionTicketKey = value;
-                    break;
-                case 0x305:
-                    _context.Keystore.WLoginSigs.D2Key = value;
-                    break;
-                case 0x106:
-                    _context.Keystore.WLoginSigs.A1 = value;
-                    break;
-                case 0x16A:
-                    _context.Keystore.WLoginSigs.NoPicSig = value;
-                    break;
-                case 0x16D:
-                    _context.Keystore.WLoginSigs.SuperKey = value;
-                    break;
-                case 0x512:
-                {
-                    _context.Keystore.WLoginSigs.PsKey.Clear();
-                    
-                    var reader = new BinaryPacket(value.AsSpan());
-                    short domainCount = reader.Read<short>();
-                    for (int i = 0; i < domainCount; i++)
-                    {
-                        string domain = reader.ReadString(Prefix.Int16 | Prefix.LengthOnly);
-                        string key = reader.ReadString(Prefix.Int16 | Prefix.LengthOnly);
-                        string pt4Token = reader.ReadString(Prefix.Int16 | Prefix.LengthOnly);
-                        _context.Keystore.WLoginSigs.PsKey[domain] = key;
-                    }
-                    break;
-                }
-                case 0x543:
-                    var resp = ProtoHelper.Deserialize<ThirdPartyLoginResponse>(value);
-                    _context.Keystore.Uid = resp.CommonInfo.RspNT.Uid;
-                    break;
-                default:
-                    _context.LogTrace(Tag, "Unknown TLV: {0:X}", tag);
-                    break;
+                handler(value, _context);
+            }
+            else
+            {
+                _context.LogTrace(Tag, "Unknown TLV: {0:X}", tag);
             }
         }
     }
