@@ -353,6 +353,14 @@ public ref struct ProtoReader
             case WireType.LengthDelimited:
                 SkipLengthDelimited();
                 break;
+            case (WireType)3: // Start group (deprecated)
+            case (WireType)4: // End group (deprecated)
+                // Skip deprecated group markers
+                break;
+            case (WireType)6: // Reserved
+            case (WireType)7: // Reserved
+                // Skip reserved wire types
+                break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(wireType), wireType, null);
         }

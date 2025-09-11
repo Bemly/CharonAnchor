@@ -45,6 +45,8 @@ public sealed partial class ProtoArray : ProtoNode
     
     public override int Measure(int field)
     {
+        if (_list.Count == 0) return 0;
+        
         int size = ProtoHelper.GetVarIntLength(field << 3 | (int)WireType) * (_list.Count - 1);
         foreach (var node in _list)
         {

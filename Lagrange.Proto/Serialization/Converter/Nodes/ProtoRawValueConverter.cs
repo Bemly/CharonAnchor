@@ -45,6 +45,11 @@ internal class ProtoRawValueConverter : ProtoConverter<ProtoRawValue>
         if (wireType == WireType.LengthDelimited)
         {
             int length = reader.DecodeVarInt<int>();
+            if (length == 0)
+            {
+                return new ProtoRawValue(wireType, 0) { Bytes = Memory<byte>.Empty };
+            }
+            
             var buffer = GC.AllocateUninitializedArray<byte>(length);
             var span = reader.CreateSpan(length);
             span.CopyTo(buffer);

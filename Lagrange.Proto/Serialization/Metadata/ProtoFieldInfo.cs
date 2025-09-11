@@ -161,7 +161,9 @@ public class ProtoFieldInfo<T> : ProtoFieldInfo
         Debug.Assert(_typedGet != null);
 
         T value = _typedGet.Invoke(target);
-        return EffectiveConverter.Measure(Field, WireType, value);
+        return NumberHandling == ProtoNumberHandling.Default 
+            ? EffectiveConverter.Measure(Field, WireType, value)
+            : EffectiveConverter.MeasureWithNumberHandling(Field, WireType, value, NumberHandling);
     }
 }
 

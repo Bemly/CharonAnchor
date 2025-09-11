@@ -24,6 +24,7 @@ public static class ProtoHelper
     public static WireType GetWireType(ITypeSymbol symbol)
     {
         if (SymbolResolver.IsRepeatedType(symbol, out var type)) symbol = type;
+        if (SymbolResolver.IsNullableType(symbol, out var elementType)) symbol = elementType;
         
         if (symbol.IsIntegerType() || symbol.TypeKind == TypeKind.Enum || symbol.SpecialType == SpecialType.System_Boolean) return WireType.VarInt;
         if (symbol.SpecialType == SpecialType.System_Single) return WireType.Fixed32;

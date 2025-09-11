@@ -118,10 +118,10 @@ public partial class ProtoSourceGenerator
             {
                 string? special = info.WireType switch
                 {
-                    WireType.VarInt when info.TypeSymbol.IsIntegerType() && info.IsSigned => $"{WriterVarName}.{EncodeVarIntMethodName}({ProtoHelperTypeRef}.{ZigZagEncodeMethodName}({memberName}));",
+                    WireType.VarInt when info.TypeSymbol.IsIntegerType() && info.IsSigned => GetZigZagEncodeCall(info.TypeSymbol, memberName),
                     WireType.VarInt when info.TypeSymbol.IsIntegerType() => $"{WriterVarName}.{EncodeVarIntMethodName}({memberName});",
-                    WireType.Fixed32 when info.IsSigned => $"{WriterVarName}.{EncodeFixed32MethodName}({ProtoHelperTypeRef}.{ZigZagEncodeMethodName}({memberName}));",
-                    WireType.Fixed64 when info.IsSigned => $"{WriterVarName}.{EncodeFixed64MethodName}({ProtoHelperTypeRef}.{ZigZagEncodeMethodName}({memberName}));",
+                    WireType.Fixed32 when info.IsSigned => GetZigZagEncodeFixed32Call(info.TypeSymbol, memberName),
+                    WireType.Fixed64 when info.IsSigned => GetZigZagEncodeFixed64Call(info.TypeSymbol, memberName),
                     WireType.Fixed32 => $"{WriterVarName}.{EncodeFixed32MethodName}({memberName});",
                     WireType.Fixed64 => $"{WriterVarName}.{EncodeFixed64MethodName}({memberName});",
                     WireType.LengthDelimited when info.TypeSymbol.SpecialType == SpecialType.System_String => $"{WriterVarName}.{EncodeStringMethodName}({memberName});",
@@ -169,6 +169,40 @@ public partial class ProtoSourceGenerator
             emitAction(source);
             source.Indentation--;
             source.WriteLine("}");
+        }
+        
+        private string GetZigZagEncodeCall(ITypeSymbol typeSymbol, string memberName)
+        {
+            // For signed byte types, we need to cast the ZigZag encoded result to unsigned
+            // to prevent sign extension when writing as varint
+            return typeSymbol.SpecialType switch
+            {
+                SpecialType.System_SByte => $"{WriterVarName}.{EncodeVarIntMethodName}((byte){ProtoHelperTypeRef}.{ZigZagEncodeMethodName}({memberName}));",
+                SpecialType.System_Int16 => $"{WriterVarName}.{EncodeVarIntMethodName}((ushort){ProtoHelperTypeRef}.{ZigZagEncodeMethodName}({memberName}));",
+                SpecialType.System_Int32 => $"{WriterVarName}.{EncodeVarIntMethodName}((uint){ProtoHelperTypeRef}.{ZigZagEncodeMethodName}({memberName}));",
+                SpecialType.System_Int64 => $"{WriterVarName}.{EncodeVarIntMethodName}((ulong){ProtoHelperTypeRef}.{ZigZagEncodeMethodName}({memberName}));",
+                _ => $"{WriterVarName}.{EncodeVarIntMethodName}({ProtoHelperTypeRef}.{ZigZagEncodeMethodName}({memberName}));"
+            };
+        }
+        
+        private string GetZigZagEncodeFixed32Call(ITypeSymbol typeSymbol, string memberName)
+        {
+            return typeSymbol.SpecialType switch
+            {
+                SpecialType.System_SByte => $"{WriterVarName}.{EncodeFixed32MethodName}((byte){ProtoHelperTypeRef}.{ZigZagEncodeMethodName}({memberName}));",
+                SpecialType.System_Int16 => $"{WriterVarName}.{EncodeFixed32MethodName}((ushort){ProtoHelperTypeRef}.{ZigZagEncodeMethodName}({memberName}));",
+                SpecialType.System_Int32 => $"{WriterVarName}.{EncodeFixed32MethodName}((uint){ProtoHelperTypeRef}.{ZigZagEncodeMethodName}({memberName}));",
+                _ => $"{WriterVarName}.{EncodeFixed32MethodName}({ProtoHelperTypeRef}.{ZigZagEncodeMethodName}({memberName}));"
+            };
+        }
+        
+        private string GetZigZagEncodeFixed64Call(ITypeSymbol typeSymbol, string memberName)
+        {
+            return typeSymbol.SpecialType switch
+            {
+                SpecialType.System_Int64 => $"{WriterVarName}.{EncodeFixed64MethodName}((ulong){ProtoHelperTypeRef}.{ZigZagEncodeMethodName}({memberName}));",
+                _ => $"{WriterVarName}.{EncodeFixed64MethodName}({ProtoHelperTypeRef}.{ZigZagEncodeMethodName}({memberName}));"
+            };
         }
     }
 }

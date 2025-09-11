@@ -6,6 +6,8 @@ public static partial class ProtoTypeResolver
 {
     private static void RegisterWellKnownTypes()
     {
+        Register(new ProtoBooleanConverter()); // Do not change the order of this line as it would be referenced by the nullable converter below
+
         Register(new ProtoNumberConverter<SByte>());
         Register(new ProtoNumberConverter<Byte>());
         Register(new ProtoNumberConverter<Int16>());
@@ -29,7 +31,6 @@ public static partial class ProtoTypeResolver
         Register(new ProtoNullableConverter<Double>());
         Register(new ProtoNullableConverter<bool>());
 
-        Register(new ProtoBooleanConverter());
         Register(new ProtoStringConverter());
         Register(new ProtoBytesConverter());
         Register(new ProtoReadOnlyMemoryByteConverter());

@@ -23,7 +23,7 @@ public sealed class ProtoValue<TValue> : ProtoValue
     
     public ProtoValue(TValue value, WireType wireType) : base(wireType)
     {
-        Debug.Assert(value != null);
+        Debug.Assert(value != null || (typeof(TValue).IsGenericType && typeof(TValue).GetGenericTypeDefinition() == typeof(Nullable<>)));
         Debug.Assert(value is not ProtoNode);
         
         Value = value;
@@ -39,6 +39,19 @@ public sealed class ProtoValue<TValue> : ProtoValue
             {
                 if (WireType is not (WireType.Fixed32 or WireType.Fixed64))
                 {
+                    // Handle unsigned types specially to avoid overflow exceptions
+                    if (typeof(T) == typeof(ulong))
+                    {
+                        return (T)(object)(ulong)rawValue.Value;
+                    }
+                    if (typeof(T) == typeof(uint))
+                    {
+                        return (T)(object)(uint)rawValue.Value;
+                    }
+                    if (typeof(T) == typeof(ushort))
+                    {
+                        return (T)(object)(ushort)rawValue.Value;
+                    }
                     return (T)Convert.ChangeType(rawValue.Value, typeof(T));
                 }
 
@@ -51,6 +64,12 @@ public sealed class ProtoValue<TValue> : ProtoValue
         }
         
         if (Value is T t) return t;
+        
+        // Try to convert numeric types
+        if (Value != null && IsNumericType(Value.GetType()) && IsNumericType(typeof(T)))
+        {
+            return (T)Convert.ChangeType(Value, typeof(T));
+        }
 
         ThrowHelper.ThrowInvalidOperationException_InvalidWireType(WireType);
         return default!;
@@ -78,8 +97,24 @@ public sealed class ProtoValue<TValue> : ProtoValue
             }
             else
             {
-                value = (T)Convert.ChangeType(rawValue.Value, typeof(T));
-                return true;
+                if (WireType is WireType.Fixed32 or WireType.Fixed64)
+                {
+                    long val = rawValue.Value;
+                    value = Unsafe.As<long, T>(ref val)!;
+                    return true;
+                }
+                else
+                {
+                    try
+                    {
+                        value = (T)Convert.ChangeType(rawValue.Value, typeof(T))!;
+                        return true;
+                    }
+                    catch
+                    {
+                        return false;
+                    }
+                }
             }
         }
         
@@ -87,6 +122,20 @@ public sealed class ProtoValue<TValue> : ProtoValue
         {
             value = t;
             return true;
+        }
+        
+        // Try to convert numeric types to other numeric types
+        if (Value != null && IsNumericType(Value.GetType()) && IsNumericType(typeof(T)))
+        {
+            try
+            {
+                value = (T)Convert.ChangeType(Value, typeof(T))!;
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         return false;
@@ -104,6 +153,16 @@ public sealed class ProtoValue<TValue> : ProtoValue
         _converter.Write(field, WireType, writer, Value);
     }
 
+    private static bool IsNumericType(Type type)
+    {
+        return type == typeof(byte) || type == typeof(sbyte) ||
+               type == typeof(short) || type == typeof(ushort) ||
+               type == typeof(int) || type == typeof(uint) ||
+               type == typeof(long) || type == typeof(ulong) ||
+               type == typeof(float) || type == typeof(double) ||
+               type == typeof(decimal);
+    }
+    
     public override int Measure(int field)
     {
         return Value is ProtoRawValue rawValue

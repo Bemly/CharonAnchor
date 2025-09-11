@@ -20,9 +20,10 @@ public partial class ProtoObject : IDictionary<int, ProtoNode>
         _fields.Clear();
     }
     
-    public void Add(int field, ProtoNode value)
+    public void Add(int field, ProtoNode? value)
     {
-        ArgumentNullException.ThrowIfNull(value);
+        // Ignore null values - they represent absent fields in protobuf
+        if (value == null) return;
         
         if (_fields.TryGetValue(field, out var removed))
         {
