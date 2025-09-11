@@ -66,7 +66,8 @@ public class ProtoWriter : IDisposable
     public void EncodeBytes(ReadOnlySpan<byte> bytes)
     {
         int length = bytes.Length;
-        if (_memory.Length - BytesPending < length) Grow(length);
+        int count = ProtoHelper.GetVarIntLength(length);
+        if (_memory.Length - BytesPending < length) Grow(length + count);
         
         EncodeVarInt(length);
         bytes.CopyTo(_memory.Span[BytesPending..]);
