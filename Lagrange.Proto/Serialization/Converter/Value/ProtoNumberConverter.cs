@@ -105,9 +105,24 @@ internal class ProtoNumberConverter<T> : ProtoConverter<T> where T : unmanaged, 
         };
     }
     
-    public override T ReadWithNumberHandling(int field, WireType wireType, ref ProtoReader reader, ProtoNumberHandling numberHandling)
+    public override unsafe T ReadWithNumberHandling(int field, WireType wireType, ref ProtoReader reader, ProtoNumberHandling numberHandling)
     {
-        T value = Read(field, wireType, ref reader);
-        return (numberHandling & ProtoNumberHandling.Signed) != 0 ? ProtoHelper.ZigZagDecode(value) : value;
+        if ((numberHandling & ProtoNumberHandling.Signed) != 0 && wireType == WireType.VarInt)
+        {
+            T value = sizeof(T) switch
+            {
+                1 => T.CreateTruncating(reader.DecodeVarInt<byte>()),
+                2 => T.CreateTruncating(reader.DecodeVarInt<ushort>()),
+                4 => T.CreateTruncating(reader.DecodeVarInt<uint>()),
+                8 => T.CreateTruncating(reader.DecodeVarInt<ulong>()),
+                _ => Read(field, wireType, ref reader)
+            };
+            return ProtoHelper.ZigZagDecode(value);
+        }
+        else
+        {
+            T value = Read(field, wireType, ref reader);
+            return (numberHandling & ProtoNumberHandling.Signed) != 0 ? ProtoHelper.ZigZagDecode(value) : value;
+        }
     }
 }

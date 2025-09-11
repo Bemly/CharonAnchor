@@ -41,31 +41,41 @@ public static class ProtoHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe T ZigZagEncode<T>(T value) where T : unmanaged, INumber<T>
     {
-        if (sizeof(T) <= 4)
+        return sizeof(T) switch
         {
-            int v = int.CreateSaturating(value);
-            return T.CreateTruncating((v << 1) ^ (v >> 31));
-        }
-        else
-        {
-            long v = long.CreateSaturating(value);
-            return T.CreateTruncating((v << 1) ^ (v >> 63));
-        }
+            1 or 2 or 4 => T.CreateTruncating(EncodeZigZag32(int.CreateSaturating(value))),
+            8 => T.CreateTruncating(EncodeZigZag64(long.CreateSaturating(value))),
+            _ => sizeof(T) <= 4
+                ? T.CreateTruncating(EncodeZigZag32(int.CreateSaturating(value)))
+                : T.CreateTruncating(EncodeZigZag64(long.CreateSaturating(value)))
+        };
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static uint EncodeZigZag32(int n) => (uint)((n << 1) ^ (n >> 31));
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static ulong EncodeZigZag64(long n) => (ulong)((n << 1) ^ (n >> 63));
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe T ZigZagDecode<T>(T value) where T : unmanaged, INumber<T>
     {
-        if (sizeof(T) <= 4)
+        return sizeof(T) switch
         {
-            int v = int.CreateSaturating(value);
-            return T.CreateTruncating((v >> 1) ^ -(v & 1));
-        }
-        else
-        {
-            long v = long.CreateSaturating(value);
-            return T.CreateTruncating((v >> 1) ^ -(v & 1));
-        }
+            1 => T.CreateTruncating(DecodeZigZag32(uint.CreateTruncating(value) & 0xFF)),
+            2 => T.CreateTruncating(DecodeZigZag32(uint.CreateTruncating(value) & 0xFFFF)),
+            4 => T.CreateTruncating(DecodeZigZag32(uint.CreateTruncating(value))),
+            8 => T.CreateTruncating(DecodeZigZag64(ulong.CreateTruncating(value))),
+            _ => sizeof(T) <= 4
+                ? T.CreateTruncating(DecodeZigZag32(uint.CreateTruncating(value)))
+                : T.CreateTruncating(DecodeZigZag64(ulong.CreateTruncating(value)))
+        };
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static int DecodeZigZag32(uint n) => (int)((n >> 1) ^ (uint)(-(int)(n & 1)));
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static long DecodeZigZag64(ulong n) => (long)((n >> 1) ^ (ulong)(-(long)(n & 1)));
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
