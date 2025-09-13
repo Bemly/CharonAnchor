@@ -61,7 +61,7 @@ public partial class ProtoSourceGenerator
             source.WriteLine('{');
             source.Indentation++;
             
-            source.WriteLine($"Fields = new global::System.Collections.Generic.Dictionary<int, {string.Format(ProtoFieldInfoTypeRef)}>()");
+            source.WriteLine($"Fields = new global::System.Collections.Generic.Dictionary<uint, {string.Format(ProtoFieldInfoTypeRef)}>()");
             source.WriteLine('{');
             source.Indentation++;
             foreach (var kv in parser.Fields)

@@ -60,7 +60,7 @@ public partial class ProtoSourceGenerator
                 int field = kv.Key;
                 var info = kv.Value;
 
-                var tag = ProtoHelper.EncodeVarInt(field << 3 | (byte)info.WireType);
+                var tag = ProtoHelper.EncodeVarInt((uint)field << 3 | (byte)info.WireType);
                 if (info.TypeSymbol.IsValueType && !info.TypeSymbol.IsNullable()) constant += tag.Length;
             }
 
@@ -69,7 +69,7 @@ public partial class ProtoSourceGenerator
 
         private void EmitLengthStatement(SourceWriter source, int field, ProtoFieldInfo info)
         {
-            int tag = field << 3 | (byte)info.WireType;
+            uint tag = (uint)field << 3 | (byte)info.WireType;
             var encodedTag = ProtoHelper.EncodeVarInt(tag);
 
             string memberName;
@@ -130,7 +130,7 @@ public partial class ProtoSourceGenerator
         
         private static string GenerateIfNotDefaultExpression(string variableName, string left, string right) => $"({variableName} != default ? {left} : {right})";
         
-        private string GenerateShouldSerializeExpression(int tag, string left, string right) =>
+        private string GenerateShouldSerializeExpression(uint tag, string left, string right) =>
             $"({_fullQualifiedName}.{TypeInfoPropertyName}.Fields[{tag}].{ShouldSerializeTypeRef}({ObjectVarName}, {parser.IgnoreDefaultFields.ToString().ToLower()}) ? {left} : {right})";
     }
 }

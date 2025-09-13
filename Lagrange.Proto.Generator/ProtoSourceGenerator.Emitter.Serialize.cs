@@ -47,7 +47,7 @@ public partial class ProtoSourceGenerator
 
         private void EmitMembers(SourceWriter source, int field, ProtoFieldInfo info)
         {
-            int tag = field << 3 | (byte)info.WireType;
+            uint tag = (uint)field << 3 | (byte)info.WireType;
             var encodedTag = ProtoHelper.EncodeVarInt(tag);
             
             string memberName =  info.TypeSymbol.IsValueType && info.TypeSymbol.IsNullable() 
@@ -161,7 +161,7 @@ public partial class ProtoSourceGenerator
             source.WriteLine("}");
         }
         
-        private void EmitIfShouldSerializeStatement(SourceWriter source, int tag, Action<SourceWriter> emitAction)
+        private void EmitIfShouldSerializeStatement(SourceWriter source, uint tag, Action<SourceWriter> emitAction)
         {
             source.WriteLine($"if ({_fullQualifiedName}.{TypeInfoPropertyName}.Fields[{tag}].{ShouldSerializeTypeRef}({ObjectVarName}, {parser.IgnoreDefaultFields.ToString().ToLower()}))");
             source.WriteLine("{");

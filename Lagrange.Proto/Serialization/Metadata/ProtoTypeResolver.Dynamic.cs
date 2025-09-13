@@ -66,7 +66,7 @@ public static partial class ProtoTypeResolver
     {
         var ctor = typeof(T).IsValueType ? null : typeof(T).GetConstructor(Type.EmptyTypes);
         bool ignoreDefaultFields = typeof(T).GetCustomAttribute<ProtoPackableAttribute>()?.IgnoreDefaultFields == true;
-        var fields = new Dictionary<int, ProtoFieldInfo>();
+        var fields = new Dictionary<uint, ProtoFieldInfo>();
         
         foreach (var field in typeof(T).GetFields(BindingFlags.Public | BindingFlags.Instance))
         {
@@ -74,7 +74,7 @@ public static partial class ProtoTypeResolver
             var fieldInfo = CreateFieldInfo(typeof(T), field);
             if (fieldInfo == null) continue;
 
-            int tag = (fieldInfo.Field << 3) | (byte)fieldInfo.WireType;
+            uint tag = ((uint)fieldInfo.Field << 3) | (byte)fieldInfo.WireType;
             if (fields.ContainsKey(tag)) ThrowHelper.ThrowInvalidOperationException_DuplicateField(typeof(T), fieldInfo.Field);
             fields[tag] = fieldInfo;
         }
@@ -84,7 +84,7 @@ public static partial class ProtoTypeResolver
             var fieldInfo = CreateFieldInfo(typeof(T), field);
             if (fieldInfo == null) continue;
             
-            int tag = (fieldInfo.Field << 3) | (byte)fieldInfo.WireType;
+            uint tag = ((uint)fieldInfo.Field << 3) | (byte)fieldInfo.WireType;
             if (fields.ContainsKey(tag)) ThrowHelper.ThrowInvalidOperationException_DuplicateField(typeof(T), fieldInfo.Field);
             fields[tag] = fieldInfo;
         }

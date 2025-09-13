@@ -6,7 +6,7 @@ namespace Lagrange.Proto.Generator.Utility;
 
 public static class ProtoHelper
 {
-    public static byte[] EncodeVarInt(int value)
+    public static byte[] EncodeVarInt(uint value)
     {
         Span<byte> result = stackalloc byte[5];
         int i = 0;

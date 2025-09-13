@@ -29,7 +29,7 @@ public static partial class ProtoSerializer
 
         while (!reader.IsCompleted)
         {
-            int tag = reader.DecodeVarIntUnsafe<int>();
+            uint tag = reader.DecodeVarIntUnsafe<uint>();
             if (objectInfo.Fields.TryGetValue(tag, out var fieldInfo))
             {
                 fieldInfo.Read(ref reader, target);
@@ -86,7 +86,7 @@ public static partial class ProtoSerializer
 
         while (!reader.IsCompleted)
         {
-            int tag = reader.DecodeVarIntUnsafe<int>();
+            uint tag = reader.DecodeVarIntUnsafe<uint>();
             if (converter.ObjectInfo.Fields.TryGetValue(tag, out var fieldInfo))
             {
                 fieldInfo.Read(ref reader, boxed);
