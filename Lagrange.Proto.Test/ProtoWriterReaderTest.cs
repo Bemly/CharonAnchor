@@ -148,21 +148,307 @@ public class ProtoWriterReaderTest
 
         var buffer = new ArrayBufferWriter<byte>();
         var writer = new ProtoWriter(buffer);
-        
+
         writer.EncodeVarInt(1145141919810L);
         writer.EncodeVarInt(114514);
         writer.Flush();
-        
+
         var reader = new ProtoReader(buffer.WrittenMemory.Span);
         var (val1, val2) = reader.DecodeVarIntUnsafe<long, int>(buffer.WrittenMemory.Span);
-        
+
         Assert.Multiple(() =>
         {
             Assert.That(val1, Is.EqualTo(1145141919810L));
             Assert.That(val2, Is.EqualTo(114514));
         });
     }
-    
+
+    [Test]
+    public void TestEncodeTwo32VarIntUnsafe_BasicValues()
+    {
+        var buffer = new ArrayBufferWriter<byte>();
+        var writer = new ProtoWriter(buffer);
+
+        // Test encoding two 32-bit values
+        writer.EncodeTwo32VarIntUnsafe(42, 123456);
+        writer.Flush();
+
+        var reader = new ProtoReader(buffer.WrittenMemory.Span);
+        int val1 = reader.DecodeVarInt<int>();
+        int val2 = reader.DecodeVarInt<int>();
+        bool isCompleted = reader.IsCompleted;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(val1, Is.EqualTo(42));
+            Assert.That(val2, Is.EqualTo(123456));
+            Assert.That(isCompleted, Is.True);
+        });
+    }
+
+    [Test]
+    public void TestEncodeTwo32VarIntUnsafe_ByteValues()
+    {
+        var buffer = new ArrayBufferWriter<byte>();
+        var writer = new ProtoWriter(buffer);
+
+        writer.EncodeTwo32VarIntUnsafe((byte)255, (byte)128);
+        writer.Flush();
+
+        var reader = new ProtoReader(buffer.WrittenMemory.Span);
+        byte val1 = reader.DecodeVarInt<byte>();
+        byte val2 = reader.DecodeVarInt<byte>();
+        bool isCompleted = reader.IsCompleted;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(val1, Is.EqualTo(255));
+            Assert.That(val2, Is.EqualTo(128));
+            Assert.That(isCompleted, Is.True);
+        });
+    }
+
+    [Test]
+    public void TestEncodeTwo32VarIntUnsafe_ShortValues()
+    {
+        var buffer = new ArrayBufferWriter<byte>();
+        var writer = new ProtoWriter(buffer);
+
+        writer.EncodeTwo32VarIntUnsafe((ushort)32767, (ushort)65535);
+        writer.Flush();
+
+        var reader = new ProtoReader(buffer.WrittenMemory.Span);
+        ushort val1 = reader.DecodeVarInt<ushort>();
+        ushort val2 = reader.DecodeVarInt<ushort>();
+        bool isCompleted = reader.IsCompleted;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(val1, Is.EqualTo(32767));
+            Assert.That(val2, Is.EqualTo(65535));
+            Assert.That(isCompleted, Is.True);
+        });
+    }
+
+    [Test]
+    public void TestEncodeTwo32VarIntUnsafe_MaxValues()
+    {
+        var buffer = new ArrayBufferWriter<byte>();
+        var writer = new ProtoWriter(buffer);
+
+        writer.EncodeTwo32VarIntUnsafe(uint.MaxValue, uint.MaxValue);
+        writer.Flush();
+
+        var reader = new ProtoReader(buffer.WrittenMemory.Span);
+        uint val1 = reader.DecodeVarInt<uint>();
+        uint val2 = reader.DecodeVarInt<uint>();
+        bool isCompleted = reader.IsCompleted;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(val1, Is.EqualTo(uint.MaxValue));
+            Assert.That(val2, Is.EqualTo(uint.MaxValue));
+            Assert.That(isCompleted, Is.True);
+        });
+    }
+
+    [Test]
+    public void TestEncodeTwo32VarIntUnsafe_MixedTypes()
+    {
+        var buffer = new ArrayBufferWriter<byte>();
+        var writer = new ProtoWriter(buffer);
+
+        // Test with different sized types
+        writer.EncodeTwo32VarIntUnsafe((byte)200, (uint)1000000);
+        writer.Flush();
+
+        var reader = new ProtoReader(buffer.WrittenMemory.Span);
+        byte val1 = reader.DecodeVarInt<byte>();
+        uint val2 = reader.DecodeVarInt<uint>();
+        bool isCompleted = reader.IsCompleted;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(val1, Is.EqualTo(200));
+            Assert.That(val2, Is.EqualTo(1000000));
+            Assert.That(isCompleted, Is.True);
+        });
+    }
+
+    [Test]
+    public void TestEncodeTwo32VarIntUnsafe_ZeroValues()
+    {
+        var buffer = new ArrayBufferWriter<byte>();
+        var writer = new ProtoWriter(buffer);
+
+        writer.EncodeTwo32VarIntUnsafe(0, 0);
+        writer.Flush();
+
+        var reader = new ProtoReader(buffer.WrittenMemory.Span);
+        int val1 = reader.DecodeVarInt<int>();
+        int val2 = reader.DecodeVarInt<int>();
+        bool isCompleted = reader.IsCompleted;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(val1, Is.EqualTo(0));
+            Assert.That(val2, Is.EqualTo(0));
+            Assert.That(isCompleted, Is.True);
+        });
+    }
+
+    [Test]
+    public void TestEncodeTwo32VarIntUnsafe_SingleByteValues()
+    {
+        var buffer = new ArrayBufferWriter<byte>();
+        var writer = new ProtoWriter(buffer);
+
+        // Values that fit in single byte (< 128)
+        writer.EncodeTwo32VarIntUnsafe(127, 64);
+        writer.Flush();
+
+        var reader = new ProtoReader(buffer.WrittenMemory.Span);
+        int val1 = reader.DecodeVarInt<int>();
+        int val2 = reader.DecodeVarInt<int>();
+        bool isCompleted = reader.IsCompleted;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(val1, Is.EqualTo(127));
+            Assert.That(val2, Is.EqualTo(64));
+            Assert.That(buffer.WrittenMemory.Length, Is.EqualTo(2)); // Should only use 2 bytes total
+            Assert.That(isCompleted, Is.True);
+        });
+    }
+
+    [Test]
+    public void TestEncodeTwo32VarIntUnsafe_CompareWithRegularEncode()
+    {
+        var buffer1 = new ArrayBufferWriter<byte>();
+        var writer1 = new ProtoWriter(buffer1);
+
+        var buffer2 = new ArrayBufferWriter<byte>();
+        var writer2 = new ProtoWriter(buffer2);
+
+        uint value1 = 42;
+        uint value2 = 123456;
+
+        // Encode using regular method
+        writer1.EncodeVarInt(value1);
+        writer1.EncodeVarInt(value2);
+        writer1.Flush();
+
+        // Encode using Two32VarIntUnsafe
+        writer2.EncodeTwo32VarIntUnsafe(value1, value2);
+        writer2.Flush();
+
+        // Both should produce identical output
+        Assert.That(buffer2.WrittenMemory.ToArray(), Is.EqualTo(buffer1.WrittenMemory.ToArray()));
+    }
+
+    [Test]
+    public void TestEncodeTwo32VarIntUnsafe_WithSsse3Fallback()
+    {
+        // This test verifies the non-SSSE3 fallback path works correctly
+        var buffer = new ArrayBufferWriter<byte>();
+        var writer = new ProtoWriter(buffer);
+
+        writer.EncodeTwo32VarIntUnsafe(12345, 67890);
+        writer.Flush();
+
+        var reader = new ProtoReader(buffer.WrittenMemory.Span);
+        int val1 = reader.DecodeVarInt<int>();
+        int val2 = reader.DecodeVarInt<int>();
+        bool isCompleted = reader.IsCompleted;
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(val1, Is.EqualTo(12345));
+            Assert.That(val2, Is.EqualTo(67890));
+            Assert.That(isCompleted, Is.True);
+        });
+    }
+
+    [Test]
+    public void TestEncodeTwo32VarIntUnsafe_RoundTripWithDecodeUnsafe()
+    {
+        if (!Ssse3.IsSupported)
+        {
+            Assert.Ignore("SSSE3 is not supported on this platform.");
+            return;
+        }
+
+        var buffer = new ArrayBufferWriter<byte>();
+        var writer = new ProtoWriter(buffer);
+
+        uint value1 = 999999;
+        uint value2 = 777777;
+
+        writer.EncodeTwo32VarIntUnsafe(value1, value2);
+        writer.Flush();
+
+        // Decode using the dual decode method
+        var reader = new ProtoReader(buffer.WrittenMemory.Span);
+        var (decoded1, decoded2) = reader.DecodeVarIntUnsafe<uint, uint>(buffer.WrittenMemory.Span);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(decoded1, Is.EqualTo(value1));
+            Assert.That(decoded2, Is.EqualTo(value2));
+        });
+    }
+
+    [Test]
+    public void TestEncodeTwo32VarIntUnsafe_PerformanceComparison()
+    {
+        // Test to verify SIMD optimization provides correct results
+        // Real performance testing should be done with BenchmarkDotNet
+        const int iterations = 1000;
+
+        var buffer1 = new ArrayBufferWriter<byte>(iterations * 10);
+        var buffer2 = new ArrayBufferWriter<byte>(iterations * 10);
+
+        var writer1 = new ProtoWriter(buffer1);
+        var writer2 = new ProtoWriter(buffer2);
+
+        // Generate test data
+        var values = new (uint, uint)[iterations];
+        for (int i = 0; i < iterations; i++)
+        {
+            values[i] = ((uint)(i * 7 + 13), (uint)(i * 11 + 17));
+        }
+
+        // Encode using regular method
+        foreach (var (v1, v2) in values)
+        {
+            writer1.EncodeVarInt(v1);
+            writer1.EncodeVarInt(v2);
+        }
+        writer1.Flush();
+
+        // Encode using SIMD-optimized method
+        foreach (var (v1, v2) in values)
+        {
+            writer2.EncodeTwo32VarIntUnsafe(v1, v2);
+        }
+        writer2.Flush();
+
+        // Verify both produce identical output
+        Assert.That(buffer2.WrittenMemory.ToArray(), Is.EqualTo(buffer1.WrittenMemory.ToArray()));
+
+        // Verify we can decode all values correctly
+        var reader = new ProtoReader(buffer2.WrittenMemory.Span);
+        for (int i = 0; i < iterations; i++)
+        {
+            uint val1 = reader.DecodeVarInt<uint>();
+            uint val2 = reader.DecodeVarInt<uint>();
+            Assert.That(val1, Is.EqualTo(values[i].Item1));
+            Assert.That(val2, Is.EqualTo(values[i].Item2));
+        }
+
+        Assert.That(reader.IsCompleted, Is.True);
+    }
+
     #endregion
     
     #region Fixed32/Fixed64 Tests

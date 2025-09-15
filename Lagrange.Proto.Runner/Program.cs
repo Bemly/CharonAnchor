@@ -6,11 +6,15 @@ internal static partial class Program
 {
     private static void Main(string[] args)
     {
+        // Run VarInt performance test
+        VarIntPerformanceTest.Run();
+
+        Console.WriteLine("\n=== Original ProtoObject Test ===");
         var test = new ProtoObject()
         {
             { 1, new ProtoObject{ { 1, 2 } } },
             { 1, new ProtoObject{ { 1, 2 } } },
-            { 3, 4 }, 
+            { 3, 4 },
             { 5, 6 }
         };
 
@@ -19,5 +23,6 @@ internal static partial class Program
         var parsed = ProtoObject.Parse(bytes);
 
         int value = parsed[1][0][1].GetValue<int>();
+        Console.WriteLine($"Parsed value: {value}");
     }
 }

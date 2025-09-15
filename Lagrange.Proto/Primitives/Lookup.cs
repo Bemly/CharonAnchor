@@ -1139,4 +1139,32 @@ internal static class Lookup
         (9, 1, 10), // 0b0000001111111110
         (84, 11, 1) // 0b0000001111111111
     ];
+    
+    public static readonly Vector128<byte>[] EncodeTwoVarIntShuffle = InitializeEncodeTwoVarIntShuffleTable();
+
+    private static Vector128<byte>[] InitializeEncodeTwoVarIntShuffleTable()
+    {
+        const int maxBytes = 8;
+        var table = new Vector128<byte>[maxBytes * maxBytes];
+
+        for (int bytes1 = 1; bytes1 <= maxBytes; bytes1++)
+        {
+            for (int bytes2 = 1; bytes2 <= maxBytes; bytes2++)
+            {
+                if (bytes1 + bytes2 > 16) continue;
+
+                int index = (bytes1 - 1) * maxBytes + (bytes2 - 1);
+                byte[] indices = new byte[16];
+                int pos = 0;
+
+                for (int i = 0; i < bytes1; i++) indices[pos++] = (byte)i;
+                for (int i = 0; i < bytes2; i++) indices[pos++] = (byte)(8 + i);
+                for (; pos < 16; pos++) indices[pos] = 0x80;
+
+                table[index] = Vector128.Create(indices);
+            }
+        }
+
+        return table;
+    }
 }

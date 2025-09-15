@@ -226,7 +226,7 @@ public class ProtoWriter : IDisposable
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static unsafe ulong PackScalar<T>(ulong v) where T : unmanaged, INumberBase<T>
+    private static unsafe ulong PackScalar<T>(ulong v) where T : unmanaged, INumberBase<T>
     {
         if (Bmi2.X64.IsSupported)
         {
@@ -254,7 +254,7 @@ public class ProtoWriter : IDisposable
     private static unsafe Vector128<ulong> PackVector<T>(ulong v) where T : unmanaged, INumberBase<T>
     {
         if (sizeof(T) < 8) throw new InvalidOperationException("Vector is too small");
-        
+
         ulong x, y;
         if (Bmi2.X64.IsSupported)
         {
@@ -286,6 +286,80 @@ public class ProtoWriter : IDisposable
 
         return Vector128.Create(x, y);
     }
+
+    /// <summary>
+    /// Encodes two 32-bit (or smaller) varint values using SIMD optimizations
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public unsafe void EncodeTwo32VarIntUnsafe<TT, TU>(TT first, TU second)
+        where TT : unmanaged, INumber<TT>
+        where TU : unmanaged, INumber<TU>
+    {
+        if (sizeof(TT) > 4 || sizeof(TU) > 4) throw new NotSupportedException("Both types must be 32-bit or smaller");
+        if (_memory.Length - BytesPending < 10) Grow(10);
+
+        ulong v1 = ulong.CreateTruncating(first);
+        ulong v2 = ulong.CreateTruncating(second);
+
+        if (v1 < 0x80 && v2 < 0x80)
+        {
+            ref byte destination = ref MemoryMarshal.GetReference(_memory.Span);
+            Unsafe.Add(ref destination, BytesPending) = (byte)v1;
+            Unsafe.Add(ref destination, BytesPending + 1) = (byte)v2;
+            BytesPending += 2;
+            return;
+        }
+
+        if (Ssse3.IsSupported)
+        {
+            EncodeTwo32VarIntSimd<TT, TU>(v1, v2);
+        }
+        else
+        {
+            EncodeVarInt(first);
+            EncodeVarInt(second);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private unsafe void EncodeTwo32VarIntSimd<TT, TU>(ulong v1, ulong v2)
+        where TT : unmanaged, INumber<TT>
+        where TU : unmanaged, INumber<TU>
+    {
+        ulong stage1 = PackScalar<TT>(v1);
+        ulong stage2 = PackScalar<TU>(v2);
+
+        int leading1 = BitOperations.LeadingZeroCount(stage1 | 1); // Ensure at least 1 byte
+        int bytes1 = 8 - ((leading1 - 1) >> 3);
+
+        int leading2 = BitOperations.LeadingZeroCount(stage2 | 1); // Ensure at least 1 byte
+        int bytes2 = 8 - ((leading2 - 1) >> 3);
+
+        ulong msbMask1 = 0xFFFFFFFFFFFFFFFF >> ((8 - bytes1 + 1) * 8 - 1);
+        ulong merged1 = stage1 | (0x8080808080808080 & msbMask1);
+
+        ulong msbMask2 = 0xFFFFFFFFFFFFFFFF >> ((8 - bytes2 + 1) * 8 - 1);
+        ulong merged2 = stage2 | (0x8080808080808080 & msbMask2);
+
+        var vec = Vector128.Create(merged1, merged2).AsByte();
+        var indices = GetCompactShuffleVector(bytes1, bytes2);
+        var result = Ssse3.Shuffle(vec, indices);
+
+        ref byte destination = ref MemoryMarshal.GetReference(_memory.Span);
+        Unsafe.As<byte, Vector128<byte>>(ref Unsafe.Add(ref destination, BytesPending)) = result;
+        BytesPending += bytes1 + bytes2;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Vector128<byte> GetCompactShuffleVector(int bytes1, int bytes2)
+    {
+        const int maxBytes = 8;
+        bytes1 = Math.Max(1, Math.Min(bytes1, maxBytes));
+        bytes2 = Math.Max(1, Math.Min(bytes2, maxBytes));
+        int index = (bytes1 - 1) * maxBytes + (bytes2 - 1);
+        return Lookup.EncodeTwoVarIntShuffle[index];
+    }
+
     
     [MethodImpl(MethodImplOptions.NoInlining)]
     private void Grow(int requiredSize)
