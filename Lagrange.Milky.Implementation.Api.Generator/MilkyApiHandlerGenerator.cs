@@ -124,11 +124,9 @@ public class MilkyApiHandlerGenerator : IIncrementalGenerator
 
         public static partial class ServiceCollectionExtension
         {
-            public static partial TServiceCollection AddApiHandlers<TServiceCollection>(this TServiceCollection services, bool debug) where TServiceCollection : global::Microsoft.Extensions.DependencyInjection.IServiceCollection
+            static partial void AddApiHandlersInternal<TServiceCollection>(TServiceCollection services, bool debug) where TServiceCollection : global::Microsoft.Extensions.DependencyInjection.IServiceCollection
             {
         {{string.Join("\n", infos.Select(info => $"        {(info.Debug ? "if (debug) " : "")}global::Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddKeyedSingleton<global::Lagrange.Milky.Api.Handler.IApiHandler, {info.HandlerTypeFullName}>(services, \"{info.ApiName}\");"))}}
-
-                return services;
             }
         }
         """);
