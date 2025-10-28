@@ -75,6 +75,9 @@ public static partial class JsonUtility
     // get_history_messages
     [JsonSerializable(typeof(GetHistoryMessagesParameter))]
     [JsonSerializable(typeof(GetHistoryMessagesResult))]
+    // get_resource_temp_url
+    [JsonSerializable(typeof(GetResourceTempUrlParameter))]
+    [JsonSerializable(typeof(GetResourceTempUrlResult))]
     // == friend ==
     // send_friend_nudge
     [JsonSerializable(typeof(SendFriendNudgeParameter))]

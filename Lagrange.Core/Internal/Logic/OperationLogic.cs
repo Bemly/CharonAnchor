@@ -5,9 +5,14 @@ using Lagrange.Core.Exceptions;
 using Lagrange.Core.Internal.Events.Message;
 using Lagrange.Core.Internal.Events.System;
 using Lagrange.Core.Internal.Packets.Service;
+using Lagrange.Core.Message;
+using Lagrange.Core.Message.Entities;
 using Lagrange.Core.Utility;
 using Lagrange.Core.Utility.Cryptography;
 using Lagrange.Core.Utility.Extension;
+using Lagrange.Proto.Primitives;
+using Lagrange.Proto.Serialization;
+using FileInfo = Lagrange.Core.Internal.Packets.Service.FileInfo;
 
 namespace Lagrange.Core.Internal.Logic;
 
@@ -283,5 +288,94 @@ internal class OperationLogic(BotContext context) : ILogic
         else await context.EventContext.SendEvent<ReduceGroupReactionEventResp>(
             new ReduceGroupReactionEventReq(groupUin, sequence, code)
         );
+    }
+
+    public async Task<string> GetNTV2RichMediaUrl(string uuid)
+    {
+        int remainder = uuid.Length % 4;
+        int length = remainder == 0 ? uuid.Length : uuid.Length + (4 - remainder);
+        string base64 = uuid.Replace('-', '+').Replace('_', '/').PadRight(length, '=');
+
+        ulong appId = 0;
+        uint ttl = 0;
+        var reader = new ProtoReader(Convert.FromBase64String(base64));
+        while (!reader.IsCompleted)
+        {
+            uint tag = reader.DecodeVarIntUnsafe<uint>();
+            switch (tag >>> 3)
+            {
+                case 4:
+                {
+                    appId = reader.DecodeVarInt<ulong>();
+                    break;
+                }
+                case 10:
+                {
+                    ttl = reader.DecodeVarInt<uint>();
+                    break;
+                }
+                default:
+                {
+                    reader.SkipField((WireType)(tag & 0b111));
+                    break;
+                }
+            }
+        }
+
+        NTV2RichMediaDownloadEventResp response = appId switch
+        {
+            // Record
+            1402 => await context.EventContext.SendEvent<RecordDownloadEventResp>(new RecordDownloadEventReq(
+                CreateFakeFriendMessage(context.BotUin),
+                CreateFakeEntity<RecordEntity>(uuid, ttl)
+            )),
+            1403 => await context.EventContext.SendEvent<RecordGroupDownloadEventResp>(new RecordGroupDownloadEventReq(
+                CreateFakeGroupMessage(context.BotUin),
+                CreateFakeEntity<RecordEntity>(uuid, ttl)
+            )),
+            // Video
+            1413 => await context.EventContext.SendEvent<VideoDownloadEventResp>(new VideoDownloadEventReq(
+                CreateFakeFriendMessage(context.BotUin),
+                CreateFakeEntity<VideoEntity>(uuid, ttl)
+            )),
+            1415 => await context.EventContext.SendEvent<VideoGroupDownloadEventResp>(new VideoGroupDownloadEventReq(
+                CreateFakeGroupMessage(context.BotUin),
+                CreateFakeEntity<VideoEntity>(uuid, ttl)
+            )),
+            // Image
+            1406 => await context.EventContext.SendEvent<ImageDownloadEventResp>(new ImageDownloadEventReq(
+                CreateFakeFriendMessage(context.BotUin),
+                CreateFakeEntity<ImageEntity>(uuid, ttl)
+            )),
+            1407 => await context.EventContext.SendEvent<ImageGroupDownloadEventResp>(new ImageGroupDownloadEventReq(
+                CreateFakeGroupMessage(context.BotUin),
+                CreateFakeEntity<ImageEntity>(uuid, ttl)
+            )),
+            _ => throw new NotSupportedException($"Unsupported AppId: {appId}"),
+        };
+
+        return response.Url;
+
+        static BotMessage CreateFakeFriendMessage(long uin) => BotMessage.CreateCustomFriend(uin, string.Empty, uin, string.Empty, DateTime.Now, []);
+        static BotMessage CreateFakeGroupMessage(long uin) => BotMessage.CreateCustomGroup(uin, 0, string.Empty, DateTime.Now, []);
+        static RichMediaEntityBase CreateFakeEntity<T>(string fileUuid, uint ttl) where T : RichMediaEntityBase, new()
+        {
+            return new T
+            {
+                MsgInfo = new MsgInfo
+                {
+                    MsgInfoBody = [new MsgInfoBody {
+                        Index = new IndexNode {
+                            Info = new FileInfo {},
+                            FileUuid = fileUuid,
+                            StoreId = 1,
+                            UploadTime = 0,
+                            Ttl = ttl,
+                            SubType = 0,
+                        }
+                    }]
+                }
+            };
+        }
     }
 }

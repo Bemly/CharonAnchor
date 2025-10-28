@@ -41,4 +41,7 @@ public static class OperationExt
 
     public static Task SetGroupReaction(this BotContext context, long groupUin, ulong sequence, string code, bool isAdd) =>
         context.EventContext.GetLogic<OperationLogic>().SetGroupReaction(groupUin, sequence, code, isAdd);
+
+    public static Task<string> GetNTV2RichMediaUrl(this BotContext context, string fileUuid) =>
+        context.EventContext.GetLogic<OperationLogic>().GetNTV2RichMediaUrl(fileUuid);
 }

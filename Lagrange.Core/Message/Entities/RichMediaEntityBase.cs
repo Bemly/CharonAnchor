@@ -11,14 +11,14 @@ public abstract class RichMediaEntityBase : IMessageEntity
     protected byte[]? _compat;
 
     private protected bool IsGroup;
-    
+
     internal MsgInfo? MsgInfo
     {
         get => _msgInfo;
-        private protected set
+        set
         {
             Debug.Assert(value != null);
-            
+
             var fileInfo = value.MsgInfoBody[0].Index.Info;
             FileUuid = value.MsgInfoBody[0].Index.FileUuid;
             FileMd5 = fileInfo.FileHash;
@@ -26,38 +26,38 @@ public abstract class RichMediaEntityBase : IMessageEntity
             FileSize = fileInfo.FileSize;
             FileName = fileInfo.FileName;
             _msgInfo = value;
-        } 
+        }
     }
-    
+
     private protected bool DisposeOnCompletion;
 
     internal abstract Lazy<Stream>? Stream { get; }
 
     public string FileUuid { get; internal set; } = string.Empty;
-    
+
     public string FileUrl { get; internal set; } = string.Empty;
 
     public string FileName { get; internal set; } = string.Empty;
-    
+
     public string FileSha1 { get; internal set; } = string.Empty;
-    
+
     public uint FileSize { get; internal set; }
 
     public string FileMd5 { get; internal set; } = string.Empty;
-    
+
     public abstract Task Preprocess(BotContext context, BotMessage message);
 
     public abstract Task Postprocess(BotContext context, BotMessage message);
-    
+
     internal abstract Elem[] Build();
-    
+
     internal abstract IMessageEntity? Parse(List<Elem> elements, Elem target);
-    
+
     public abstract string ToPreviewString();
-    
+
     Elem[] IMessageEntity.Build() => Build();
 
     IMessageEntity? IMessageEntity.Parse(List<Elem> elements, Elem target) => Parse(elements, target);
-    
+
     string IMessageEntity.ToPreviewString() => ToPreviewString();
 }

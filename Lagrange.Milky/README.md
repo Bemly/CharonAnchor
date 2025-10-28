@@ -12,8 +12,11 @@ https://lagrangedev.github.io/Lagrange.Milky.Document
 
 ## Feature List
 
+Current Milky version: [77c6cbd](https://github.com/SaltifyDev/milky/tree/77c6cbd6fb131d581fbb4c128a540eadfbcbd475)
+
 ### communication
 
+- [ ] SSE (wontimpl)
 - [x] WebSocket
 - [x] WebHook
 
@@ -39,7 +42,7 @@ https://lagrangedev.github.io/Lagrange.Milky.Document
 - [x] /send_group_message
 - [x] /get_message
 - [x] /get_history_messages - not supported start_message_seq eql null
-- [ ] /get_resource_temp_url
+- [x] /get_resource_temp_url
 - [ ] /get_forwarded_messages
 - [ ] /recall_private_message
 - [ ] /recall_group_message
@@ -125,6 +128,7 @@ https://lagrangedev.github.io/Lagrange.Milky.Document
 - [x] image
 - [x] record
 - [x] video
+- [ ] file
 - [x] forward
 - [ ] market_face
 - [ ] light_app
@@ -145,8 +149,8 @@ https://lagrangedev.github.io/Lagrange.Milky.Document
 #### forward
 
 - [x] text
-<!-- - [ ] mention -->
-<!-- - [ ] mention_all -->
+- [ ] mention - (wontimpl) forward not supported
+- [ ] mention_all - (wontimpl) forward not supported
 - [ ] face
 - [ ] reply
 - [ ] image
