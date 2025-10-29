@@ -99,6 +99,9 @@ Current Milky version: [77c6cbd](https://github.com/SaltifyDev/milky/tree/77c6cb
 - [x] bot_offline
 - [x] message_receive
 - [ ] message_recall
+  - [ ] friend
+  - [x] group
+  - [ ] temp
 - [x] friend_request
 - [ ] group_join_request
 - [ ] group_invited_join_request
