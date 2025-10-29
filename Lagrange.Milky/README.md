@@ -41,7 +41,14 @@ Current Milky version: [77c6cbd](https://github.com/SaltifyDev/milky/tree/77c6cb
 - [x] /send_private_message
 - [x] /send_group_message
 - [x] /get_message
-- [x] /get_history_messages - not supported start_message_seq eql null
+  - [x] friend
+  - [x] group
+  - [ ] temp (wontimpl)
+- [ ] /get_history_messages
+  - [x] friend
+  - [x] group
+  - [ ] temp (wontimpl)
+  - [ ] no start_message_seq
 - [x] /get_resource_temp_url
 - [ ] /get_forwarded_messages
 - [ ] /recall_private_message
@@ -101,7 +108,7 @@ Current Milky version: [77c6cbd](https://github.com/SaltifyDev/milky/tree/77c6cb
 - [ ] message_recall
   - [ ] friend
   - [x] group
-  - [ ] temp
+  - [ ] temp (wontimpl)
 - [x] friend_request
 - [ ] group_join_request
 - [ ] group_invited_join_request
