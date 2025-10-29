@@ -7,17 +7,17 @@ using Lagrange.Milky.Cache;
 
 namespace Lagrange.Milky.Api.Handler.Message;
 
-[Api("recall_group_message")]
-public class RecallGroupMessageHandler(BotContext bot, MessageCache cache) : IEmptyResultApiHandler<RecallGroupMessageParameter>
+[Api("recall_private_message")]
+public class RecallPrivateMessageHandler(BotContext bot, MessageCache cache) : IEmptyResultApiHandler<RecallPrivateMessageParameter>
 {
     private readonly BotContext _bot = bot;
     private readonly MessageCache _cache = cache;
 
-    public async Task HandleAsync(RecallGroupMessageParameter parameter, CancellationToken token)
+    public async Task HandleAsync(RecallPrivateMessageParameter parameter, CancellationToken token)
     {
         var message = await _cache.GetMessageAsync(
-            MessageType.Group,
-            parameter.GroupId,
+            MessageType.Private,
+            parameter.UserId,
             (ulong)parameter.MessageSeq,
             token
         );
@@ -26,11 +26,11 @@ public class RecallGroupMessageHandler(BotContext bot, MessageCache cache) : IEm
     }
 }
 
-public class RecallGroupMessageParameter(long groupId, long messageSeq)
+public class RecallPrivateMessageParameter(long userId, long messageSeq)
 {
     [JsonRequired]
-    [JsonPropertyName("group_id")]
-    public long GroupId { get; init; } = groupId;
+    [JsonPropertyName("user_id")]
+    public long UserId { get; init; } = userId;
 
     [JsonRequired]
     [JsonPropertyName("message_seq")]

@@ -1,5 +1,4 @@
 using Lagrange.Core.Common;
-using Lagrange.Core.Exceptions;
 using Lagrange.Core.Internal.Events;
 using Lagrange.Core.Internal.Events.Message;
 using Lagrange.Core.Internal.Packets.Message;
@@ -9,7 +8,7 @@ namespace Lagrange.Core.Internal.Services.Message;
 
 [Service("trpc.msg.msg_svc.MsgService.SsoGroupRecallMsg")]
 [EventSubscribe<GroupRecallMsgEventReq>(Protocols.All)]
-internal class SsoGroupRecallMsgService : BaseService<GroupRecallMsgEventReq, GroupRecallMsgEventResp>
+internal class GroupRecallMsgService : BaseService<GroupRecallMsgEventReq, GroupRecallMsgEventResp>
 {
     protected override ValueTask<ReadOnlyMemory<byte>> Build(GroupRecallMsgEventReq input, BotContext context)
     {

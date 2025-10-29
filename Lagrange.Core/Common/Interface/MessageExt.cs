@@ -32,8 +32,8 @@ public static class MessageExt
     public static Task<string> SendGroupFile(this BotContext context, long groupUin, Stream fileStream, string? fileName = null, string parentDirectory = "/")
         => context.EventContext.GetLogic<OperationLogic>().SendGroupFile(groupUin, fileStream, fileName, parentDirectory);
 
-    public static Task RecallGroupMessage(this BotContext context, long groupUin, ulong sequence)
-        => context.EventContext.GetLogic<MessagingLogic>().RecallGroupMessage(groupUin, sequence);
+    public static Task RecallMessage(this BotContext context, BotMessage message)
+        => context.EventContext.GetLogic<MessagingLogic>().RecallMessage(message);
 
     public static Task<string> GroupFSDownload(this BotContext context, long groupUin, string fileId)
         => context.EventContext.GetLogic<OperationLogic>().GroupFSDownload(groupUin, fileId);

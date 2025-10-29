@@ -3,6 +3,7 @@ using Lagrange.Core.Exceptions;
 using Lagrange.Core.Internal.Events.Message;
 using Lagrange.Core.Internal.Packets.Message;
 using Lagrange.Core.Message;
+using Lagrange.Core.Utility.Extension;
 
 namespace Lagrange.Core.Internal.Logic;
 
@@ -71,9 +72,25 @@ internal class MessagingLogic(BotContext context) : ILogic
         return message;
     }
 
-    public Task RecallGroupMessage(long groupUin, ulong sequence)
+    public Task RecallMessage(BotMessage message)
     {
-        return context.EventContext.SendEvent<GroupRecallMsgEventResp>(new GroupRecallMsgEventReq(groupUin, sequence)).AsTask();
+        return message.Contact switch
+        {
+            BotGroupMember member => context.EventContext.SendEvent<GroupRecallMsgEventResp>(
+                new GroupRecallMsgEventReq(
+                    member.Group.GroupUin,
+                    message.Sequence
+                )
+            ).AsTask(),
+            BotFriend friend => context.EventContext.SendEvent<C2CRecallMsgEventResp>(new C2CRecallMsgEventReq(
+                friend.Uin == context.BotUin ? message.Receiver.Uid : friend.Uid,
+                message.Sequence,
+                message.ClientSequence,
+                message.Random,
+                (uint)new DateTimeOffset(message.Time).ToUnixTimeSeconds()
+            )).AsTask(),
+            _ => throw new NotImplementedException(),
+        };
     }
 
     private async Task<BotMessage> BuildMessage(MessageChain chain, BotContact contact, BotContact receiver)
