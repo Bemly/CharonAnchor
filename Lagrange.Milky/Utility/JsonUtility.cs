@@ -78,6 +78,8 @@ public static partial class JsonUtility
     // get_resource_temp_url
     [JsonSerializable(typeof(GetResourceTempUrlParameter))]
     [JsonSerializable(typeof(GetResourceTempUrlResult))]
+    // recall_group_message
+    [JsonSerializable(typeof(RecallGroupMessageParameter))]
     // == friend ==
     // send_friend_nudge
     [JsonSerializable(typeof(SendFriendNudgeParameter))]

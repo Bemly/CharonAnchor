@@ -30,7 +30,7 @@ internal class MessagingLogic(BotContext context) : ILogic
         foreach (var chain in result.Chains) messages.Add(await Parse(chain));
         return messages;
     }
-    
+
     public async Task<List<BotMessage>> GetC2CMessage(long peerUin, ulong startSequence, ulong endSequence)
     {
         string peerUid = context.CacheContext.ResolveCachedUid(peerUin) ?? throw new InvalidTargetException(peerUin);
@@ -69,6 +69,11 @@ internal class MessagingLogic(BotContext context) : ILogic
         message.Time = DateTimeOffset.FromUnixTimeSeconds(result.SendTime).DateTime;
 
         return message;
+    }
+
+    public Task RecallGroupMessage(long groupUin, ulong sequence)
+    {
+        return context.EventContext.SendEvent<GroupRecallMsgEventResp>(new GroupRecallMsgEventReq(groupUin, sequence)).AsTask();
     }
 
     private async Task<BotMessage> BuildMessage(MessageChain chain, BotContact contact, BotContact receiver)
