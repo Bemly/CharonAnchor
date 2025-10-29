@@ -22,8 +22,8 @@ namespace Lagrange.Core.Internal.Logic;
 internal class PushLogic : ILogic
 {
 
-    private BotContext context;
-    
+    private readonly BotContext _context;
+
     private readonly FrozenDictionary<MsgMatchKey, List<MsgPushProcessorBase>> _processors;
 
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "All the types are preserved in the csproj by using the TrimmerRootAssembly attribute")]
@@ -31,17 +31,17 @@ internal class PushLogic : ILogic
     [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "All the types are preserved in the csproj by using the TrimmerRootAssembly attribute")]
     public PushLogic(BotContext ctx)
     {
-        context = ctx;
-        
+        _context = ctx;
+
         var handlers = new Dictionary<MsgMatchKey, List<MsgPushProcessorBase>>();
         foreach (var type in typeof(MsgPushProcessorBase).Assembly.GetTypes())
         {
             if (!type.HasImplemented<MsgPushProcessorBase>() ||
                 Activator.CreateInstance(type) is not MsgPushProcessorBase instance)
                 continue;
-            
+
             var attributes = type.GetCustomAttributes<MsgPushProcessorAttribute>();
-            
+
             foreach (var attribute in attributes)
             {
                 var msgType = new MsgMatchKey(attribute.MsgType, attribute.SubType, attribute.RequireContent);
@@ -50,13 +50,13 @@ internal class PushLogic : ILogic
                     set = [];
                     handlers[msgType] = set;
                 }
-                
+
                 set.Add(instance);
             }
         }
         _processors = handlers.ToFrozenDictionary();
     }
-    
+
     public async ValueTask Incoming(ProtocolEvent e)
     {
         if (e is not PushMessageEvent msgEvt) return;
@@ -69,16 +69,16 @@ internal class PushLogic : ILogic
         {
             foreach (var handler in handlers)
             {
-                if (await handler.Handle(context, msgType, subType, msgEvt, content))
+                if (await handler.Handle(_context, msgType, subType, msgEvt, content))
                     return;
             }
-        } 
-        
+        }
+
         if (_processors.TryGetValue(new MsgMatchKey(msgType, -1, hasContent), out handlers))
         {
             foreach (var handler in handlers)
             {
-                if (await handler.Handle(context, msgType, subType, msgEvt, content))
+                if (await handler.Handle(_context, msgType, subType, msgEvt, content))
                     return;
             }
         }
@@ -111,10 +111,10 @@ internal class MsgPushProcessorAttribute : Attribute
     public MsgType MsgType { get; init; }
     public int SubType { get; }
     public bool RequireContent { get; } = false;
-    
+
     public MsgPushProcessorAttribute(MsgType msgType, bool requireContent = false)
         : this(msgType, -1, requireContent) { }
-    
+
     public MsgPushProcessorAttribute(MsgType msgType, int subType, bool requireContent = false)
     {
         MsgType = msgType;

@@ -34,7 +34,7 @@ public partial class EntityConvert
             @event.InvitorUin
         )
     );
-    
+
     public GroupMemberDecreaseEvent GroupMemberDecreaseEvent(LgrEventArgs.BotGroupMemberDecreaseEvent @event) => new(
         @event.EventTime.ToUnixTimeSeconds(),
         _bot.BotUin,
@@ -53,6 +53,19 @@ public partial class EntityConvert
             @event.InitiatorUin,
             @event.Message,
             @event.Source
+        )
+    );
+
+    public MessageRecallEvent MessageRecallEvent(LgrEventArgs.BotGroupRecallEvent @event) => new(
+        @event.EventTime.ToUnixTimeSeconds(),
+        _bot.BotUin,
+        new MessageRecallEventData(
+            "group",
+            @event.GroupUin,
+            (long)@event.Sequence,
+            @event.AuthorUin,
+            @event.OperatorUin,
+            @event.Tip
         )
     );
 }

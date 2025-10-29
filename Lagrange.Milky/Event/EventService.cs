@@ -32,6 +32,7 @@ public class EventService(ILogger<EventService> logger, IOptions<MilkyConfigurat
         _bot.EventInvoker.RegisterEvent<LgrEvents.BotGroupMemberIncreaseEvent>(HandleGroupMemberIncreaseEvent);
         _bot.EventInvoker.RegisterEvent<LgrEvents.BotGroupMemberDecreaseEvent>(HandleGroupMemberDecreaseEvent);
         _bot.EventInvoker.RegisterEvent<LgrEvents.BotFriendRequestEvent>(HandleFriendRequestEvent);
+        _bot.EventInvoker.RegisterEvent<LgrEvents.BotGroupRecallEvent>(HandleGroupRecallEvent);
 
         return Task.CompletedTask;
     }
@@ -150,7 +151,7 @@ public class EventService(ILogger<EventService> logger, IOptions<MilkyConfigurat
             _logger.LogHandleEventException(nameof(LgrEvents.BotGroupMemberIncreaseEvent), e);
         }
     }
-    
+
     private void HandleGroupMemberDecreaseEvent(BotContext bot, LgrEvents.BotGroupMemberDecreaseEvent @event)
     {
         try
@@ -180,7 +181,7 @@ public class EventService(ILogger<EventService> logger, IOptions<MilkyConfigurat
     {
         try
         {
-            _logger.LogBotFriendRequestEvent(
+            _logger.LogFriendRequestEvent(
                 @event.InitiatorUid,
                 @event.InitiatorUin,
                 @event.Message,
@@ -202,6 +203,33 @@ public class EventService(ILogger<EventService> logger, IOptions<MilkyConfigurat
         }
     }
 
+    private void HandleGroupRecallEvent(BotContext bot, LgrEvents.BotGroupRecallEvent @event)
+    {
+        try
+        {
+            _logger.LogGroupRecallEvent(
+                @event.GroupUin,
+                @event.Sequence,
+                @event.AuthorUin,
+                @event.OperatorUin,
+                @event.Tip
+            );
+            var result = _convert.MessageRecallEvent(@event);
+            byte[] bytes = JsonUtility.SerializeToUtf8Bytes(result.GetType(), result);
+            using (_lock.UsingReadLock())
+            {
+                foreach (var handler in _handlers)
+                {
+                    handler(bytes);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            _logger.LogHandleEventException(nameof(LgrEvents.BotGroupRecallEvent), e);
+        }
+    }
+
     public Task StopAsync(CancellationToken token)
     {
         _bot.EventInvoker.UnregisterEvent<LgrEvents.BotMessageEvent>(HandleMessageEvent);
@@ -209,6 +237,7 @@ public class EventService(ILogger<EventService> logger, IOptions<MilkyConfigurat
         _bot.EventInvoker.UnregisterEvent<LgrEvents.BotGroupNudgeEvent>(HandleGroupNudgeEvent);
         _bot.EventInvoker.UnregisterEvent<LgrEvents.BotGroupMemberDecreaseEvent>(HandleGroupMemberDecreaseEvent);
         _bot.EventInvoker.UnregisterEvent<LgrEvents.BotFriendRequestEvent>(HandleFriendRequestEvent);
+        _bot.EventInvoker.UnregisterEvent<LgrEvents.BotGroupRecallEvent>(HandleGroupRecallEvent);
 
         return Task.CompletedTask;
     }
@@ -248,13 +277,16 @@ public static partial class EventServiceLoggerExtension
     public static partial void LogGroupMemberDecreaseEvent(this ILogger<EventService> logger, long group, long user, long? @operator);
 
     [LoggerMessage(EventId = 5, Level = LogLevel.Debug, Message = "BotFriendRequestEvent {{ request: {request}, user: {user}, message: {message}, source: {source} }}")]
-    public static partial void LogBotFriendRequestEvent(this ILogger<EventService> logger, string request, long user, string? message, string? source);
+    public static partial void LogFriendRequestEvent(this ILogger<EventService> logger, string request, long user, string? message, string? source);
 
     [LoggerMessage(EventId = 6, Level = LogLevel.Debug, Message = "BotGroupInviteEvent {{ request: {request}, user: {user}, group: {group} }}")]
     public static partial void LogGroupInvitationEvent(this ILogger<EventService> logger, long request, long user, long group);
 
     [LoggerMessage(EventId = 7, Level = LogLevel.Debug, Message = "BotGroupMemberIncreaseEvent {{ group: {group}, user: {user}, operator: {operator}, invitor: {invitor} }}")]
     public static partial void LogGroupMemberIncreaseEvent(this ILogger<EventService> logger, long group, long user, long? @operator, long? invitor);
+
+    [LoggerMessage(EventId = 8, Level = LogLevel.Debug, Message = "GroupRecallEvent {{ group: {group}, sequence: {sequence}, author: {author}, operator: {operator}, tip: {tip} }}")]
+    public static partial void LogGroupRecallEvent(this ILogger<EventService> logger, long group, ulong sequence, long author, long @operator, string tip);
 
     [LoggerMessage(EventId = 999, Level = LogLevel.Error, Message = "Handle {event} exception")]
     public static partial void LogHandleEventException(this ILogger<EventService> logger, string @event, Exception e);

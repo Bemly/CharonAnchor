@@ -128,6 +128,8 @@ public static partial class JsonUtility
     [JsonSerializable(typeof(FriendRequestEvent))]
     // group_invitation
     [JsonSerializable(typeof(GroupInvitationEvent))]
+    // message_recall
+    [JsonSerializable(typeof(MessageRecallEvent))]
     private partial class JsonContext : JsonSerializerContext;
 
     public static string Serialize<T>(T value) where T : class
