@@ -68,4 +68,16 @@ public partial class EntityConvert
             @event.Tip
         )
     );
+    public MessageRecallEvent MessageRecallEvent(LgrEventArgs.BotFriendRecallEvent @event) => new(
+        @event.EventTime.ToUnixTimeSeconds(),
+        _bot.BotUin,
+        new MessageRecallEventData(
+            "friend",
+            @event.PeerUin,
+            (long)@event.Sequence,
+            @event.AuthorUin,
+            @event.AuthorUin,
+            @event.Tip
+        )
+    );
 }

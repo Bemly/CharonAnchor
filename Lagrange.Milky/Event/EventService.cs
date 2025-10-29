@@ -33,6 +33,7 @@ public class EventService(ILogger<EventService> logger, IOptions<MilkyConfigurat
         _bot.EventInvoker.RegisterEvent<LgrEvents.BotGroupMemberDecreaseEvent>(HandleGroupMemberDecreaseEvent);
         _bot.EventInvoker.RegisterEvent<LgrEvents.BotFriendRequestEvent>(HandleFriendRequestEvent);
         _bot.EventInvoker.RegisterEvent<LgrEvents.BotGroupRecallEvent>(HandleGroupRecallEvent);
+        _bot.EventInvoker.RegisterEvent<LgrEvents.BotFriendRecallEvent>(HandleFriendRecallEvent);
 
         return Task.CompletedTask;
     }
@@ -230,6 +231,28 @@ public class EventService(ILogger<EventService> logger, IOptions<MilkyConfigurat
         }
     }
 
+    private void HandleFriendRecallEvent(BotContext ctx, LgrEvents.BotFriendRecallEvent @event)
+    {
+        try
+        {
+            _logger.LogFriendRecallEvent(@event.PeerUin, @event.AuthorUin, @event.Sequence, @event.Tip);
+
+            var result = _convert.MessageRecallEvent(@event);
+            byte[] bytes = JsonUtility.SerializeToUtf8Bytes(result.GetType(), result);
+            using (_lock.UsingReadLock())
+            {
+                foreach (var handler in _handlers)
+                {
+                    handler(bytes);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            _logger.LogHandleEventException(nameof(LgrEvents.BotFriendRecallEvent), e);
+        }
+    }
+
     public Task StopAsync(CancellationToken token)
     {
         _bot.EventInvoker.UnregisterEvent<LgrEvents.BotMessageEvent>(HandleMessageEvent);
@@ -238,6 +261,7 @@ public class EventService(ILogger<EventService> logger, IOptions<MilkyConfigurat
         _bot.EventInvoker.UnregisterEvent<LgrEvents.BotGroupMemberDecreaseEvent>(HandleGroupMemberDecreaseEvent);
         _bot.EventInvoker.UnregisterEvent<LgrEvents.BotFriendRequestEvent>(HandleFriendRequestEvent);
         _bot.EventInvoker.UnregisterEvent<LgrEvents.BotGroupRecallEvent>(HandleGroupRecallEvent);
+        _bot.EventInvoker.UnregisterEvent<LgrEvents.BotFriendRecallEvent>(HandleFriendRecallEvent);
 
         return Task.CompletedTask;
     }
@@ -287,6 +311,9 @@ public static partial class EventServiceLoggerExtension
 
     [LoggerMessage(EventId = 8, Level = LogLevel.Debug, Message = "GroupRecallEvent {{ group: {group}, sequence: {sequence}, author: {author}, operator: {operator}, tip: {tip} }}")]
     public static partial void LogGroupRecallEvent(this ILogger<EventService> logger, long group, ulong sequence, long author, long @operator, string tip);
+
+    [LoggerMessage(EventId = 9, Level = LogLevel.Debug, Message = "FriendRecallEvent {{ peer: {peer} author: {author}, sequence: {sequence}, tip: {tip} }}")]
+    public static partial void LogFriendRecallEvent(this ILogger<EventService> logger, long peer, long author, ulong sequence, string tip);
 
     [LoggerMessage(EventId = 999, Level = LogLevel.Error, Message = "Handle {event} exception")]
     public static partial void LogHandleEventException(this ILogger<EventService> logger, string @event, Exception e);
