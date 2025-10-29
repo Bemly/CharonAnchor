@@ -138,6 +138,7 @@ public class MilkyWebSocketEventService(ILogger<MilkyWebSocketEventService> logg
             _connections.Remove(connection, out _);
 
             await connection.WsContext.WebSocket.CloseAsync(status, null, token);
+            connection.HttpContext.Response.Close();
 
             _logger.LogWebSocketClosed(identifier, remote);
         }
