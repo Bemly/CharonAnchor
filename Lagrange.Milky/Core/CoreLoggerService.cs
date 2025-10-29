@@ -73,13 +73,13 @@ public partial class CoreLoggerService(ILogger<CoreLoggerService> logger, IOptio
 
     private static partial class LoggerUtility
     {
-        [LoggerMessage(EventId = 0, Message = "{message}")]
+        [LoggerMessage("{message}")]
         public static partial void LogBotMessage(ILogger logger, MSLogLevel level, string message, Exception? exception);
     }
 }
 
 public static partial class CoreLoggerServiceLoggerExtension
 {
-    [LoggerMessage(EventId = 0, Level = MSLogLevel.Debug, Message = "Core minimum log level reloaded to {level}")]
+    [LoggerMessage(MSLogLevel.Debug, "Core minimum log level reloaded to {level}")]
     public static partial void LogCoreMinimumLogLevelReloaded(this ILogger<CoreLoggerService> logger, CoreLogLevel level);
 }

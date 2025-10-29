@@ -301,44 +301,44 @@ public class MilkyWebSocketEventService(ILogger<MilkyWebSocketEventService> logg
 
 public static partial class MilkyWebSocketEventServiceLoggerExtension
 {
-    [LoggerMessage(EventId = 0, Level = LogLevel.Information, Message = "Event websocket server is running on {prefix}")]
+    [LoggerMessage(LogLevel.Information, "Event websocket server is running on {prefix}")]
     public static partial void LogServerRunning(this ILogger<MilkyWebSocketEventService> logger, string prefix);
 
-    [LoggerMessage(EventId = 1, Level = LogLevel.Debug, Message = "{identifier} {remote} -->> {method} {path}")]
+    [LoggerMessage(LogLevel.Debug, "{identifier} {remote} -->> {method} {path}")]
     public static partial void LogHttpContext(this ILogger<MilkyWebSocketEventService> logger, Guid identifier, IPEndPoint remote, string method, string? path);
 
-    [LoggerMessage(EventId = 2, Level = LogLevel.Debug, Message = "{identifier} {remote} <<-- {status}")]
+    [LoggerMessage(LogLevel.Debug, "{identifier} {remote} <<-- {status}")]
     public static partial void LogSend(this ILogger<MilkyWebSocketEventService> logger, Guid identifier, IPEndPoint remote, HttpStatusCode status);
 
-    [LoggerMessage(EventId = 3, Level = LogLevel.Debug, Message = "WebSockets <<-- {payload}")]
+    [LoggerMessage(LogLevel.Debug, "WebSockets <<-- {payload}")]
     private static partial void LogSend(this ILogger<MilkyWebSocketEventService> logger, string payload);
     public static void LogSend(this ILogger<MilkyWebSocketEventService> logger, Span<byte> payload)
     {
         if (logger.IsEnabled(LogLevel.Debug)) logger.LogSend(Encoding.UTF8.GetString(payload));
     }
 
-    [LoggerMessage(EventId = 4, Level = LogLevel.Debug, Message = "{identifier} {remote} <//> WebSocket closed")]
+    [LoggerMessage(LogLevel.Debug, "{identifier} {remote} <//> WebSocket closed")]
     public static partial void LogWebSocketClosed(this ILogger<MilkyWebSocketEventService> logger, Guid identifier, IPEndPoint remote);
 
 
-    [LoggerMessage(EventId = 995, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> WebSocket close failed")]
+    [LoggerMessage(LogLevel.Error, "{identifier} {remote} <!!> WebSocket close failed")]
     public static partial void LogWebSocketCloseException(this ILogger<MilkyWebSocketEventService> logger, Guid identifier, IPEndPoint remote, Exception e);
 
-    [LoggerMessage(EventId = 995, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> Wait websocket close failed")]
+    [LoggerMessage(LogLevel.Error, "{identifier} {remote} <!!> Wait websocket close failed")]
     public static partial void LogWaitWebSocketCloseException(this ILogger<MilkyWebSocketEventService> logger, Guid identifier, IPEndPoint remote, Exception e);
 
-    [LoggerMessage(EventId = 995, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> Send failed")]
+    [LoggerMessage(LogLevel.Error, "{identifier} {remote} <!!> Send failed")]
     public static partial void LogSendException(this ILogger<MilkyWebSocketEventService> logger, Guid identifier, IPEndPoint remote, Exception e);
 
-    [LoggerMessage(EventId = 996, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> Handle http context failed")]
+    [LoggerMessage(LogLevel.Error, "{identifier} {remote} <!!> Handle http context failed")]
     public static partial void LogHandleHttpContextException(this ILogger<MilkyWebSocketEventService> logger, Guid identifier, IPEndPoint remote, Exception e);
 
-    [LoggerMessage(EventId = 997, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> Upgrade websocket failed")]
+    [LoggerMessage(LogLevel.Error, "{identifier} {remote} <!!> Upgrade websocket failed")]
     public static partial void LogUpgradeWebSocketException(this ILogger<MilkyWebSocketEventService> logger, Guid identifier, IPEndPoint remote, Exception e);
 
-    [LoggerMessage(EventId = 998, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> Validate access token failed")]
+    [LoggerMessage(LogLevel.Error, "{identifier} {remote} <!!> Validate access token failed")]
     public static partial void LogValidateAccessTokenFailed(this ILogger<MilkyWebSocketEventService> logger, Guid identifier, IPEndPoint remote);
 
-    [LoggerMessage(EventId = 999, Level = LogLevel.Error, Message = "Get http context failed")]
+    [LoggerMessage(LogLevel.Error, "Get http context failed")]
     public static partial void LogGetHttpContextException(this ILogger<MilkyWebSocketEventService> logger, Exception e);
 }

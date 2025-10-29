@@ -255,44 +255,44 @@ public class MilkyHttpApiService(ILogger<MilkyHttpApiService> logger, IOptions<M
 
 public static partial class MilkyApiServiceLoggerExtension
 {
-    [LoggerMessage(EventId = 0, Level = LogLevel.Information, Message = "Api http server is running on {prefix}")]
+    [LoggerMessage(LogLevel.Information, "Api http server is running on {prefix}")]
     public static partial void LogServerRunning(this ILogger<MilkyHttpApiService> logger, string prefix);
 
-    [LoggerMessage(EventId = 1, Level = LogLevel.Debug, Message = "{identifier} {remote} -->> {method} {path}")]
+    [LoggerMessage(LogLevel.Debug, "{identifier} {remote} -->> {method} {path}")]
     public static partial void LogReceive(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote, string method, string? path);
 
-    [LoggerMessage(EventId = 2, Level = LogLevel.Debug, Message = "{identifier} {remote} -->> {body}")]
+    [LoggerMessage(LogLevel.Debug, "{identifier} {remote} -->> {body}")]
     private static partial void LogReceiveBody(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote, string body);
     public static void LogReceiveBody(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote, Span<byte> body)
     {
         if (logger.IsEnabled(LogLevel.Debug)) logger.LogReceiveBody(identifier, remote, Encoding.UTF8.GetString(body));
     }
 
-    [LoggerMessage(EventId = 3, Level = LogLevel.Debug, Message = "{identifier} {remote} <<-- {status}")]
+    [LoggerMessage(LogLevel.Debug, "{identifier} {remote} <<-- {status}")]
     public static partial void LogSend(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote, HttpStatusCode status);
 
-    [LoggerMessage(EventId = 4, Level = LogLevel.Debug, Message = "{identifier} {remote} <<-- {body}", SkipEnabledCheck = true)]
+    [LoggerMessage(LogLevel.Debug, "{identifier} {remote} <<-- {body}", SkipEnabledCheck = true)]
     private static partial void LogSend(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote, string body);
     public static void LogSend(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote, Span<byte> body)
     {
         if (logger.IsEnabled(LogLevel.Debug)) logger.LogSend(identifier, remote, Encoding.UTF8.GetString(body));
     }
 
-    [LoggerMessage(EventId = 994, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> Send failed")]
+    [LoggerMessage(LogLevel.Error, "{identifier} {remote} <!!> Send failed")]
     public static partial void LogSendException(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote, System.Exception e);
 
-    [LoggerMessage(EventId = 995, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> Handle http context failed")]
+    [LoggerMessage(LogLevel.Error, "{identifier} {remote} <!!> Handle http context failed")]
     public static partial void LogHandleHttpContextException(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote, System.Exception e);
 
-    [LoggerMessage(EventId = 996, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> Handle api failed")]
+    [LoggerMessage(LogLevel.Error, "{identifier} {remote} <!!> Handle api failed")]
     public static partial void LogHandleApiException(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote, System.Exception e);
 
-    [LoggerMessage(EventId = 997, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> Deserialize parameter failed")]
+    [LoggerMessage(LogLevel.Error, "{identifier} {remote} <!!> Deserialize parameter failed")]
     public static partial void LogDeserializeParameterException(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote, System.Exception e);
 
-    [LoggerMessage(EventId = 998, Level = LogLevel.Error, Message = "{identifier} {remote} <!!> Validate access token failed")]
+    [LoggerMessage(LogLevel.Error, "{identifier} {remote} <!!> Validate access token failed")]
     public static partial void LogValidateAccessTokenFailed(this ILogger<MilkyHttpApiService> logger, Guid identifier, IPEndPoint remote);
 
-    [LoggerMessage(EventId = 999, Level = LogLevel.Error, Message = "Get http context failed")]
+    [LoggerMessage(LogLevel.Error, "Get http context failed")]
     public static partial void LogGetHttpContextException(this ILogger<MilkyHttpApiService> logger, System.Exception e);
 }

@@ -120,24 +120,24 @@ public class CoreLoginService(ILogger<CoreLoginService> logger, IOptions<CoreCon
 
 public static partial class CoreLoginServiceLoggerExtension
 {
-    [LoggerMessage(EventId = 0, Level = MSLogLevel.Information, Message = "\n{qrcode}")]
+    [LoggerMessage(MSLogLevel.Information, "\n{qrcode}")]
     public static partial void LogQrCode(this ILogger<CoreLoginService> logger, string qrcode);
 
-    [LoggerMessage(EventId = 1, Level = MSLogLevel.Information, Message = "Fetch QrCode Success, Expiration: 120 seconds, Url: {url}")]
+    [LoggerMessage(MSLogLevel.Information, "Fetch QrCode Success, Expiration: 120 seconds, Url: {url}")]
     public static partial void LogFetchQrCodeSuccess(this ILogger<CoreLoginService> logger, string url);
 
-    [LoggerMessage(EventId = 2, Message = "QrCode State: {state}")]
+    [LoggerMessage("QrCode State: {state}")]
     public static partial void LogQrCodeState(this ILogger<CoreLoginService> logger, MSLogLevel level, TransEmpState state);
 
-    [LoggerMessage(EventId = 3, Level = MSLogLevel.Information, Message = "NewDevice verify required, please scan the QrCode with the device that has already logged in with uin {uin}")]
+    [LoggerMessage(MSLogLevel.Information, "NewDevice verify required, please scan the QrCode with the device that has already logged in with uin {uin}")]
     public static partial void LogNewDeviceVerify(this ILogger<CoreLoginService> logger, long uin);
 
-    [LoggerMessage(EventId = 4, Level = MSLogLevel.Information, Message = "{uin} successfully logged in via {protocol} {version}")]
+    [LoggerMessage(MSLogLevel.Information, "{uin} successfully logged in via {protocol} {version}")]
     public static partial void LogLoginSuccessful(this ILogger<CoreLoginService> logger, long uin, Protocols protocol, string version);
 
-    [LoggerMessage(EventId = 998, Level = MSLogLevel.Critical, Message = "Login failed")]
+    [LoggerMessage(MSLogLevel.Critical, "Login failed")]
     public static partial void LogLoginFailed(this ILogger<CoreLoginService> logger);
 
-    [LoggerMessage(EventId = 999, Level = MSLogLevel.Critical, Message = "SMS code is empty")]
+    [LoggerMessage(MSLogLevel.Critical, "SMS code is empty")]
     public static partial void LogSmsCodeEmpty(this ILogger<CoreLoginService> logger);
 }

@@ -478,12 +478,12 @@ public class AndroidSecSignResponseData(string sign, string token, string extra)
 
 public static partial class SignerLoggerExtension
 {
-    [LoggerMessage(EventId = 997, Level = LogLevel.Error, Message = "Get debug xwid failed")]
+    [LoggerMessage(LogLevel.Error, "Get debug xwid failed")]
     public static partial void LogGetDebugXwidFailed(this ILogger<Signer> logger, Exception e);
 
-    [LoggerMessage(EventId = 998, Level = LogLevel.Error, Message = "Get energy failed")]
+    [LoggerMessage(LogLevel.Error, "Get energy failed")]
     public static partial void LogGetEnergyFailed(this ILogger<Signer> logger, Exception e);
 
-    [LoggerMessage(EventId = 999, Level = LogLevel.Error, Message = "Get sec sign failed")]
+    [LoggerMessage(LogLevel.Error, "Get sec sign failed")]
     public static partial void LogGetSecSignFailed(this ILogger<Signer> logger, Exception e);
 }

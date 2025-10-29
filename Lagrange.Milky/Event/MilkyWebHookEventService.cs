@@ -63,10 +63,10 @@ public class MilkyWebHookEventService(ILogger<MilkyWebHookEventService> logger, 
 
 public static partial class MilkyWebHookEventServiceLoggerExtension
 {
-    [LoggerMessage(EventId = 0, Level = LogLevel.Information, Message = "WebHook service running; delivering to {url}")]
+    [LoggerMessage(LogLevel.Information, "WebHook service running; delivering to {url}")]
     public static partial void LogServiceRunning(this ILogger<MilkyWebHookEventService> logger, string url);
 
-    [LoggerMessage(EventId = 1, Level = LogLevel.Debug, Message = "{url} <<-- {body}", SkipEnabledCheck = true)]
+    [LoggerMessage(LogLevel.Debug, "{url} <<-- {body}", SkipEnabledCheck = true)]
     private static partial void LogSend(this ILogger<MilkyWebHookEventService> logger, string url, string body);
     public static void LogSend(this ILogger<MilkyWebHookEventService> logger, string url, Span<byte> body)
     {
@@ -74,6 +74,6 @@ public static partial class MilkyWebHookEventServiceLoggerExtension
     }
 
 
-    [LoggerMessage(EventId = 999, Level = LogLevel.Error, Message = "{url} <!!> Send exception")]
+    [LoggerMessage(LogLevel.Error, "{url} <!!> Send exception")]
     public static partial void LogSendException(this ILogger<MilkyWebHookEventService> logger, string url, Exception e);
 }

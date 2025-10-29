@@ -52,18 +52,18 @@ public class OnlineCaptchaResolver(ILogger<OnlineCaptchaResolver> logger, IOptio
 
 public static partial class OnlineCaptchaResolverLoggerExtension
 {
-    [LoggerMessage(EventId = 0, Level = LogLevel.Information, Message = "\n{qrcode}")]
+    [LoggerMessage(LogLevel.Information, "\n{qrcode}")]
     public static partial void LogCaptchaQrCode(this ILogger<OnlineCaptchaResolver> logger, string qrcode);
 
-    [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Please scan the QR code or access the {url} to solve the captcha")]
+    [LoggerMessage(LogLevel.Information, "Please scan the QR code or access the {url} to solve the captcha")]
     public static partial void LogCaptchaTip(this ILogger<OnlineCaptchaResolver> logger, string url);
 
-    [LoggerMessage(EventId = 2, Level = LogLevel.Debug, Message = "Waiting for captcha response...")]
+    [LoggerMessage(LogLevel.Debug, "Waiting for captcha response...")]
     public static partial void LogCaptchaWaiting(this ILogger<OnlineCaptchaResolver> logger);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Captcha solved, ticket: {ticket}, randstr: {randstr}")]
     public static partial void CaptchaSolved(this ILogger<OnlineCaptchaResolver> logger, string ticket, string randstr);
 
-    [LoggerMessage(EventId = 999, Level = LogLevel.Error, Message = "Unexpected http status code({status})")]
+    [LoggerMessage(LogLevel.Error, "Unexpected http status code({status})")]
     public static partial void LogCaptchaError(this ILogger<OnlineCaptchaResolver> logger, HttpStatusCode status);
 }

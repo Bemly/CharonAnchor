@@ -285,36 +285,36 @@ public class EventService(ILogger<EventService> logger, IOptions<MilkyConfigurat
 
 public static partial class EventServiceLoggerExtension
 {
-    [LoggerMessage(EventId = 0, Level = LogLevel.Debug, Message = "BotOfflineEvent {{ {reason} {tag} {message} }}")]
+    [LoggerMessage(LogLevel.Debug, "BotOfflineEvent {{ {reason} {tag} {message} }}")]
     public static partial void LogOffline(this ILogger<EventService> logger, Reasons reason, string? tag, string? message);
 
-    [LoggerMessage(EventId = 1, Level = LogLevel.Debug, Message = "BotMessageEvent {{ {type} {group} {sender} {entities} }}")]
+    [LoggerMessage(LogLevel.Debug, "BotMessageEvent {{ {type} {group} {sender} {entities} }}")]
     public static partial void LogGroupMessage(this ILogger<EventService> logger, MessageType type, long group, long sender, string entities);
 
-    [LoggerMessage(EventId = 2, Level = LogLevel.Debug, Message = "BotMessageEvent {{ {type} {sender} {entities} }}")]
+    [LoggerMessage(LogLevel.Debug, "BotMessageEvent {{ {type} {sender} {entities} }}")]
     public static partial void LogPrivateMessage(this ILogger<EventService> logger, MessageType type, long sender, string entities);
 
-    [LoggerMessage(EventId = 3, Level = LogLevel.Debug, Message = "BotGroupNudgeEvent {{ group: {group}, sender: {sender} target: {target} }}")]
+    [LoggerMessage(LogLevel.Debug, "BotGroupNudgeEvent {{ group: {group}, sender: {sender} target: {target} }}")]
     public static partial void LogGroupNudgeEvent(this ILogger<EventService> logger, long group, long sender, long target);
 
-    [LoggerMessage(EventId = 4, Level = LogLevel.Debug, Message = "BotGroupMemberDecreaseEvent {{ group: {group}, user: {user}, operator: {operator} }}")]
+    [LoggerMessage(LogLevel.Debug, "BotGroupMemberDecreaseEvent {{ group: {group}, user: {user}, operator: {operator} }}")]
     public static partial void LogGroupMemberDecreaseEvent(this ILogger<EventService> logger, long group, long user, long? @operator);
 
-    [LoggerMessage(EventId = 5, Level = LogLevel.Debug, Message = "BotFriendRequestEvent {{ request: {request}, user: {user}, message: {message}, source: {source} }}")]
+    [LoggerMessage(LogLevel.Debug, "BotFriendRequestEvent {{ request: {request}, user: {user}, message: {message}, source: {source} }}")]
     public static partial void LogFriendRequestEvent(this ILogger<EventService> logger, string request, long user, string? message, string? source);
 
-    [LoggerMessage(EventId = 6, Level = LogLevel.Debug, Message = "BotGroupInviteEvent {{ request: {request}, user: {user}, group: {group} }}")]
+    [LoggerMessage(LogLevel.Debug, "BotGroupInviteEvent {{ request: {request}, user: {user}, group: {group} }}")]
     public static partial void LogGroupInvitationEvent(this ILogger<EventService> logger, long request, long user, long group);
 
-    [LoggerMessage(EventId = 7, Level = LogLevel.Debug, Message = "BotGroupMemberIncreaseEvent {{ group: {group}, user: {user}, operator: {operator}, invitor: {invitor} }}")]
+    [LoggerMessage(LogLevel.Debug, "BotGroupMemberIncreaseEvent {{ group: {group}, user: {user}, operator: {operator}, invitor: {invitor} }}")]
     public static partial void LogGroupMemberIncreaseEvent(this ILogger<EventService> logger, long group, long user, long? @operator, long? invitor);
 
-    [LoggerMessage(EventId = 8, Level = LogLevel.Debug, Message = "GroupRecallEvent {{ group: {group}, sequence: {sequence}, author: {author}, operator: {operator}, tip: {tip} }}")]
+    [LoggerMessage(LogLevel.Debug, "GroupRecallEvent {{ group: {group}, sequence: {sequence}, author: {author}, operator: {operator}, tip: {tip} }}")]
     public static partial void LogGroupRecallEvent(this ILogger<EventService> logger, long group, ulong sequence, long author, long @operator, string tip);
 
-    [LoggerMessage(EventId = 9, Level = LogLevel.Debug, Message = "FriendRecallEvent {{ peer: {peer} author: {author}, sequence: {sequence}, tip: {tip} }}")]
+    [LoggerMessage(LogLevel.Debug, "FriendRecallEvent {{ peer: {peer} author: {author}, sequence: {sequence}, tip: {tip} }}")]
     public static partial void LogFriendRecallEvent(this ILogger<EventService> logger, long peer, long author, ulong sequence, string tip);
 
-    [LoggerMessage(EventId = 999, Level = LogLevel.Error, Message = "Handle {event} exception")]
+    [LoggerMessage(LogLevel.Error, "Handle {event} exception")]
     public static partial void LogHandleEventException(this ILogger<EventService> logger, string @event, Exception e);
 }
