@@ -18,7 +18,7 @@ class Program
         IntPtr keystorePtr = IntPtr.Zero;
         IntPtr botConfigPtr = Marshal.AllocHGlobal(Marshal.SizeOf(botConfig));
         Marshal.StructureToPtr(botConfig, botConfigPtr, false);
-        _index = Wrapper.Initialize(botConfigPtr, keystorePtr);
+        _index = Wrapper.Initialize(botConfigPtr, keystorePtr, IntPtr.Zero);
         Console.WriteLine($"Bot initialized with index: {_index}");
         int status = Wrapper.Start(_index);
         Console.WriteLine($"Bot started with status: {status}");
@@ -34,7 +34,7 @@ class Program
     {
         try
         {
-            //await GetEventCount();
+            // await GetEventCount();
             await GetQrCodeEvent();
             await GetLogEvent();
         }

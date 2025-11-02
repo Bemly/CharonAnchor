@@ -1,4 +1,4 @@
-using Lagrange.Core.Common.Entity;
+﻿using Lagrange.Core.Common.Entity;
 using Lagrange.Core.Exceptions;
 using Lagrange.Core.Internal.Events.Message;
 using Lagrange.Core.Internal.Packets.Message;

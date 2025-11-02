@@ -4,7 +4,6 @@ using Lagrange.Core.Common.Entity;
 using Lagrange.Core.Message;
 using Lagrange.Core.Message.Entities;
 using Lagrange.Core.NativeAPI.NativeModel.Common;
-using Lagrange.Core.NativeAPI.NativeModel.Event;
 using Lagrange.Core.NativeAPI.NativeModel.Message.Entity;
 
 namespace Lagrange.Core.NativeAPI.NativeModel.Message
@@ -27,6 +26,10 @@ namespace Lagrange.Core.NativeAPI.NativeModel.Message
         public IntPtr Entities = IntPtr.Zero;
 
         public int EntityLength = 0;
+
+        public ulong Sequence = 0;
+
+        public ulong ClientSequence = 0;
 
         public static implicit operator BotMessageStruct(BotMessage message)
         {
@@ -162,7 +165,9 @@ namespace Lagrange.Core.NativeAPI.NativeModel.Message
                 Type = type,
                 Time = Encoding.UTF8.GetBytes(message.Time.ToString("O")),
                 Entities = entitiesPtr,
-                EntityLength = entitiesLength
+                EntityLength = entitiesLength,
+                Sequence = message.Sequence,
+                ClientSequence = message.ClientSequence
             };
         }
     }

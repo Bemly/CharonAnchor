@@ -9,6 +9,7 @@ namespace Lagrange.Core.NativeAPI.NativeModel.Event
 
         public int BotCaptchaEventCount = 0;
         public int BotFriendRequestEventCount = 0;
+        public int BotFriendRecallEventCount = 0;
         public int BotGroupInviteNotificationEventCount = 0;
         public int BotGroupInviteSelfEventCount = 0;
         public int BotGroupJoinNotificationEventCount = 0;
@@ -16,6 +17,7 @@ namespace Lagrange.Core.NativeAPI.NativeModel.Event
         public int BotGroupMemberIncreaseEventCount = 0;
         public int BotGroupNudgeEventCount = 0;
         public int BotGroupReactionEventCount = 0;
+        public int BotGroupRecallEventCount = 0;
         public int BotLoginEventCount = 0;
         public int BotLogEventCount = 0;
         public int BotMessageEventCount = 0;

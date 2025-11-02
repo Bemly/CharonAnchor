@@ -7,6 +7,7 @@ using Lagrange.Core.Common.Interface;
 using Lagrange.Core.Events.EventArgs;
 using Lagrange.Core.Internal.Packets.Message;
 using Lagrange.Core.Message;
+using Lagrange.Core.NativeAPI.NativeModel.Common;
 using Lagrange.Core.Utility;
 
 namespace Lagrange.Core.Runner;
@@ -15,7 +16,7 @@ internal static class Program
 {
     private static async Task Main()
     {
-        var sign = new InteropSignProvider();
+        var sign = new LinuxSignProvider("");
         
         Console.OutputEncoding = Encoding.UTF8;
         Console.InputEncoding = Encoding.UTF8;
@@ -26,18 +27,18 @@ internal static class Program
         {
             context = BotFactory.Create(new BotConfig
             {
-                Protocol = Protocols.Windows,
+                Protocol = Protocols.Linux,
                 SignProvider = sign,
-                LogLevel = LogLevel.Trace
+                LogLevel = LogLevel.Debug
             }, JsonSerializer.Deserialize<BotKeystore>(await File.ReadAllTextAsync("keystore.json")) ?? throw new InvalidOperationException());
         }
         else
         {
             context = BotFactory.Create(new BotConfig
             {
-                Protocol = Protocols.Windows,
+                Protocol = Protocols.Linux,
                 SignProvider = sign,
-                LogLevel = LogLevel.Trace
+                LogLevel = LogLevel.Debug
             });
         }
         
@@ -64,8 +65,8 @@ internal static class Program
 
         await context.Login();
 
-        var builder = new MessageBuilder().Text("Awoo");
-        var message = await context.SendFriendMessage(1925648680, builder.Build());
+        //var builder = new MessageBuilder().Text("Awoo");
+        //var message = await context.SendFriendMessage(1925648680, builder.Build());
         
         await Task.Delay(-1);
     }

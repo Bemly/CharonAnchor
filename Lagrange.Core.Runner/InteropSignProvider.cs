@@ -1,13 +1,23 @@
-using System.Runtime.InteropServices;
+﻿using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using Lagrange.Core.Common;
+using Lagrange.Core.Internal.Packets.Service;
 
-namespace Lagrange.Core.Runner;
+namespace Lagrange.Core.NativeAPI.NativeModel.Common;
 
-public partial class InteropSignProvider : BotSignProvider
+public class LinuxSignProvider(string? signUrl) : BotSignProvider, IDisposable
 {
+    private const string Tag = nameof(LinuxSignProvider);
+
+    private readonly HttpClient _client = new();
+
+    private string Url => signUrl ?? $"https://sign.lagrangecore.org/api/sign/{Context.AppInfo.AppClientVersion}";
+
     private static readonly HashSet<string> WhiteListCommand =
     [
-        "trpc.o3.ecdh_access.EcdhAccess.SsoEstablishShareKey",
+    "trpc.o3.ecdh_access.EcdhAccess.SsoEstablishShareKey",
         "trpc.o3.ecdh_access.EcdhAccess.SsoSecureAccess",
         "trpc.o3.report.Report.SsoReport",
         "MessageSvc.PbSendMsg",
@@ -49,75 +59,79 @@ public partial class InteropSignProvider : BotSignProvider
         "OidbSvcTrpcTcp.0xf67_5",
         "OidbSvcTrpcTcp.0x6d9_4"
     ];
-    
-    private const string MicroblockSign = "libMicroblockSign";
-    
-    [LibraryImport(MicroblockSign, EntryPoint = "attach")] [return: MarshalAs(UnmanagedType.I1)]
-    private static partial bool Attach();
-
-    [LibraryImport(MicroblockSign, EntryPoint = "signData")] [return: MarshalAs(UnmanagedType.I1)]
-    private static partial bool SignData(
-        IntPtr  cmdName,                     // const char*
-        IntPtr  srcData,                     // const uint8_t*
-        nuint   srcDataSize,                 // size_t  → nuint (platform-native)
-        long    seq,                         // int64_t
-        IntPtr  extraOut, ref nuint extraOutSize,
-        IntPtr  tokenOut, ref nuint tokenOutSize,
-        IntPtr  signOut,  ref nuint signOutSize);
-
-    public InteropSignProvider()
-    {
-        bool ok = Attach();
-        if (!ok) throw new Exception("Failed to attach to MicroblockSign library.");
-    }
 
     public override bool IsWhiteListCommand(string cmd) => WhiteListCommand.Contains(cmd);
 
-    public override Task<SsoSecureInfo?> GetSecSign(long uin, string cmd, int seq, ReadOnlyMemory<byte> body)
+    public override async Task<SsoSecureInfo?> GetSecSign(long uin, string cmd, int seq, ReadOnlyMemory<byte> body)
     {
-        nuint extraOutSize = 0u;
-        nuint tokenOutSize = 0u;
-        nuint signOutSize  = 0u;
-
-        var extraOut = Marshal.AllocHGlobal(600);
-        var tokenOut = Marshal.AllocHGlobal(200);
-        var signOut  = Marshal.AllocHGlobal(400);
-        
-        var srcData = Marshal.AllocHGlobal(body.Length);
-        var cmdName = Marshal.StringToHGlobalAnsi(cmd);
-        Marshal.Copy(body.Span.ToArray(), 0, srcData, body.Length);
-        
         try
         {
-            if (SignData(cmdName, srcData, (nuint)body.Length, seq, extraOut, ref extraOutSize, tokenOut, ref tokenOutSize, signOut, ref signOutSize))
+            var payload = new JsonObject
             {
-                var extra = new byte[extraOutSize];
-                var token = new byte[tokenOutSize];
-                var sign  = new byte[signOutSize];
+                ["cmd"] = cmd,
+                ["seq"] = seq,
+                ["src"] = Convert.ToHexString(body.Span),
+            };
 
-                Marshal.Copy(extraOut, extra, 0, (int)extraOutSize);
-                Marshal.Copy(tokenOut, token, 0, (int)tokenOutSize);
-                Marshal.Copy(signOut, sign, 0, (int)signOutSize);
+            var response = await _client.PostAsync(Url, new StringContent(payload.ToJsonString(), Encoding.UTF8, "application/json"));
+            if (!response.IsSuccessStatusCode) return null;
 
-                return Task.FromResult<SsoSecureInfo?>(new SsoSecureInfo
-                {
-                    SecSign = sign.ToArray(),
-                    SecToken = token.ToArray(),
-                    SecExtra = extra.ToArray()
-                });
-            }
-            else
+            var content = JsonHelper.Deserialize<Root>(await response.Content.ReadAsStringAsync());
+            if (content == null) return null;
+
+            return new SsoSecureInfo
             {
-                return Task.FromResult<SsoSecureInfo?>(null);
-            }
+                SecSign = Convert.FromHexString(content.Value.Sign),
+                SecToken = Convert.FromHexString(content.Value.Token),
+                SecExtra = Convert.FromHexString(content.Value.Extra)
+            };
         }
-        finally
+        catch (Exception e)
         {
-            Marshal.FreeHGlobal(extraOut);
-            Marshal.FreeHGlobal(tokenOut);
-            Marshal.FreeHGlobal(signOut);
-            Marshal.FreeHGlobal(srcData);
-            Marshal.FreeHGlobal(cmdName);
+            Context.LogWarning(Tag, $"Failed to get sign: {e.Message}");
+            return null;
         }
     }
+
+    public void Dispose()
+    {
+        _client.Dispose();
+    }
+
+    [Serializable]
+    internal class Root
+    {
+        [JsonPropertyName("value")] public Response Value { get; set; } = new();
+    }
+
+    [Serializable]
+    internal class Response
+    {
+        [JsonPropertyName("sign")] public string Sign { get; set; } = string.Empty;
+
+        [JsonPropertyName("token")] public string Token { get; set; } = string.Empty;
+
+        [JsonPropertyName("extra")] public string Extra { get; set; } = string.Empty;
+    }
+}
+
+internal static partial class JsonHelper
+{
+    [JsonSourceGenerationOptions(GenerationMode = JsonSourceGenerationMode.Default, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+
+    [JsonSerializable(typeof(LinuxSignProvider.Root))]
+    [JsonSerializable(typeof(LinuxSignProvider.Response))]
+
+    [JsonSerializable(typeof(JsonObject))]
+    [JsonSerializable(typeof(LightApp))]
+    private partial class CoreSerializerContext : JsonSerializerContext;
+
+    public static T? Deserialize<T>(string json) where T : class =>
+        JsonSerializer.Deserialize(json, typeof(T), CoreSerializerContext.Default) as T;
+
+    public static string Serialize<T>(T value) =>
+        JsonSerializer.Serialize(value, typeof(T), CoreSerializerContext.Default);
+
+    public static ReadOnlyMemory<byte> SerializeToUtf8Bytes<T>(T value) =>
+        JsonSerializer.SerializeToUtf8Bytes(value, typeof(T), CoreSerializerContext.Default);
 }

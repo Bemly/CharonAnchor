@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using System.Runtime.CompilerServices;
+using System.Text;
+using Lagrange.Core.Common.Entity;
 using Lagrange.Core.Message;
 
 namespace Lagrange.Core.NativeAPI
@@ -51,7 +53,7 @@ namespace Lagrange.Core.NativeAPI
             }
         }
 
-        public void AddImage(int id, byte[] image, byte[]? summary = null, 
+        public void AddImage(int id, byte[] image, byte[]? summary = null,
             int subType = 0)
         {
             if (MessageBuilders.TryGetValue(id, out var builder))
@@ -67,7 +69,7 @@ namespace Lagrange.Core.NativeAPI
             }
         }
 
-        public void AddLocalImage(int id, byte[] path, byte[]? summary = null, 
+        public void AddLocalImage(int id, byte[] path, byte[]? summary = null,
             int subType = 0)
         {
             if (MessageBuilders.TryGetValue(id, out var builder))
@@ -145,5 +147,17 @@ namespace Lagrange.Core.NativeAPI
                 builder.Video(Encoding.UTF8.GetString(path), thumb);
             }
         }
+    }
+
+    internal static class BotMessageAccessor
+    {
+        [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "<Contact>k__BackingField")]
+        public static extern ref BotContact GetContact(this BotMessage message);
+
+        [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "<Receiver>k__BackingField")]
+        public static extern ref BotContact GetReceiver(this BotMessage message);
+
+        [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "<ClientSequence>k__BackingField")]
+        public static extern ref ulong GetClientSequence(this BotMessage message);
     }
 }

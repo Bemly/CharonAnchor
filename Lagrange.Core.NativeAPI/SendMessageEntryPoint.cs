@@ -1,5 +1,8 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using Lagrange.Core.Common.Entity;
 using Lagrange.Core.Common.Interface;
+using Lagrange.Core.Message;
 using Lagrange.Core.NativeAPI.NativeModel.Common;
 using Lagrange.Core.NativeAPI.NativeModel.Message;
 
@@ -252,6 +255,40 @@ namespace Lagrange.Core.NativeAPI
             {
                 return IntPtr.Zero;
             }
+        }
+
+        [UnmanagedCallersOnly(EntryPoint = "RecallMessage")]
+        public static void RecallMessage(int index, BotMessageStruct message)
+        {
+            if (Program.Contexts.Count <= index)
+            {
+                return;
+            }
+
+            var context = Program.Contexts[index];
+            var message1 = (BotMessage)RuntimeHelpers.GetUninitializedObject(typeof(BotMessage));
+            message1.Sequence = message.Sequence;
+            message1.GetClientSequence() = message.ClientSequence;
+
+            if ((MessageType)message.Type == MessageType.Group)
+            {
+                BotGroupMemberStruct member = new();
+                Marshal.PtrToStructure(
+                   message.Contact,
+                   member
+               );
+                message1.GetContact() = (BotGroupMember)member;
+                context.BotContext.RecallMessage(message1);
+                return;
+            }
+
+            BotFriendStruct contact = new();
+            BotFriendStruct receiver = new();
+            Marshal.PtrToStructure(message.Contact, contact);
+            Marshal.PtrToStructure(message.Receiver, receiver);
+            message1.GetContact() = (BotFriend)contact;
+            message1.GetReceiver() = (BotFriend)receiver;
+            context.BotContext.RecallMessage(message1);
         }
     }
 }
