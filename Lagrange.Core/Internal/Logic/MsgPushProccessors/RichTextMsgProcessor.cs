@@ -17,7 +17,7 @@ internal class RichTextMsgProcessor : MsgPushProcessorBase
     {
         var message = await context.EventContext.GetLogic<MessagingLogic>().Parse(msgEvt.MsgPush.CommonMessage);
 
-        if (message.Entities[0] is LightAppEntity app && TryHandleLightApp(context, message, app)) return true;
+        if (message.Entities.Count > 0 && message.Entities[0] is LightAppEntity app && TryHandleLightApp(context, message, app)) return true;
 
         context.EventInvoker.PostEvent(new BotMessageEvent(message, msgEvt.Raw));
         return true;
