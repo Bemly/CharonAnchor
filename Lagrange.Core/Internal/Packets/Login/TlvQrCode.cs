@@ -1,7 +1,6 @@
 using Lagrange.Core.Common;
 using Lagrange.Core.Utility;
 using Lagrange.Core.Utility.Binary;
-using Lagrange.Proto;
 
 namespace Lagrange.Core.Internal.Packets.Login;
 

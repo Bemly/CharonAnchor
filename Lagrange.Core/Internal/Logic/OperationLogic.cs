@@ -5,6 +5,7 @@ using Lagrange.Core.Exceptions;
 using Lagrange.Core.Internal.Events.Message;
 using Lagrange.Core.Internal.Events.System;
 using Lagrange.Core.Internal.Packets.Service;
+using Lagrange.Core.Internal.Services;
 using Lagrange.Core.Message;
 using Lagrange.Core.Message.Entities;
 using Lagrange.Core.Utility;
@@ -21,6 +22,11 @@ internal class OperationLogic(BotContext context) : ILogic
     private const string Tag = nameof(OperationLogic);
 
     public async Task<Dictionary<string, string>> FetchCookies(List<string> domains) => (await context.EventContext.SendEvent<FetchCookiesEventResp>(new FetchCookiesEventReq(domains))).Cookies;
+    
+    public ValueTask<BotSsoPacket> SendPacket(BotSsoPacket packet)
+    {
+        return context.PacketContext.SendPacket(packet, new ServiceAttribute(packet.Command));
+    }
 
     public async Task<(string, uint)> FetchClientKey()
     {

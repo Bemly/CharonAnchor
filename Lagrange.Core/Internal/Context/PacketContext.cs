@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using Lagrange.Core.Common;
+using Lagrange.Core.Common.Entity;
 using Lagrange.Core.Internal.Packets.Struct;
 using Lagrange.Core.Internal.Services;
 
@@ -34,7 +35,7 @@ internal class PacketContext
         SignProvider.Context = context; // Initialize the sign provider with the context
     }
 
-    public ValueTask<SsoPacket> SendPacket(SsoPacket packet, ServiceAttribute options)
+    public ValueTask<BotSsoPacket> SendPacket(BotSsoPacket packet, ServiceAttribute options)
     {
         var tcs = new SsoPacketValueTaskSource();
         _pendingTasks.TryAdd(packet.Sequence, tcs);
@@ -76,7 +77,7 @@ internal class PacketContext
             await _context.SocketContext.Send(frame);
         });
 
-        return new ValueTask<SsoPacket>(tcs, 0);
+        return new ValueTask<BotSsoPacket>(tcs, 0);
     }
 
     public void DispatchPacket(ReadOnlySpan<byte> buffer)

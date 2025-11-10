@@ -1,20 +1,18 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 using Lagrange.Core.Common;
+using Lagrange.Core.Common.Entity;
 using Lagrange.Core.Internal.Events;
 using Lagrange.Core.Internal.Events.Login;
 using Lagrange.Core.Internal.Packets.Login;
-using Lagrange.Core.Internal.Packets.Struct;
 using Lagrange.Core.Utility.Binary;
 using Lagrange.Core.Utility.Cryptography;
 
 namespace Lagrange.Core.Internal.Services.Login;
 
-[EventSubscribe<PasswordLoginEventReq>(Protocols.PC)]
-[Service("trpc.login.ecdh.EcdhService.SsoNTLoginPasswordLogin", RequestType.D2Auth, EncryptType.EncryptEmpty)]
-internal class PasswordLoginService : BaseService<PasswordLoginEventReq, PasswordLoginEventResp>
+file static class PasswordLoginCommon
 {
-    protected override ValueTask<ReadOnlyMemory<byte>> Build(PasswordLoginEventReq input, BotContext context)
+    internal static byte[] GenerateClientA1(PasswordLoginEventReq input, BotContext context)
     {
         var md5 = MD5.HashData(Encoding.UTF8.GetBytes(input.Password));
         
@@ -43,10 +41,19 @@ internal class PasswordLoginService : BaseService<PasswordLoginEventReq, Passwor
         plainWriter.Write(1); // flag
         plainWriter.Write(context.Keystore.Uin.ToString(), Prefix.Int16 | Prefix.LengthOnly);
 
-        var clientA1 = TeaProvider.Encrypt(plainWriter.CreateReadOnlySpan(), key);
+        return TeaProvider.Encrypt(plainWriter.CreateReadOnlySpan(), key);
+    }
+}
+
+[EventSubscribe<PasswordLoginEventReq>(Protocols.PC)]
+[Service("trpc.login.ecdh.EcdhService.SsoNTLoginPasswordLogin", RequestType.D2Auth, EncryptType.EncryptEmpty)]
+internal class PasswordLoginService : BaseService<PasswordLoginEventReq, PasswordLoginEventResp>
+{
+    protected override ValueTask<ReadOnlyMemory<byte>> Build(PasswordLoginEventReq input, BotContext context)
+    {
         var reqBody = new NTLoginPasswordLoginReqBody
         {
-            A1 = clientA1,
+            A1 = PasswordLoginCommon.GenerateClientA1(input, context),
             Iframe = input.Captcha is { } value ? new NTLoginIframe
             {
                 IframeSig = value.Item1,
@@ -68,6 +75,45 @@ internal class PasswordLoginService : BaseService<PasswordLoginEventReq, Passwor
             NTLoginRetCode.LOGIN_SUCCESS => new PasswordLoginEventResp(state, null, null),
             NTLoginRetCode.LOGIN_ERROR_PROOF_WATER => new PasswordLoginEventResp(state, null, resp.SecCheck.IframeUrl),
             _ when info is not null => new PasswordLoginEventResp(state, (info.StrTipsTitle, info.StrTipsContent), info.StrJumpUrl),
+            _ => new PasswordLoginEventResp(state, null, null)
+        });
+    }
+}
+
+[EventSubscribe<PasswordLoginEventReq>(Protocols.Android)]
+[Service("trpc.login.ecdh.EcdhService.SsoNTLoginPasswordLogin", RequestType.D2Auth, EncryptType.EncryptEmpty)]
+internal class PasswordLoginAndroidService : BaseService<PasswordLoginEventReq, PasswordLoginEventResp>
+{
+    protected override ValueTask<ReadOnlyMemory<byte>> Build(PasswordLoginEventReq input, BotContext context)
+    {
+        var reqBody = new NTLoginPasswordLoginReqBody
+        {
+            A1 = PasswordLoginCommon.GenerateClientA1(input, context),
+            Iframe = input.Captcha is { } value ? new NTLoginIframe
+            {
+                IframeSig = value.Item1,
+                IframeRandstr = value.Item2,
+                IframeSid = value.Item3
+            } : null,
+            LoginProcessReq = new NTLoginLoginProcessReqBody
+            {
+                NeedRemindCancellatedStatus = true
+            }
+        };
+        
+        return new ValueTask<ReadOnlyMemory<byte>>(NTLoginCommon.EncodeAndroid(context, reqBody));
+    }
+
+    protected override ValueTask<PasswordLoginEventResp> Parse(ReadOnlyMemory<byte> input, BotContext context)
+    {
+        var state = NTLoginCommon.DecodeAndroid<NTLoginPasswordLoginRspBody>(context, input, out var info, out var resp);
+        if (state == NTLoginRetCode.LOGIN_SUCCESS) NTLoginCommon.SaveTicket(context, resp.Tickets);
+        
+        return new ValueTask<PasswordLoginEventResp>(state switch
+        {
+            NTLoginRetCode.LOGIN_SUCCESS => new PasswordLoginEventResp(state, null, null),
+            NTLoginRetCode.LOGIN_ERROR_PROOF_WATER when info is not null => new PasswordLoginEventResp(state, null, info.ErrorInfo.StrJumpUrl),
+            _ when info is not null => new PasswordLoginEventResp(state, (info.ErrorInfo.StrTipsTitle, info.ErrorInfo.StrTipsContent), info.ErrorInfo.StrJumpUrl),
             _ => new PasswordLoginEventResp(state, null, null)
         });
     }

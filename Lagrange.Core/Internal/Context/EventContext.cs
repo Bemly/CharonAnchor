@@ -1,12 +1,11 @@
 ﻿using System.Collections.Frozen;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using Lagrange.Core.Common.Entity;
 using Lagrange.Core.Events;
 using Lagrange.Core.Exceptions;
 using Lagrange.Core.Internal.Events;
 using Lagrange.Core.Internal.Logic;
-using Lagrange.Core.Internal.Packets.Struct;
 using Lagrange.Core.Utility.Extension;
 
 namespace Lagrange.Core.Internal.Context;
@@ -133,7 +132,7 @@ internal class EventContext : IDisposable
         }
     }
 
-    public async Task HandleServerPacket(SsoPacket packet)
+    public async Task HandleServerPacket(BotSsoPacket packet)
     {
         try
         {

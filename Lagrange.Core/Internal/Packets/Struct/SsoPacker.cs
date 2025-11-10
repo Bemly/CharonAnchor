@@ -1,4 +1,5 @@
 using Lagrange.Core.Common;
+using Lagrange.Core.Common.Entity;
 using Lagrange.Core.Utility;
 using Lagrange.Core.Utility.Binary;
 using Lagrange.Core.Utility.Compression;
@@ -13,7 +14,7 @@ internal class SsoPacker(BotContext context) : StructBase(context)
     private readonly Lazy<string> _guid = new(() => Convert.ToHexString(context.Keystore.Guid).ToLowerInvariant());
     private readonly BotContext _context = context;
 
-    public BinaryPacket BuildProtocol12(SsoPacket sso, SsoSecureInfo? secInfo)
+    public BinaryPacket BuildProtocol12(BotSsoPacket sso, SsoSecureInfo? secInfo)
     {
         var head = new BinaryPacket(stackalloc byte[0x200]);
         
@@ -38,7 +39,7 @@ internal class SsoPacker(BotContext context) : StructBase(context)
         return result;
     }
     
-    public BinaryPacket BuildProtocol13(SsoPacket sso)
+    public BinaryPacket BuildProtocol13(BotSsoPacket sso)
     {
         var head = new BinaryPacket(stackalloc byte[0x200]);
         
@@ -55,7 +56,7 @@ internal class SsoPacker(BotContext context) : StructBase(context)
         return result;
     }
 
-    public SsoPacket Parse(ReadOnlySpan<byte> data)
+    public BotSsoPacket Parse(ReadOnlySpan<byte> data)
     {
         var parent = new BinaryPacket(data);
         var head = parent.ReadBytes(Prefix.Int32 | Prefix.WithPrefix);
@@ -78,8 +79,8 @@ internal class SsoPacker(BotContext context) : StructBase(context)
         };
 
         return retCode == 0
-            ? new SsoPacket(command, payload, sequence)
-            : new SsoPacket(command, sequence, retCode, extra);
+            ? new BotSsoPacket(command, payload, sequence)
+            : new BotSsoPacket(command, sequence, retCode, extra);
     }
 
     private void WriteSsoReservedField(ref BinaryPacket writer, SsoSecureInfo? secInfo)

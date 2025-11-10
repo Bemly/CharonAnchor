@@ -57,7 +57,9 @@ internal class DefaultAndroidBotSignProvider : AndroidBotSignProvider, IDisposab
         "trpc.login.ecdh.EcdhService.SsoQRLoginGenQr", "OidbSvcTrpcTcp.0xf59_2", "OidbSvc.0x592_10",
         "OidbSvcTrpcTcp.0xfe7_3", "OidbSvc.0x592_18", "OidbSvc.0x88d_0", "trpc.qpay.red_pack_skin.Skin.SsoAddSkin",
         "MsgProxy.SendMsg", "OidbSvcTrpcTcp.0x899_1", "trpc.lplan.user_manager_svr.User.SsoSetProfile",
-        "trpc.login.ecdh.EcdhService.SsoNTLoginPasswordLoginUnusualDevice",
+        "trpc.login.ecdh.EcdhService.SsoKeyExchange", "trpc.login.ecdh.EcdhService.SsoNTLoginPasswordLogin", 
+        "trpc.login.ecdh.EcdhService.SsoNTLoginEasyLogin", "trpc.login.ecdh.EcdhService.SsoNTLoginPasswordLoginNewDevice",
+        "trpc.login.ecdh.EcdhService.SsoNTLoginEasyLoginUnusualDevice", "trpc.login.ecdh.EcdhService.SsoNTLoginPasswordLoginUnusualDevice",
         "QChannelSvr.trpc.qchannel.commwriter.ComWriter.DoReply", "OidbSvc.0x5eb_43",
         "trpc.passwd.manager.PasswdManager.VerifyPasswd", "OidbSvc.0xb3c_update_5", "OidbSvc.0x592_17",
         "trpc.login.ecdh.EcdhService.SsoQRLoginScanQr", "FeedCloudSvr.trpc.feedcloud.commwriter.ComWriter.DoLike",
@@ -169,7 +171,8 @@ internal class DefaultAndroidBotSignProvider : AndroidBotSignProvider, IDisposab
                 ["seq"] = seq,
                 ["buffer"] = Convert.ToHexString(body.Span),
                 ["guid"] = Convert.ToHexString(Context.Keystore.Guid),
-                ["version"] = Context.AppInfo.PtVersion
+                ["version"] = Context.AppInfo.PtVersion,
+                ["qua"] = "V1_AND_SQ_9.2.20_11650_YYB_D"
             };
             
             var response = await _client.PostAsync($"{_url}/sign", new StringContent(payload.ToJsonString(), Encoding.UTF8, "application/json"));
@@ -202,7 +205,8 @@ internal class DefaultAndroidBotSignProvider : AndroidBotSignProvider, IDisposab
                 ["data"] = data,
                 ["guid"] = Convert.ToHexString(Context.Keystore.Guid),
                 ["ver"] = Context.AppInfo.SdkInfo.SdkVersion,
-                ["version"] = Context.AppInfo.PtVersion
+                ["version"] = Context.AppInfo.PtVersion,
+                ["qua"] = "V1_AND_SQ_9.2.20_11650_YYB_D"
             };
             
             var response = await _client.PostAsync($"{_url}/energy", new StringContent(payload.ToJsonString(), Encoding.UTF8, "application/json"));
@@ -227,7 +231,8 @@ internal class DefaultAndroidBotSignProvider : AndroidBotSignProvider, IDisposab
                 ["uin"] = uin,
                 ["data"] = data,
                 ["guid"] = Convert.ToHexString(Context.Keystore.Guid),
-                ["version"] = Context.AppInfo.PtVersion
+                ["version"] = Context.AppInfo.PtVersion,
+                ["qua"] = "V1_AND_SQ_9.2.20_11650_YYB_D"
             };
             
             var response = await _client.PostAsync($"{_url}/get_tlv553", new StringContent(payload.ToJsonString(), Encoding.UTF8, "application/json"));

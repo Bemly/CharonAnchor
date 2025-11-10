@@ -3,7 +3,6 @@ using Lagrange.Core.Common;
 using Lagrange.Core.Events;
 using Lagrange.Core.Events.EventArgs;
 using Lagrange.Core.Internal.Context;
-using Lagrange.Core.Message;
 
 namespace Lagrange.Core;
 

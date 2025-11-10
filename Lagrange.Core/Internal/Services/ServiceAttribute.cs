@@ -1,4 +1,4 @@
-using Lagrange.Core.Internal.Packets.Struct;
+using Lagrange.Core.Common.Entity;
 
 namespace Lagrange.Core.Internal.Services;
 

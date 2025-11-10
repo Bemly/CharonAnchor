@@ -57,4 +57,6 @@ internal partial class NTLoginForwardRequest
     [ProtoMember(3)] public byte[] Buffer { get; set; }
     
     [ProtoMember(4)] public uint Type { get; set; }
+    
+    [ProtoMember(5)] public byte[] SecBuffer { get; set; }
 }

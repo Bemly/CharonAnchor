@@ -1,5 +1,5 @@
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Lagrange.Core.Common.Entity;
 using Lagrange.Core.Internal.Services;
 using Lagrange.Core.Utility.Binary;
 using Lagrange.Core.Utility.Cryptography;
@@ -38,7 +38,7 @@ internal class ServicePacker(BotContext context) : StructBase(context)
         return writer.ToArray();
     }
 
-    public ReadOnlyMemory<byte> BuildProtocol13(SsoPacket sso, BinaryPacket payload, ServiceAttribute options)
+    public ReadOnlyMemory<byte> BuildProtocol13(BotSsoPacket sso, BinaryPacket payload, ServiceAttribute options)
     {
         var cipher = options.EncryptType switch
         {
@@ -99,17 +99,4 @@ internal class ServicePacker(BotContext context) : StructBase(context)
 
         return decrypted;
     }
-}
-
-internal enum EncryptType : byte
-{
-    NoEncrypt = 0x00,
-    EncryptD2Key = 0x01,
-    EncryptEmpty = 0x02,
-}
-
-internal enum RequestType
-{
-    D2Auth = 0x0C,
-    Simple = 0x0D,
 }

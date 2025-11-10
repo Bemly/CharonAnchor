@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Formats.Asn1;
-using System.Text;
 using Lagrange.Core.Common.Entity;
 using Lagrange.Core.Internal.Events.System;
 using Lagrange.Core.Internal.Packets.Message;

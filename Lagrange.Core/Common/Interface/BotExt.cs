@@ -1,4 +1,5 @@
-﻿using Lagrange.Core.Internal.Logic;
+﻿using Lagrange.Core.Common.Entity;
+using Lagrange.Core.Internal.Logic;
 
 namespace Lagrange.Core.Common.Interface;
 
@@ -21,4 +22,7 @@ public static class BotExt
 
     public static bool SubmitSMSCode(this BotContext context, string code) =>
         context.EventContext.GetLogic<WtExchangeLogic>().SubmitSMSCode(code);
+
+    public static ValueTask<BotSsoPacket> SendPacket(this BotContext context, BotSsoPacket packet)
+        => context.EventContext.GetLogic<OperationLogic>().SendPacket(packet);
 }

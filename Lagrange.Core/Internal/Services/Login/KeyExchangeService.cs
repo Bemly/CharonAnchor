@@ -1,16 +1,16 @@
 ﻿using System.Security.Cryptography;
 using Lagrange.Core.Common;
+using Lagrange.Core.Common.Entity;
 using Lagrange.Core.Internal.Events;
 using Lagrange.Core.Internal.Events.Login;
 using Lagrange.Core.Internal.Packets.Login;
-using Lagrange.Core.Internal.Packets.Struct;
 using Lagrange.Core.Utility;
 using Lagrange.Core.Utility.Binary;
 using Lagrange.Core.Utility.Cryptography;
 
 namespace Lagrange.Core.Internal.Services.Login;
 
-[EventSubscribe<KeyExchangeEventReq>(Protocols.PC)]
+[EventSubscribe<KeyExchangeEventReq>(Protocols.All)]
 [Service("trpc.login.ecdh.EcdhService.SsoKeyExchange", RequestType.D2Auth, EncryptType.EncryptEmpty)]
 internal class KeyExchangeService : BaseService<KeyExchangeEventReq, KeyExchangeEventResp>
 {

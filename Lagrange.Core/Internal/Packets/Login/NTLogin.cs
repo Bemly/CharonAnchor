@@ -542,3 +542,19 @@ internal partial class NTLoginCommon
     
     [ProtoMember(2)] public ReadOnlyMemory<byte> Body { get; set; }
 }
+
+[ProtoPackable]
+internal partial class NTLoginAndroidExt
+{
+    [ProtoMember(1)] public int Field1 { get; set; }
+    
+    [ProtoMember(2)] public string Uin { get; set; }
+}
+
+[ProtoPackable]
+internal partial class NTLoginAndroidCommon
+{
+    [ProtoMember(2)] public NTLoginCommon Common { get; set; }
+    
+    [ProtoMember(3)] public NTLoginAndroidExt Ext { get; set; }
+}

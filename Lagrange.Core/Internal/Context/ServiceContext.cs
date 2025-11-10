@@ -2,9 +2,9 @@ using System.Collections.Frozen;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Lagrange.Core.Common;
+using Lagrange.Core.Common.Entity;
 using Lagrange.Core.Exceptions;
 using Lagrange.Core.Internal.Events;
-using Lagrange.Core.Internal.Packets.Struct;
 using Lagrange.Core.Internal.Services;
 using Lagrange.Core.Utility.Extension;
 
@@ -58,7 +58,7 @@ internal class ServiceContext
         _servicesEventType = servicesEventType.ToFrozenDictionary();
     }
 
-    public ValueTask<ProtocolEvent> Resolve(SsoPacket ssoPacket)
+    public ValueTask<ProtocolEvent> Resolve(BotSsoPacket ssoPacket)
     {
         if (!_services.TryGetValue(ssoPacket.Command, out var service)) throw new ServiceNotFoundException(ssoPacket.Command);
 
@@ -66,14 +66,14 @@ internal class ServiceContext
         return service.Parse(ssoPacket.Data, _context);
     }
 
-    public async ValueTask<(SsoPacket, ServiceAttribute)> Resolve(ProtocolEvent @event)
+    public async ValueTask<(BotSsoPacket, ServiceAttribute)> Resolve(ProtocolEvent @event)
     {
         if (!_servicesEventType.TryGetValue(@event.GetType(), out var handler)) return default;
 
         var (attr, service) = handler;
         if (!handler.Attribute.DisableLog) _context.LogTrace(Tag, "Outgoing SSOFrame: {0}", handler.Attribute.Command);
 
-        return (new SsoPacket(attr.Command, await service.Build(@event, _context), GetNewSequence()), attr);
+        return (new BotSsoPacket(attr.Command, await service.Build(@event, _context), GetNewSequence()), attr);
     }
 
     private int GetNewSequence()

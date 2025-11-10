@@ -3,7 +3,6 @@ using Lagrange.Core.Exceptions;
 using Lagrange.Core.Internal.Events.Message;
 using Lagrange.Core.Internal.Packets.Message;
 using Lagrange.Core.Message;
-using Lagrange.Core.Utility.Extension;
 
 namespace Lagrange.Core.Internal.Logic;
 

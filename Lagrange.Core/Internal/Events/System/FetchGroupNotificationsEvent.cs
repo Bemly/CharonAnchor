@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Lagrange.Core.Common.Entity;
 
 namespace Lagrange.Core.Internal.Events.System;
