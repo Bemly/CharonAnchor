@@ -39,13 +39,13 @@ internal class SsoPacker(BotContext context) : StructBase(context)
         return result;
     }
     
-    public BinaryPacket BuildProtocol13(BotSsoPacket sso)
+    public BinaryPacket BuildProtocol13(BotSsoPacket sso, SsoSecureInfo? secInfo)
     {
         var head = new BinaryPacket(stackalloc byte[0x200]);
         
         head.Write(sso.Command, Prefix.Int32 | Prefix.WithPrefix); // command
         head.Write(ReadOnlySpan<byte>.Empty, Prefix.Int32 | Prefix.WithPrefix); // message_cookies
-        WriteSsoReservedField(ref head, null);
+        WriteSsoReservedField(ref head, secInfo);
         
         var headSpan = head.CreateReadOnlySpan();
         var result = new BinaryPacket(headSpan.Length + sso.Data.Length + 2 * 4); // 2 * 4 for the length of the payload

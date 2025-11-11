@@ -76,7 +76,7 @@ internal class ServiceContext
         return (new BotSsoPacket(attr.Command, await service.Build(@event, _context), GetNewSequence()), attr);
     }
 
-    private int GetNewSequence()
+    public int GetNewSequence()
     {
         Interlocked.CompareExchange(ref _sequence, 5000000, 9900000);
         return Interlocked.Increment(ref _sequence);

@@ -23,6 +23,6 @@ public static class BotExt
     public static bool SubmitSMSCode(this BotContext context, string code) =>
         context.EventContext.GetLogic<WtExchangeLogic>().SubmitSMSCode(code);
 
-    public static ValueTask<BotSsoPacket> SendPacket(this BotContext context, BotSsoPacket packet)
-        => context.EventContext.GetLogic<OperationLogic>().SendPacket(packet);
+    public static ValueTask<BotSsoPacket> SendPacket(this BotContext context, BotSsoPacket packet, RequestType requestType = RequestType.D2Auth, EncryptType encryptType = EncryptType.EncryptD2Key)
+        => context.EventContext.GetLogic<OperationLogic>().SendPacket(packet, requestType, encryptType);
 }

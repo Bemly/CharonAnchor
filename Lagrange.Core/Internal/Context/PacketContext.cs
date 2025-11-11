@@ -64,8 +64,17 @@ internal class PacketContext
                 }
                 case RequestType.Simple:
                 {
-                    var sso = _ssoPacker.BuildProtocol13(packet);
-                    frame = _servicePacker.BuildProtocol13(packet, sso, options);
+                    if (SignProvider.IsWhiteListCommand(packet.Command))
+                    {
+                        var secInfo = await SignProvider.GetSecSign(_keystore.Uin, packet.Command, packet.Sequence, packet.Data);
+                        var sso = _ssoPacker.BuildProtocol13(packet, secInfo);
+                        frame = _servicePacker.BuildProtocol13(packet, sso, options);
+                    }
+                    else
+                    {
+                        var sso = _ssoPacker.BuildProtocol13(packet, null);
+                        frame = _servicePacker.BuildProtocol13(packet, sso, options);
+                    }
                     break;
                 }
                 default:

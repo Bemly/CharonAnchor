@@ -23,9 +23,11 @@ internal class OperationLogic(BotContext context) : ILogic
 
     public async Task<Dictionary<string, string>> FetchCookies(List<string> domains) => (await context.EventContext.SendEvent<FetchCookiesEventResp>(new FetchCookiesEventReq(domains))).Cookies;
     
-    public ValueTask<BotSsoPacket> SendPacket(BotSsoPacket packet)
+    public ValueTask<BotSsoPacket> SendPacket(BotSsoPacket packet, RequestType requestType, EncryptType encryptType)
     {
-        return context.PacketContext.SendPacket(packet, new ServiceAttribute(packet.Command));
+        int sequence = packet.Sequence != 0 ? packet.Sequence : context.ServiceContext.GetNewSequence();
+        packet.Sequence = sequence;
+        return context.PacketContext.SendPacket(packet, new ServiceAttribute(packet.Command, requestType, encryptType));
     }
 
     public async Task<(string, uint)> FetchClientKey()

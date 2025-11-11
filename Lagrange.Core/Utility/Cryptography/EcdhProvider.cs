@@ -43,19 +43,22 @@ internal sealed class EcdhProvider
         if (compress)
         {
             var result = new byte[Curve.Size + 1];
-            
+
             result[0] = (byte) (Public.Y.IsEven ^ Public.Y.Sign < 0 ? 0x02 : 0x03);
-            Public.X.TryWriteBytes(result.AsSpan()[1..], out _, true, true);
-            
+            var xBytes = ToFixedBytes(Public.X, Curve.Size);
+            xBytes.CopyTo(result, 1);
+
             return result;
         }
         else
         {
             var result = new byte[Curve.Size * 2 + 1];
-        
+
             result[0] = 0x04;
-            Public.X.TryWriteBytes(result.AsSpan()[1..], out _, true, true);
-            Public.Y.TryWriteBytes(result.AsSpan()[(Curve.Size + 1)..], out _, true, true);
+            var xBytes = ToFixedBytes(Public.X, Curve.Size);
+            var yBytes = ToFixedBytes(Public.Y, Curve.Size);
+            xBytes.CopyTo(result, 1);
+            yBytes.CopyTo(result, Curve.Size + 1);
 
             return result;
         }
@@ -72,7 +75,7 @@ internal sealed class EcdhProvider
     
     private byte[] PackShared(EllipticPoint ecShared, bool isHash)
     {
-        var x = ecShared.X.ToByteArray(true, true);
+        var x = ToFixedBytes(ecShared.X, Curve.Size);
         return !isHash ? x : MD5.HashData(x[..Curve.PackSize]);
     }
 
@@ -200,6 +203,24 @@ internal sealed class EcdhProvider
     {
         var result = a % b;
         if (result < 0) result += b;
+        return result;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static byte[] ToFixedBytes(BigInteger value, int size)
+    {
+        var bytes = value.ToByteArray(true, true);
+        if (bytes.Length == size) return bytes;
+
+        var result = new byte[size];
+        if (bytes.Length < size)
+        {
+            bytes.CopyTo(result, size - bytes.Length);
+        }
+        else
+        {
+            Array.Copy(bytes, bytes.Length - size, result, 0, size);
+        }
         return result;
     }
 }

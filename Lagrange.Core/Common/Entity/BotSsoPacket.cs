@@ -10,7 +10,7 @@ public class BotSsoPacket
 
     public int RetCode { get; }
 
-    public int Sequence { get; }
+    public int Sequence { get; internal set; }
     
     /// <summary>
     /// Constructs a new SSO packet with the specified command and data.
