@@ -27,7 +27,9 @@ public partial class ProtoSourceGenerator : IIncrementalGenerator
     private static void Emit(SourceProductionContext context, Parser parser)
     {
         foreach (var diagnostic in parser.Diagnostics) context.ReportDiagnostic(diagnostic);
-        
+
+        if (parser.TypeDeclarations.Count == 0) return;
+
         var emitter = new Emitter(parser);
         emitter.Emit(context);
     }
