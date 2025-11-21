@@ -42,7 +42,7 @@ public class ProtoWriter : IDisposable
         int min = ProtoHelper.GetVarIntMin(count);
         int max = ProtoHelper.GetVarIntMax(count);
         int utf16Max = ProtoConstants.MaxExpansionFactorWhileTranscoding * str.Length;
-        if (_memory.Length < utf16Max + count) Grow(utf16Max + count);
+        if (_memory.Length - BytesPending < utf16Max + count) Grow(utf16Max + count);
         
         if (str.Length + count > min && utf16Max + count < max) // falls within the range
         {
