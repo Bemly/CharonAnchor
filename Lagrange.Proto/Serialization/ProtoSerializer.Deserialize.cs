@@ -24,22 +24,10 @@ public static partial class ProtoSerializer
     {
         var objectInfo = T.TypeInfo;
         Debug.Assert(objectInfo.ObjectCreator != null);
-        
-        T target = objectInfo.ObjectCreator();
 
-        while (!reader.IsCompleted)
-        {
-            uint tag = reader.DecodeVarIntUnsafe<uint>();
-            if (objectInfo.Fields.TryGetValue(tag, out var fieldInfo))
-            {
-                fieldInfo.Read(ref reader, target);
-            }
-            else
-            {
-                reader.SkipField((WireType)(tag & 0x07));
-            }
-        }
-        
+        T target = objectInfo.ObjectCreator();
+        T.DeserializeHandler(target, ref reader);
+
         return target;
     }
     

@@ -57,7 +57,7 @@ public partial class ProtoSourceGenerator
             {
                 if (info.TypeSymbol.IsValueType) // check with default
                 {
-                    EmitIfNotDefaultStatement(source, $"{ObjectVarName}.{info.Symbol.Name}", writer =>
+                    EmitIfNotDefaultStatement(source, info.TypeSymbol, $"{ObjectVarName}.{info.Symbol.Name}", writer =>
                     {
                         EmitRawTags(writer, encodedTag);
                         EmitMember(writer, field, info, memberName);
@@ -151,9 +151,10 @@ public partial class ProtoSourceGenerator
             source.WriteLine("}");
         }
         
-        private static void EmitIfNotDefaultStatement(SourceWriter source, string variableName, Action<SourceWriter> emitAction)
+        private void EmitIfNotDefaultStatement(SourceWriter source, ITypeSymbol typeSymbol, string variableName, Action<SourceWriter> emitAction)
         {
-            source.WriteLine($"if ({variableName} != default)");
+            string fullTypeName = typeSymbol.GetFullName();
+            source.WriteLine($"if (!global::System.Collections.Generic.EqualityComparer<{fullTypeName}>.Default.Equals({variableName}, default))");
             source.WriteLine("{");
             source.Indentation++;
             emitAction(source);

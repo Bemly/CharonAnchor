@@ -92,7 +92,7 @@ public partial class ProtoSourceGenerator
             if (parser.IgnoreDefaultFields)
             {
                 expression = info.TypeSymbol.IsValueType
-                    ? GenerateIfNotDefaultExpression($"{ObjectVarName}.{info.Symbol.Name}", $"{encodedTag.Length} + {lengthMember}", "0")
+                    ? GenerateIfNotDefaultExpression(info.TypeSymbol, $"{ObjectVarName}.{info.Symbol.Name}", $"{encodedTag.Length} + {lengthMember}", "0")
                     : GenerateShouldSerializeExpression(tag, $"{encodedTag.Length} + {lengthMember}", "0"); // check with default
             }
             else
@@ -127,9 +127,13 @@ public partial class ProtoSourceGenerator
         }
         
         private static string GenerateIfNotNullExpression(string variableName, string left, string right) => $"({variableName} != null ? {left} : {right})";
-        
-        private static string GenerateIfNotDefaultExpression(string variableName, string left, string right) => $"({variableName} != default ? {left} : {right})";
-        
+
+        private string GenerateIfNotDefaultExpression(ITypeSymbol typeSymbol, string variableName, string left, string right)
+        {
+            string fullTypeName = typeSymbol.GetFullName();
+            return $"(!global::System.Collections.Generic.EqualityComparer<{fullTypeName}>.Default.Equals({variableName}, default) ? {left} : {right})";
+        }
+
         private string GenerateShouldSerializeExpression(uint tag, string left, string right) =>
             $"({_fullQualifiedName}.{TypeInfoPropertyName}.Fields[{tag}].{ShouldSerializeTypeRef}({ObjectVarName}, {parser.IgnoreDefaultFields.ToString().ToLower()}) ? {left} : {right})";
     }
