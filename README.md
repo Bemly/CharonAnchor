@@ -2,7 +2,9 @@
 
 <img src="Charon.png" width="200" height="200" align="right">
 
-Lagrange.Milky 签名服务 · 卡戎·失败的作品拉格兰的现实锚定点
+Lagrange.Milky 签名服务
+
+失败的作品·卡戎 - 拉格兰的现实锚定点
 
 创造
 ============
