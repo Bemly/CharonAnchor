@@ -22,5 +22,5 @@ ls -lh charon libsymbols.so
 
 echo ""
 echo "Usage:"
-echo "  1. Place wrapper.node and libgnutls.so.30 in this directory"
+echo "  1. Place wrapper.node, libsymbols.so, libbugly.so, libcrbase.so in this directory"
 echo "  2. Run ./charon"

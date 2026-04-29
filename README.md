@@ -2,8 +2,7 @@
 
 <img src="Charon.png" width="200" height="200" align="right">
 
-Lagrange.Milky 签名服务 -
-(卡戎·失败的作品)拉格兰的现实锚定点
+Lagrange.Milky 签名服务 · 卡戎·失败的作品拉格兰的现实锚定点
 
 创造
 ============
@@ -13,34 +12,48 @@ Lagrange.Milky 签名服务 -
 
 锚定
 ============
-1. 提取 `wrapper.node` 和 `libgnutls.so.30`
-2. 放到本项目目录
-3. 运行 `./charon`
+将以下文件放在同一目录：
+- `charon` · 主程序
+- `wrapper.node` · 签名模块（从 Lagrange.Milky 依赖提取）
+- `libsymbols.so` · 符号补丁
+- `libbugly.so` · 依赖库
+- `libcrbase.so` · 依赖库
+
+运行：
+```bash
+./charon
+```
 
 人为构造
 ============
 ```
-POST http://127.0.0.1:8080/
+POST http://127.0.0.1:8080/api/sign/sec-sign
 
 请求:
 {
-    "cmd": "xxx",
-    "src": "hex字符串",
-    "seq": 123
+    "uin": 账号,
+    "command": "命令字符串",
+    "seq": 序列号,
+    "body": "hex字符串(小写)",
+    "guid": "hex字符串",
+    "qua": "版本字符串"
 }
 
 响应:
 {
-    "token": "hex字符串",
-    "extra": "hex字符串",
-    "sign": "hex字符串"
+    "code": 0,
+    "message": null,
+    "value": {
+        "sec_sign": "hex",
+        "sec_token": "hex",
+        "sec_extra": "hex"
+    }
 }
 ```
 
 自我投影
 ============
 修改 `src/main.cpp` 中的 `SIGN_OFFSET` 值。
-
 
 ------------
 真相是这样的：一个脆弱的灵魂打造了这个破碎又诡异的牢笼，
