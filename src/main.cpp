@@ -7,8 +7,11 @@
 
 using json = nlohmann::json;
 
-// 签名函数偏移地址 - 适配不同版本 Lagrange.Milky
+// 签名函数偏移地址 - 编译时通过 -DSIGN_OFFSET=0xXXXX 指定
+// 默认值: 0x5ADE220 (3.2.19-39038)
+#ifndef SIGN_OFFSET
 #define SIGN_OFFSET 0x5ADE220
+#endif
 
 int main() {
     // 初始化：预加载依赖库
