@@ -1,6 +1,5 @@
 // symbols.c - 辅助符号文件
 // 编译: gcc -shared -fPIC -o libsymbols.so symbols.c
 
-// 此文件提供空符号，用于解决 wrapper.node 的符号依赖问题
-
-void __attribute__((weak)) dummy_symbol() {}
+// 提供 wrapper.node 需要的符号
+void qq_magic_napi_register(void* arg) { }

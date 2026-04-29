@@ -14,10 +14,12 @@ int main() {
     // 初始化：预加载依赖库
     const char* libs[] = {
         "libgnutls.so.30",
-        "./libsymbols.so"
+        "./libsymbols.so",
+        "./libbugly.so",
+        "./libcrbase.so"
     };
 
-    if (sign_init(libs, 2, SIGN_OFFSET) != 0) {
+    if (sign_init(libs, 4, SIGN_OFFSET) != 0) {
         std::cerr << "Failed to load wrapper.node" << std::endl;
         return 1;
     }
@@ -27,26 +29,35 @@ int main() {
     // HTTP 服务
     httplib::Server svr;
 
-    svr.Post("/", [](const httplib::Request& req, httplib::Response& res) {
+    // Lagrange.Milky 期望的签名路径
+    svr.Post("/api/sign/sec-sign", [](const httplib::Request& req, httplib::Response& res) {
         try {
             json body = json::parse(req.body);
 
-            std::string cmd = body["cmd"];
-            std::string src_hex = body["src"];
+            std::string command = body["command"];
+            std::string body_hex = body["body"];
             int seq = body["seq"];
 
             // hex -> bytes
             std::vector<uint8_t> src;
-            for (size_t i = 0; i < src_hex.length(); i += 2) {
-                uint8_t byte = std::stoi(src_hex.substr(i, 2), nullptr, 16);
+            for (size_t i = 0; i < body_hex.length(); i += 2) {
+                uint8_t byte = std::stoi(body_hex.substr(i, 2), nullptr, 16);
                 src.push_back(byte);
             }
 
             // 调用签名函数
             uint8_t out_buf[0x300] = {0};
-            if (sign_call(cmd.c_str(), src.data(), src.size(), seq, out_buf) != 0) {
-                res.status = 500;
-                res.set_content(json{{"error", "sign failed"}}.dump(), "application/json");
+            if (sign_call(command.c_str(), src.data(), src.size(), seq, out_buf) != 0) {
+                json response = {
+                    {"code", -1},
+                    {"message", "sign failed"},
+                    {"value", {
+                        {"sec_sign", ""},
+                        {"sec_token", ""},
+                        {"sec_extra", ""}
+                    }}
+                };
+                res.set_content(response.dump(), "application/json");
                 return;
             }
 
@@ -55,30 +66,40 @@ int main() {
             int token_len, extra_len, sign_len;
             sign_extract(out_buf, token, &token_len, extra, &extra_len, sign_out, &sign_len);
 
-            // bytes -> hex
+            // bytes -> hex (小写)
             auto to_hex = [](const uint8_t* data, int len) {
                 std::string hex;
                 for (int i = 0; i < len; i++) {
                     char buf[3];
-                    snprintf(buf, 3, "%02X", data[i]);
+                    snprintf(buf, 3, "%02x", data[i]);
                     hex += buf;
                 }
                 return hex;
             };
 
             json response = {
+                {"code", 0},
+                {"message", nullptr},
                 {"value", {
-                    {"token", to_hex(token, token_len)},
-                    {"extra", to_hex(extra, extra_len)},
-                    {"sign", to_hex(sign_out, sign_len)}
+                    {"sec_sign", to_hex(sign_out, sign_len)},
+                    {"sec_token", to_hex(token, token_len)},
+                    {"sec_extra", to_hex(extra, extra_len)}
                 }}
             };
 
             res.set_content(response.dump(), "application/json");
 
         } catch (const std::exception& e) {
-            res.status = 400;
-            res.set_content(json{{"error", e.what()}}.dump(), "application/json");
+            json response = {
+                {"code", -2},
+                {"message", e.what()},
+                {"value", {
+                    {"sec_sign", ""},
+                    {"sec_token", ""},
+                    {"sec_extra", ""}
+                }}
+            };
+            res.set_content(response.dump(), "application/json");
         }
     });
 
