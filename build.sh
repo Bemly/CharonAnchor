@@ -10,10 +10,12 @@ VERSION=${1:-3.2.19-39038}
 
 case $VERSION in
     3.2.19-39038)
-        SIGN_OFFSET=0x5ADE220
+        SIGN_OFFSET_HEX=0x5ADE220
+        SIGN_OFFSET_DEC=95281696
         ;;
     3.2.28-48517)
-        SIGN_OFFSET=0x56D5491
+        SIGN_OFFSET_HEX=0x56D5491
+        SIGN_OFFSET_DEC=91051153
         ;;
     *)
         echo "未知版本: $VERSION"
@@ -23,7 +25,7 @@ case $VERSION in
 esac
 
 echo "编译版本: $VERSION"
-echo "签名偏移: 0x$(printf '%X' $SIGN_OFFSET)"
+echo "签名偏移: $SIGN_OFFSET_HEX (十进制: $SIGN_OFFSET_DEC)"
 
 # 编译 libsymbols.so
 echo "Building libsymbols.so..."
@@ -35,7 +37,7 @@ g++ -std=c++17 -O2 -o charon \
     src/main.cpp src/sign.cpp \
     -I include -I third_party \
     -ldl \
-    -DSIGN_OFFSET=$SIGN_OFFSET
+    -DSIGN_OFFSET=$SIGN_OFFSET_DEC
 
 echo "Build complete!"
 echo ""
