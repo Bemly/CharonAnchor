@@ -34,17 +34,60 @@ cd Lagrange.Milky/bin/Debug/net10.0
 
 人为构造
 ============
-扫码登录后即可使用 Milky API：
 
-```
-POST http://127.0.0.1:6101/api/send_group_message
+首次运行会生成 `appsettings.jsonc`，编辑后重启生效。
 
-请求:
+```jsonc
 {
-    "group_id": 群号,
-    "message": [{"type": "text", "data": {"text": "消息内容"}}]
+    // 日志级别
+    "Logging": {
+        "LogLevel": { "Default": "Information" }
+    },
+    // 核心设置
+    "Core": {
+        // 服务器连接
+        "Server": {
+            "AutoReconnect": true,           // 断线自动重连
+            "UseIPv6Network": false,         // 是否使用 IPv6
+            "GetOptimumServer": true         // 自动选择最快服务器
+        },
+        // 签名服务（本地签名无需修改）
+        "Signer": {
+            "Url": ""
+        },
+        // 登录设置
+        "Login": {
+            "Uin": 0,                        // 账号，0 则扫码登录
+            "Password": null,                // 密码，null 则扫码
+            "DeviceName": "BemlyCharon",     // 设备名称
+            "AutoReLogin": true,             // 断线自动重登
+            "CompatibleQrCode": false,       // ASCII 兼容二维码
+            "UseOnlineCaptchaResolver": true // 在线验证码识别
+        }
+    },
+    // HTTP 服务设置
+    "Milky": {
+        "Host": "*",                         // 监听地址，* 为所有网卡
+        "Port": 6101,                        // 监听端口
+        "Prefix": "/",                       // URL 路径前缀
+        "AccessToken": "charon",             // API 令牌，null 则不验证（建议设置）
+        "EnabledWebSocket": false,           // 是否启用 WebSocket
+        "WebHook": null                      // WebHook 回调 URL，null 则不启用
+        // "WebHook": { "Url": "http://127.0.0.1:3001/webhook" }
+    }
 }
 ```
+
+**API 调用示例：**
+
+```bash
+curl -X POST http://127.0.0.1:6101/api/send_private_message \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer charon" \
+  -d '{"user_id": 10000, "message": [{"type": "text", "data": {"text": "Hello"}}]}'
+```
+
+消息段类型：`text`, `image`, `face`, `reply`, `record`, `video`, `file`, `mention`, `mention_all`, `forward`, `market_face`, `light_app`, `xml`
 
 自我投影
 ============
