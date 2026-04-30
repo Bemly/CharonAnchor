@@ -1,3 +1,4 @@
+using CharonAnchor;
 using Lagrange.Core.Common;
 using Lagrange.Core.Common.Interface;
 using Lagrange.Milky.Api;
@@ -36,14 +37,17 @@ public static class HostApplicationBuilderExtension
         .ConfigureServices(services => services
             .Configure<CoreConfiguration>(builder.Configuration.GetSection("Core"))
 #pragma warning restore IL2026, IL3050
-            // Signer
-            .AddSingleton<Signer>()
+            // CharonSignProvider (本地签名)
+            .AddSingleton<BotSignProvider>(sp => new CharonSignProvider(
+                Directory.GetCurrentDirectory(),
+                "3.2.28"
+            ))
             // BotConfig
             .AddSingleton(services =>
             {
                 var loggerConfiguration = services.GetRequiredService<IOptions<LoggerFilterOptions>>().Value;
                 var coreConfiguration = services.GetRequiredService<IOptions<CoreConfiguration>>().Value;
-                var signer = services.GetRequiredService<Signer>();
+                var signer = services.GetRequiredService<BotSignProvider>();
 
                 return new BotConfig
                 {
