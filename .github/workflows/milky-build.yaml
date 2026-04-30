@@ -1,50 +1,14 @@
-name: Build Lagrange.Milky
+name: Build CharonAnchor
 
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - .github/workflows/milky-build.yaml
-      - Lagrange.Codec/**
-      - Lagrange.Core/**
-      - Lagrange.Milky/**
-      - Lagrange.Milky.Implementation.Api.Generator/**
-      - Lagrange.Proto/**
-      - Lagrange.Proto.Generator/**
-  pull_request:
-    branches: [ main ]
-    paths:
-      - .github/workflows/milky-build.yaml
-      - Lagrange.Codec/**
-      - Lagrange.Core/**
-      - Lagrange.Milky/**
-      - Lagrange.Milky.Implementation.Api.Generator/**
-      - Lagrange.Proto/**
-      - Lagrange.Proto.Generator/**
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - os: windows-latest
-            rid: win-x64
-            binary-extension: '.exe'
-          - os: macos-latest
-            rid: osx-arm64
-            binary-extension: ''
-          - os: ubuntu-latest
-            rid: linux-x64
-            binary-extension: ''
-
-    env:
-      RUNTIME_IDENTIFIER: ${{ matrix.rid }}
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Install Linux Dependencies
-        if: matrix.os == 'ubuntu-latest'
+      - name: Install Dependencies
         run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
 
       - name: Setup .NET SDK
@@ -56,17 +20,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Publish
-        run: dotnet publish Lagrange.Milky -c Release -r ${{ matrix.rid }}
+        run: dotnet publish Lagrange.Milky -c Release -r linux-x64
 
-      - if: github.event_name != 'pull_request'
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: Lagrange.Milky-${{ matrix.rid }}
-          path: Lagrange.Milky/bin/Release/net10.0/${{ matrix.rid }}/publish/Lagrange.Milky${{ matrix.binary-extension }}
-      - if: github.event_name != 'pull_request'
-        uses: actions/upload-artifact@v4
-        with:
-          name: Lagrange.Milky-${{ matrix.rid }}-symbol-files
-          path: |
-            Lagrange.Milky/bin/Release/net10.0/${{ matrix.rid }}/publish/*
-            !Lagrange.Milky/bin/Release/net10.0/${{ matrix.rid }}/publish/Lagrange.Milky${{ matrix.binary-extension }}
+          name: CharonAnchor-linux-x64
+          path: Lagrange.Milky/bin/Release/net10.0/linux-x64/publish/Lagrange.Milky

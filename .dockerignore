@@ -1,6 +1,7 @@
 *
 
 !.git/
+!Charon/
 !Lagrange.Codec/
 !Lagrange.Core/
 !Lagrange.Milky/
