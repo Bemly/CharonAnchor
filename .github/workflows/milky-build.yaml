@@ -19,19 +19,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download QQ deb and extract dependencies
+      - name: Download deb and extract dependencies
         run: |
-          # Download QQ deb
-          wget -q https://dldir1v6.qq.com/qqfile/qq/QQNT/f9cbaab2/linuxqq_3.2.28-48517_amd64.deb -O /tmp/qq.deb
+          # Download LinuxIM deb
+          wget -q https://dldir1v6.qq.com/qqfile/qq/QQNT/f9cbaab2/linuxqq_3.2.28-48517_amd64.deb -O /tmp/linuxim.deb
 
           # Extract deb
-          mkdir -p /tmp/qq-extract
-          dpkg-deb -x /tmp/qq.deb /tmp/qq-extract
+          mkdir -p /tmp/linuxim-extract
+          dpkg-deb -x /tmp/linuxim.deb /tmp/linuxim-extract
 
-          # Copy dependencies to project (all in resources/app/)
-          cp /tmp/qq-extract/opt/QQ/resources/app/wrapper.node ./wrapper.node
-          cp /tmp/qq-extract/opt/QQ/resources/app/libbugly.so ./libbugly.so
-          cp /tmp/qq-extract/opt/QQ/resources/app/libcrbase.so ./libcrbase.so
+          # Copy dependencies to project
+          cp /tmp/linuxim-extract/opt/QQ/resources/app/wrapper.node ./wrapper.node
+          cp /tmp/linuxim-extract/opt/QQ/resources/app/libbugly.so ./libbugly.so
+          cp /tmp/linuxim-extract/opt/QQ/resources/app/libcrbase.so ./libcrbase.so
 
           echo "Extracted files:"
           ls -la wrapper.node libbugly.so libcrbase.so libsymbols.so
