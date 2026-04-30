@@ -8,12 +8,6 @@ Lagrange.Milky 签名服务
 
 特别鸣谢: [LagrangeV2](https://github.com/LagrangeDev/LagrangeV2)
 
-自助签名: [SignApiGuide](https://github.com/LagrangeDev/SignApiGuide)
-
-自搭签名(only docker linux x64): 按照下方`人为构造`描述，在`JSONC`的签名服务器中填入本地运行的`http://127.0.0.1:8080/api/sign/sec-sign`即可
-
-懒人签名(only docker linux x64): [自用(版本写死的,每次更新需要更新整个框架！使用后果自负)](https://github.com/Bemly/CharonAnchor/tree/Lagrange-3.2.28)
-
 创造
 ============
 ```bash
@@ -64,6 +58,20 @@ POST http://127.0.0.1:8080/api/sign/sec-sign
 自我投影
 ============
 修改 `src/main.cpp` 中的 `SIGN_OFFSET` 值。
+
+虚无
+============
+自助签名: [SignApiGuide](https://github.com/LagrangeDev/SignApiGuide)
+
+自搭签名(仅支持linux x64): \
+选择你喜欢的版本分支，按照下方`人为构造`描述，\
+在`JSONC`的签名服务器中填入本地运行的`http://127.0.0.1:8080/api/sign/sec-sign`即可\
+版本号需要💯完全一致Nya～
+
+懒人签名(仅支持docker linux x64): [自用(版本写死的,每次更新需要更新整个框架！使用后果自负)](https://github.com/Bemly/CharonAnchor/tree/Lagrange-3.2.28)
+
+开发学习: 获取[MEMORY.md](https://t.me/citron_bemly)和[学习插件](https://github.com/HexRaysSA/ida-claude-plugins)
+
 
 ------------
 真相是这样的：一个脆弱的灵魂打造了这个破碎又诡异的牢笼，
