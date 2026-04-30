@@ -44,12 +44,26 @@ jobs:
           cp ${{ github.workspace }}/libcrbase.so .
           cp ${{ github.workspace }}/libsymbols.so .
 
-          mv Lagrange.Milky Lagrange.Milky-3.2.19
-
           echo "Package contents:"
           ls -la
 
-      - uses: actions/upload-artifact@v4
+      - name: Login to GHCR
+        uses: docker/login-action@v3
         with:
-          name: CharonAnchor-3.2.19-linux-x64
-          path: Lagrange.Milky/bin/Release/net10.0/linux-x64/publish/
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        run: |
+          cd Lagrange.Milky/bin/Release/net10.0/linux-x64/publish
+
+          cat > Dockerfile <<'EOF'
+          FROM alpine
+          WORKDIR /root
+          COPY . /usr/local/bin/
+          CMD ["Lagrange.Milky"]
+          EOF
+
+          docker build -t ghcr.io/${{ github.repository_owner }}/charonanchor:3.2.19 .
+          docker push ghcr.io/${{ github.repository_owner }}/charonanchor:3.2.19
