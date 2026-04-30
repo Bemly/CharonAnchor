@@ -1,4 +1,4 @@
-name: Build CharonAnchor
+name: Build CharonAnchor 3.2.28
 
 on:
   workflow_dispatch:

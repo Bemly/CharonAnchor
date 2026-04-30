@@ -1,0 +1,10 @@
+name: Build CharonAnchor 3.2.19
+
+on:
+  workflow_dispatch:
+
+jobs:
+  placeholder:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Select the Lagrange branch to trigger the real build"
