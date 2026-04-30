@@ -2,7 +2,7 @@
 charon
 libsymbols.so
 
-# QQ files (user should provide)
+# 签名模块依赖文件 (user should provide)
 wrapper.node
 libgnutls.so*
 *.deb
