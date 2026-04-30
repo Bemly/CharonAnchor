@@ -33,6 +33,9 @@ jobs:
           cp /tmp/linuxim-extract/opt/QQ/resources/app/libbugly.so ./libbugly.so
           cp /tmp/linuxim-extract/opt/QQ/resources/app/libcrbase.so ./libcrbase.so
 
+          # Compile libsymbols.so on Linux (repo version is macOS Mach-O)
+          gcc -shared -fPIC -o libsymbols.so -xc - <<< 'void qq_magic_napi_register(void* arg) {}'
+
           echo "Extracted files:"
           ls -la wrapper.node libbugly.so libcrbase.so libsymbols.so
 
@@ -65,13 +68,15 @@ jobs:
           cd Lagrange.Milky/bin/Release/net10.0/linux-x64/publish
 
           cat > Dockerfile <<'EOF'
-          FROM ubuntu:noble
+          FROM ubuntu:latest
           RUN apt-get update && apt-get install -y --no-install-recommends \
               ca-certificates libgnutls30 libssl3t64 \
+              libvips42 libx11-6 libx11-xcb1 libxext6 \
+              libunwind8 libgssapi-krb5-2 libssh2-1t64 libpsl5t64 \
               && rm -rf /var/lib/apt/lists/*
           WORKDIR /root
-          COPY . /usr/local/bin/
-          CMD ["/usr/local/bin/Lagrange.Milky"]
+          COPY . /root/
+          CMD ["./Lagrange.Milky"]
           EOF
 
           docker build -t ghcr.io/${OWNER}/charonanchor:3.2.19 .

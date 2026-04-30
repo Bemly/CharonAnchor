@@ -40,7 +40,7 @@ internal static class Program
 
             Console.WriteLine("Please edit the configuration file");
             Console.WriteLine("and press any key to continue starting the application.");
-            Console.ReadKey();
+            try { Console.ReadKey(); } catch (InvalidOperationException) { }
         }
     }
 
