@@ -8,9 +8,10 @@
 using json = nlohmann::json;
 
 // 签名函数偏移地址 - 编译时通过 -DSIGN_OFFSET=0xXXXX 指定
-// 默认值: 0x5ADE220 (3.2.19-39038)
+// 老版本 (3.2.19): 0x5ADE220
+// 新版本 (3.2.28): 0x57E1131 (sub_57E1131 - MSFSign 核心函数)
 #ifndef SIGN_OFFSET
-#define SIGN_OFFSET 0x5ADE220
+#define SIGN_OFFSET 0x57E1131
 #endif
 
 int main() {
