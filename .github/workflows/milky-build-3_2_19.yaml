@@ -65,9 +65,9 @@ jobs:
           cd Lagrange.Milky/bin/Release/net10.0/linux-x64/publish
 
           cat > Dockerfile <<'EOF'
-          FROM debian:bookworm-slim
+          FROM ubuntu:noble
           RUN apt-get update && apt-get install -y --no-install-recommends \
-              ca-certificates libgnutls30 libssl3 \
+              ca-certificates libgnutls30 libssl3t64 \
               && rm -rf /var/lib/apt/lists/*
           WORKDIR /root
           COPY . /usr/local/bin/
