@@ -1,62 +1,73 @@
 <div align="center">
 
-![Lagrange.Core](https://socialify.git.ci/KonataDev/Lagrange.Core/image?description=1&descriptionEditable=An%20Implementation%20of%20NTQQ%20Protocol%2C%20with%20Pure%20C%23%2CDerived%20from%20Konata.Core&font=Jost&forks=1&issues=1&logo=https%3A%2F%2Fstatic.live.moe%2Flagrange.jpg&name=1&pattern=Diagonal%20Stripes&pulls=1&stargazers=1&theme=Auto)
+# CharonAnchor
 
-[![Image](https://trendshift.io/api/badge/repositories/3486)](https://trendshift.io/repositories/3486)
+**Fork of [LagrangeV2](https://github.com/LagrangeDev/LagrangeV2)**
+
+失败的作品·卡戎 - 拉格兰的现实锚定点
 
 </div>
 
-## Usage
+---
 
-### Integrating into .NET projects
+## 修改说明
 
-Add the [NuGet package](https://www.nuget.org/packages/Lagrange.Core/) to the project.
+本仓库是 LagrangeV2 的 fork，内置本地签名，不再需要外部签名服务器。
 
-For more library usage, please refer to the [documentation](https://lagrangedev.github.io/Lagrange.Doc/v2/Lagrange.Core) of Lagrange.Core.
+**改动：**
+- 添加 `Charon/` - 本地签名实现
+- 修改 `Lagrange.Milky` - 使用本地签名
 
-### Integrating into projects of other languages
+---
 
-If you are using other languages, the module [Lagrange.Core.NativeAPI](https://lagrangedev.github.io/Lagrange.Doc/v2/Lagrange.Core.NativeAPI/) provides a C ABI-compatible wrapper for 64-bit native libraries.
+## 创造
 
-### Providing web service to bot applications
+```bash
+dotnet build Lagrange.Milky/Lagrange.Milky.csproj
+```
 
-The project [Lagrange.Milky](https://github.com/LagrangeDev/LagrangeV2/tree/main/Lagrange.Milky) implements [Milky](https://milky.ntqqrev.org/) protocol. You can use it to provide web service to bot applications like NoneBot ~~and Saltify~~.
+---
 
-Check [Lagrange.Milky README](https://github.com/LagrangeDev/LagrangeV2/tree/main/Lagrange.Milky#readme) for more information.
+## 锚定
 
-## Appendix
+将以下文件放在运行目录：
+- `wrapper.node` - 签名模块（从 Lagrange.Milky 依赖提取）
+- `libsymbols.so` - 符号补丁
+- `libbugly.so` - 依赖库
+- `libcrbase.so` - 依赖库
 
-### Disclaimer
+运行：
+```bash
+cd Lagrange.Milky/bin/Debug/net10.0
+./Lagrange.Milky
+```
 
-The Lagrange.Core project, including its developers, contributors, and affiliated individuals or entities, hereby explicitly disclaim any association with, support for, or endorsement of any form of illegal behavior. This disclaimer extends to any use or application of the Lagrange.Core project that may be contrary to local, national, or international laws, regulations, or ethical guidelines.
+---
 
-Lagrange.Core is an open-source software project designed to facilitate lawful and ethical applications in its intended use cases. It is the responsibility of each user to ensure that their usage of Lagrange.Core complies with all applicable laws and regulations in their jurisdiction.
+## 版本支持
 
-The developers and contributors of Lagrange.Core assume no liability whatsoever for any actions taken by users that violate the law or engage in any form of illicit activity. Users are solely responsible for their own actions and any consequences that may arise from the use of Lagrange.Core.
+| 版本 | 偏移 |
+|------|------|
+| 3.2.19 | 0x5ADE220 |
+| 3.2.28 | 0x57E1131 |
 
-Furthermore, any discussions, suggestions, or guidance provided by the Lagrange.Core community, including its developers, contributors, and users, should not be interpreted as legal advice. It is strongly recommended that users seek independent legal counsel to understand the legal implications of their actions and ensure compliance with the relevant laws and regulations.
+---
 
-By using or accessing Lagrange.Core, the user acknowledges and agrees to release the developers, contributors, and affiliated individuals or entities from any and all liability arising from the use or misuse of the project, including any legal consequences incurred as a result of their actions.
+## 分支
 
-Please use Lagrange.Core responsibly and in accordance with the law.
+| 分支 | 说明 |
+|------|------|
+| main | Fork + 本地签名 |
+| 3.2.19-39038 | C++ HTTP 服务（封存） |
+| 3.2.28-48517 | C++ HTTP 服务（封存） |
 
-### Feedback
+---
 
-[Join Telegram Chat](https://t.me/+6HNTeJO0JqtlNmRl)
+<div align="center">
 
-### Related Projects
+真相是这样的：一个脆弱的灵魂打造了这个破碎又诡异的牢笼，
+而在这个牢笼之中，一切行动都被赋予了"理由"。
+拉格兰伸出双手，紧紧抱住卡戎。它的眼睛闪着光芒。
+看到这一幕，她问道："……你就是我那时候看见的指引之光吗？"
 
-<table>
-<tr>
-  <td><a href="https://github.com/LagrangeDev/Lagrange.Core">Lagrange.Core</a></td>
-  <td>NTQQ Protocol Implementation（👈Here</td>
-</tr>
-<tr>
-  <td><a href="https://github.com/whitechi73/OpenShamrock">OpenShamrock</a></td>
-  <td>Based on Xposed, OneBot Bot Framework</td>
-</tr>
-<tr>
-  <td><a href="https://github.com/chrononeko/chronocat">Chronocat</a></td>
-  <td>Based on Electron, modular Satori Bot Framework</td>
-</tr>
-</table>
+</div>
