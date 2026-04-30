@@ -68,7 +68,7 @@ POST http://127.0.0.1:8080/api/sign/sec-sign
 在`JSONC`的签名服务器中填入本地运行的`http://127.0.0.1:8080/api/sign/sec-sign`即可\
 版本号需要💯完全一致Nya～
 
-懒人签名(仅支持docker linux x64): [自用(版本写死的,每次更新需要更新整个框架！使用后果自负)](pkgs/container/charonanchor)
+懒人签名(仅支持docker linux x64): [自用(版本写死的,每次更新需要更新整个框架！使用后果自负)](../pkgs/container/charonanchor)
 
 开发学习: 获取[MEMORY.md](https://t.me/citron_bemly)和[学习插件](https://github.com/HexRaysSA/ida-claude-plugins)
 
