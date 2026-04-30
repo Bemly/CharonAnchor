@@ -10,9 +10,9 @@ Lagrange.Milky 签名服务
 
 自助签名: [SignApiGuide](https://github.com/LagrangeDev/SignApiGuide)
 
-自搭签名(docker linux x64): 按照下方`人为构造`描述，在`JSONC`的签名服务器中填入本地运行的`http://127.0.0.1:8080/api/sign/sec-sign`即可
+自搭签名(only docker linux x64): 按照下方`人为构造`描述，在`JSONC`的签名服务器中填入本地运行的`http://127.0.0.1:8080/api/sign/sec-sign`即可
 
-懒人签名(docker linux x64): [自用(版本写死的,每次更新需要更新整个框架！使用后果自负)](https://github.com/Bemly/CharonAnchor/tree/Lagrange-3.2.28)
+懒人签名(only docker linux x64): [自用(版本写死的,每次更新需要更新整个框架！使用后果自负)](https://github.com/Bemly/CharonAnchor/tree/Lagrange-3.2.28)
 
 创造
 ============
