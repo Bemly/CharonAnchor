@@ -3,6 +3,10 @@ name: Build CharonAnchor 3.2.28
 on:
   workflow_dispatch:
 
+permissions:
+  packages: write
+  contents: read
+
 jobs:
   build-3_2_28:
     runs-on: ubuntu-latest
