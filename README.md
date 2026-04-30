@@ -6,7 +6,7 @@ Lagrange.Milky 签名服务
 
 失败的作品·卡戎 - 拉格兰的现实锚定点
 
-特别鸣谢: [LagrangeV2](https://github.com/LagrangeDev/LagrangeV2)
+特别鸣谢: [LagrangeV2](https://github.com/LagrangeDev/LagrangeV2)、[SignServer](https://github.com/nimeng1299/SignServer)
 
 创造
 ============
