@@ -28,10 +28,10 @@ jobs:
           mkdir -p /tmp/qq-extract
           dpkg-deb -x /tmp/qq.deb /tmp/qq-extract
 
-          # Copy dependencies to project
+          # Copy dependencies to project (all in resources/app/)
           cp /tmp/qq-extract/opt/QQ/resources/app/wrapper.node ./wrapper.node
-          cp /tmp/qq-extract/opt/QQ/lib/libbugly.so ./libbugly.so
-          cp /tmp/qq-extract/opt/QQ/lib/libcrbase.so ./libcrbase.so
+          cp /tmp/qq-extract/opt/QQ/resources/app/libbugly.so ./libbugly.so
+          cp /tmp/qq-extract/opt/QQ/resources/app/libcrbase.so ./libcrbase.so
 
           echo "Extracted files:"
           ls -la wrapper.node libbugly.so libcrbase.so libsymbols.so
