@@ -1,4 +1,4 @@
-name: Build CharonAnchor
+name: Build CharonAnchor 3.2.19
 
 on:
   workflow_dispatch:
@@ -6,7 +6,6 @@ on:
 jobs:
   build-3_2_19:
     runs-on: ubuntu-latest
-
     steps:
       - name: Install Dependencies
         run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
@@ -53,55 +52,4 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: CharonAnchor-3.2.19-linux-x64
-          path: Lagrange.Milky/bin/Release/net10.0/linux-x64/publish/
-
-  build-3_2_28:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Install Dependencies
-        run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
-
-      - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10'
-
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download deb and extract dependencies
-        run: |
-          wget -q https://dldir1v6.qq.com/qqfile/qq/QQNT/f9cbaab2/linuxqq_3.2.28-48517_amd64.deb -O /tmp/linuxim.deb
-
-          mkdir -p /tmp/linuxim-extract
-          dpkg-deb -x /tmp/linuxim.deb /tmp/linuxim-extract
-
-          cp /tmp/linuxim-extract/opt/QQ/resources/app/wrapper.node ./wrapper.node
-          cp /tmp/linuxim-extract/opt/QQ/resources/app/libbugly.so ./libbugly.so
-          cp /tmp/linuxim-extract/opt/QQ/resources/app/libcrbase.so ./libcrbase.so
-
-          echo "Extracted files:"
-          ls -la wrapper.node libbugly.so libcrbase.so libsymbols.so
-
-      - name: Publish
-        run: dotnet publish Lagrange.Milky -c Release -r linux-x64 -p:DebugType=none -p:StripSymbols=true -p:OptimizationPreference=Size
-
-      - name: Package with dependencies
-        run: |
-          cd Lagrange.Milky/bin/Release/net10.0/linux-x64/publish
-
-          cp ${{ github.workspace }}/wrapper.node .
-          cp ${{ github.workspace }}/libbugly.so .
-          cp ${{ github.workspace }}/libcrbase.so .
-          cp ${{ github.workspace }}/libsymbols.so .
-
-          mv Lagrange.Milky Lagrange.Milky-3.2.28
-
-          echo "Package contents:"
-          ls -la
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: CharonAnchor-3.2.28-linux-x64
           path: Lagrange.Milky/bin/Release/net10.0/linux-x64/publish/
