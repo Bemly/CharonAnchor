@@ -67,10 +67,11 @@ jobs:
           cat > Dockerfile <<'EOF'
           FROM debian:bookworm-slim
           RUN apt-get update && apt-get install -y --no-install-recommends \
-              libgnutls30 && rm -rf /var/lib/apt/lists/*
+              ca-certificates libgnutls30 libssl3 \
+              && rm -rf /var/lib/apt/lists/*
           WORKDIR /root
           COPY . /usr/local/bin/
-          CMD ["Lagrange.Milky"]
+          CMD ["/usr/local/bin/Lagrange.Milky"]
           EOF
 
           docker build -t ghcr.io/${OWNER}/charonanchor:3.2.19 .
