@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-3.2.19:
+  build-3_2_19:
     runs-on: ubuntu-latest
 
     steps:
@@ -55,7 +55,7 @@ jobs:
           name: CharonAnchor-3.2.19-linux-x64
           path: Lagrange.Milky/bin/Release/net10.0/linux-x64/publish/
 
-  build-3.2.28:
+  build-3_2_28:
     runs-on: ubuntu-latest
 
     steps:
