@@ -39,7 +39,7 @@ public static class HostApplicationBuilderExtension
 #pragma warning restore IL2026, IL3050
             // CharonSignProvider (本地签名)
             .AddSingleton<BotSignProvider>(sp => new CharonSignProvider(
-                Directory.GetCurrentDirectory(),
+                AppContext.BaseDirectory,
                 "3.2.28"
             ))
             // BotConfig

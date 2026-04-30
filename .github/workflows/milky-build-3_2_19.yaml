@@ -75,8 +75,8 @@ jobs:
               libunwind8 libgssapi-krb5-2 libssh2-1t64 libpsl5t64 \
               && rm -rf /var/lib/apt/lists/*
           WORKDIR /root
-          COPY . /root/
-          CMD ["./Lagrange.Milky"]
+          COPY . /usr/local/bin/
+          CMD ["Lagrange.Milky"]
           EOF
 
           docker build -t ghcr.io/${OWNER}/charonanchor:3.2.19 .
