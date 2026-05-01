@@ -61,10 +61,11 @@ POST http://127.0.0.1:8080/api/sign/sec-sign
 
 虚无
 ============
+<img src="fumo.png" width="400" height="400" align="left">
 自助签名: [SignApiGuide](https://github.com/LagrangeDev/SignApiGuide)
 
 自搭签名(仅支持linux x64): \
-选择你喜欢的版本分支，按照下方`人为构造`描述，\
+选择你喜欢的版本分支，按照`人为构造`描述，\
 在`JSONC`的签名服务器中填入本地运行的`http://127.0.0.1:8080/api/sign/sec-sign`即可\
 版本号需要💯完全一致Nya～
 
@@ -75,6 +76,7 @@ POST http://127.0.0.1:8080/api/sign/sec-sign
 
 开发学习: 获取[MEMORY.md](https://t.me/citron_bemly)和[学习插件](https://github.com/HexRaysSA/ida-claude-plugins)
 
+这里是`ptt`越打越低的小萌新，欢迎加阿卡伊好友捏: `986 075 845`
 
 ------------
 真相是这样的：一个脆弱的灵魂打造了这个破碎又诡异的牢笼，
