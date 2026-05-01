@@ -52,16 +52,6 @@ internal static partial class WrapperInterop
     [return: MarshalAs(UnmanagedType.LPStr)]
     public static partial string dlerror();
 
-    // symlink/unlink for bypass
-    [LibraryImport("libc.so.6")]
-    public static partial int symlink([MarshalAs(UnmanagedType.LPStr)] string target, [MarshalAs(UnmanagedType.LPStr)] string linkpath);
-
-    [LibraryImport("libc.so.6")]
-    public static partial int unlink([MarshalAs(UnmanagedType.LPStr)] string pathname);
-
-    [LibraryImport("libc.so.6")]
-    public static partial int mkdir([MarshalAs(UnmanagedType.LPStr)] string pathname, uint mode);
-
     // Get function pointer from address
     public static T GetDelegateForFunctionPointer<T>(nuint address) where T : Delegate
     {

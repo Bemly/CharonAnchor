@@ -29,31 +29,27 @@ public class WrapperLoader : IDisposable
     }
 
     /// <summary>
-    /// Initialize: preload dependencies, create bypass symlink, load wrapper.node
+    /// Initialize: preload dependencies, load wrapper.node directly
+    /// DFLJ symlink is intentionally NOT created — "DFLJ" is a canary,
+    /// not a bypass requirement. Loading from a path containing "DFLJ"
+    /// sets dword_7EE72B0 = 0 (detected), causing forced disconnect after ~5h.
     /// </summary>
     public bool Initialize()
     {
         // 1. Preload dependencies
         PreloadDependencies();
 
-        // 2. Create DFLJ bypass symlink (anti-reverse check bypass)
-        var bypassPath = CreateBypassSymlink();
-        if (bypassPath == null)
-        {
-            Console.Error.WriteLine("Failed to create bypass symlink");
-            return false;
-        }
-
-        // 3. Load wrapper.node from bypass path
-        _wrapperHandle = dlopen(bypassPath, RTLD_LAZY);
+        // 2. Load wrapper.node directly (no DFLJ symlink — see comment above)
+        var wrapperPath = GetWrapperPath();
+        _wrapperHandle = dlopen(wrapperPath, RTLD_LAZY);
         if (_wrapperHandle == IntPtr.Zero)
         {
             Console.Error.WriteLine($"dlopen failed: {dlerror()}");
             return false;
         }
 
-        // 4. Find base address by parsing /proc/self/maps
-        _baseAddress = FindBaseAddress(bypassPath);
+        // 3. Find base address by parsing /proc/self/maps
+        _baseAddress = FindBaseAddress(wrapperPath);
         if (_baseAddress == 0)
         {
             Console.Error.WriteLine("Failed to find wrapper.node base address");
@@ -64,6 +60,14 @@ public class WrapperLoader : IDisposable
 
         Console.WriteLine($"Loaded wrapper.node at base: 0x{_baseAddress:X}");
         return true;
+    }
+
+    private string GetWrapperPath()
+    {
+        var path = Path.Combine(_workingDirectory, "wrapper.node");
+        if (!Path.IsPathRooted(path))
+            path = Path.GetFullPath(path);
+        return path;
     }
 
     private void PreloadDependencies()
@@ -88,33 +92,6 @@ public class WrapperLoader : IDisposable
                 Console.WriteLine($"Failed to preload {lib}: {dlerror()}");
             }
         }
-    }
-
-    private string? CreateBypassSymlink()
-    {
-        // Create /tmp/DFLJ directory
-        const string tmpDir = "/tmp/DFLJ";
-        mkdir(tmpDir, 0755);
-
-        // Get absolute path to wrapper.node
-        var wrapperPath = Path.Combine(_workingDirectory, "wrapper.node");
-        if (!Path.IsPathRooted(wrapperPath))
-        {
-            wrapperPath = Path.GetFullPath(wrapperPath);
-        }
-
-        // Create symlink
-        var symlinkPath = Path.Combine(tmpDir, "wrapper.node");
-        unlink(symlinkPath); // Remove existing
-
-        if (symlink(wrapperPath, symlinkPath) != 0)
-        {
-            Console.Error.WriteLine($"Failed to create symlink: {dlerror()}");
-            return null;
-        }
-
-        Console.WriteLine($"Created bypass symlink: {symlinkPath} -> {wrapperPath}");
-        return symlinkPath;
     }
 
     private nuint FindBaseAddress(string path)
