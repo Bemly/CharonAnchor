@@ -68,12 +68,15 @@ cd Lagrange.Milky/bin/Debug/net10.0
     // HTTP 服务设置
     "Milky": {
         "Host": "*",                         // 监听地址，* 为所有网卡
-        "Port": 6101,                        // 监听端口
+        "Port": 616,                         // 监听端口（容器内 616，-p 映射）
         "Prefix": "/",                       // URL 路径前缀
-        "AccessToken": "charon",             // API 令牌，null 则不验证（建议设置）
+        "AccessToken": "your-token",         // API 令牌，null 则不验证（生产务必设置）
         "EnabledWebSocket": false,           // 是否启用 WebSocket
-        "WebHook": null                      // WebHook 回调 URL，null 则不启用
-        // "WebHook": { "Url": "http://127.0.0.1:3001/webhook" }
+        // WebHook 回调 URL：
+        //   bridge 模式 → host.docker.internal:6160（访问宿主机映射端口）
+        //   host 模式   → 127.0.0.1:6160
+        //   详见下方 Docker 部署说明
+        "WebHook": { "Url": "http://host.docker.internal:6160/cgi-bin/router.sh/qq" }
     }
 }
 ```
@@ -81,13 +84,50 @@ cd Lagrange.Milky/bin/Debug/net10.0
 **API 调用示例：**
 
 ```bash
-curl -X POST http://127.0.0.1:6101/api/send_private_message \
+curl -X POST http://127.0.0.1:616/api/send_private_message \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer charon" \
+  -H "Authorization: Bearer your-token" \
   -d '{"user_id": 10000, "message": [{"type": "text", "data": {"text": "Hello"}}]}'
 ```
 
 消息段类型：`text`, `image`, `face`, `reply`, `record`, `video`, `file`, `mention`, `mention_all`, `forward`, `market_face`, `light_app`, `xml`
+
+Docker 部署
+============
+
+**bridge 模式（推荐）** — 端口映射 + `host.docker.internal` 访问宿主机：
+
+```bash
+# 启动（需 --add-host 支持 host.docker.internal）
+docker run -d --name Lagrange \
+  --add-host host.docker.internal:host-gateway \
+  -p 616:616 \
+  -v /vol1/1000/Lagrange:/root \
+  ghcr.io/bemly/charonanchor:3.2.28 Lagrange.Milky
+
+# WebHook 配置（appsettings.jsonc）：
+# "WebHook": { "Url": "http://host.docker.internal:6160/cgi-bin/router.sh/qq" }
+
+# 外部容器访问 API：
+# http://host.docker.internal:616/api
+```
+
+**host 模式** — 共享宿主机网络，`127.0.0.1` 直通：
+
+```bash
+docker run -d --name Lagrange \
+  --network host \
+  -v /vol1/1000/Lagrange:/root \
+  ghcr.io/bemly/charonanchor:3.2.28 Lagrange.Milky
+
+# WebHook 配置（appsettings.jsonc）：
+# "WebHook": { "Url": "http://127.0.0.1:6160/cgi-bin/router.sh/qq" }
+
+# 外部容器访问 API：
+# http://127.0.0.1:616/api
+```
+
+> `--add-host host.docker.internal:host-gateway` 仅在 Linux 需要，Docker Desktop（Mac/Windows）内置支持。
 
 自我投影
 ============
