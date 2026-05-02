@@ -4,9 +4,6 @@
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <cerrno>
 
 static void* g_module = nullptr;
 static uintptr_t g_base = 0;
@@ -38,28 +35,7 @@ static int find_module(struct dl_phdr_info* info, size_t size, void* data) {
     return 0;
 }
 
-// 创建包含 "DFLJ" 路径的符号链接来绕过反逆向检查
-static char* create_bypass_symlink(const char* original_path) {
-    static char symlink_path[256];
 
-    // 创建临时目录 /tmp/DFLJ
-    const char* tmp_dir = "/tmp/DFLJ";
-    mkdir(tmp_dir, 0755);
-
-    // 创建符号链接
-    snprintf(symlink_path, sizeof(symlink_path), "%s/wrapper.node", tmp_dir);
-
-    // 如果已存在，先删除
-    unlink(symlink_path);
-
-    if (symlink(original_path, symlink_path) != 0) {
-        fprintf(stderr, "Failed to create symlink: %s\n", strerror(errno));
-        return nullptr;
-    }
-
-    printf("Created bypass symlink: %s -> %s\n", symlink_path, original_path);
-    return symlink_path;
-}
 
 int sign_init(const char** libs, int libs_count, uintptr_t offset) {
     // 1. 预加载依赖库
@@ -72,21 +48,9 @@ int sign_init(const char** libs, int libs_count, uintptr_t offset) {
         }
     }
 
-    // 2. 尝试直接加载，如果失败则创建符号链接绕过检查
+    // 2. 直接加载 wrapper.node（不要创建 DFLJ symlink——DFLJ 是 canary 陷阱标记）
     const char* wrapper_path = "./wrapper.node";
     g_module = dlopen(wrapper_path, RTLD_LAZY);
-
-    if (!g_module) {
-        // 新版本可能需要 DFLJ 路径检查，创建符号链接
-        printf("Direct load failed, trying bypass symlink...\n");
-
-        // 查找原始 wrapper.node 路径
-        char* bypass_path = create_bypass_symlink(wrapper_path);
-        if (bypass_path) {
-            g_module = dlopen(bypass_path, RTLD_LAZY);
-            wrapper_path = bypass_path;
-        }
-    }
 
     if (!g_module) {
         fprintf(stderr, "dlopen wrapper.node failed: %s\n", dlerror());
