@@ -75,7 +75,7 @@ cd Lagrange.Milky/bin/Debug/net10.0
         // WebHook 回调 URL：
         //   bridge 模式 → host.docker.internal:6160（访问宿主机映射端口）
         //   host 模式   → 127.0.0.1:6160
-        //   详见下方 Docker 部署说明
+        //   详见下方 Docker 神授说
         "WebHook": { "Url": "http://host.docker.internal:6160/cgi-bin/router.sh/qq" }
     }
 }
@@ -92,7 +92,7 @@ curl -X POST http://127.0.0.1:616/api/send_private_message \
 
 消息段类型：`text`, `image`, `face`, `reply`, `record`, `video`, `file`, `mention`, `mention_all`, `forward`, `market_face`, `light_app`, `xml`
 
-Docker 部署
+Docker 神授说
 ============
 
 **bridge 模式（推荐）** — 端口映射 + `host.docker.internal` 访问宿主机：
