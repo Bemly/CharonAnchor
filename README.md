@@ -73,8 +73,6 @@ POST http://127.0.0.1:8080/api/sign/sec-sign
 懒人签名(仅支持docker linux x64): \
 [版本固定,每次需要更新整个框架,使用后果自负](https://github.com/Bemly/CharonAnchor/pkgs/container/charonanchor)
 
-温馨提示自搭的反检测逻辑没有剥离好，虽然能够正常登录，但目前是一天一踢喵，生产环境请慎用
-
 开发学习: 获取[MEMORY.md](https://t.me/citron_bemly)和[学习插件](https://github.com/HexRaysSA/ida-claude-plugins)
 
 这里是`ptt`越打越低的小萌新，欢迎加阿卡伊好友捏: `986 075 845`
