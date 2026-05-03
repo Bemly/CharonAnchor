@@ -40,6 +40,13 @@ jobs:
           echo "Extracted files:"
           ls -la wrapper.node libbugly.so libcrbase.so libsymbols.so
 
+      - name: Set random DeviceName
+        run: |
+          DEVICE="CT-$(openssl rand -hex 6 | tr '[:lower:]' '[:upper:]')"
+          echo "DeviceName: $DEVICE"
+          sed -i "s|// \"DeviceName\": \"[^\"]*\"|\"DeviceName\": \"$DEVICE\"|" Lagrange.Milky/Resources/appsettings.jsonc
+          grep DeviceName Lagrange.Milky/Resources/appsettings.jsonc
+
       - name: Publish
         run: dotnet publish Lagrange.Milky -c Release -r linux-x64 -p:DebugType=none -p:StripSymbols=true -p:OptimizationPreference=Size
 
@@ -89,14 +96,12 @@ jobs:
       - name: Verify Docker image
         run: |
           IMAGE="${{ steps.build.outputs.image }}"
-          PC_NAME="CT$(openssl rand -hex 6 | tr '[:lower:]' '[:upper:]')"
 
           echo "Pulling image: $IMAGE"
           docker pull "$IMAGE"
 
-          echo "Starting container with PC name: $PC_NAME"
+          echo "Starting container..."
           docker run -d --name charon-verify \
-            --hostname "$PC_NAME" \
             "$IMAGE" 2>&1
 
           # Wait for QR login output (timeout 30s)
