@@ -61,17 +61,11 @@ jobs:
           echo "Package contents:"
           ls -la
 
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push Docker image
+      - name: Build Docker image (local)
         id: build
         run: |
           OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE="ghcr.io/${OWNER}/charonanchor:3.2.19"
 
           cd Lagrange.Milky/bin/Release/net10.0/linux-x64/publish
 
@@ -87,21 +81,15 @@ jobs:
           CMD ["Lagrange.Milky"]
           EOF
 
-          docker build -t ghcr.io/${OWNER}/charonanchor:3.2.19 .
-          docker push ghcr.io/${OWNER}/charonanchor:3.2.19
-
-          echo "image=ghcr.io/${OWNER}/charonanchor:3.2.19" >> $GITHUB_OUTPUT
+          docker build -t "$IMAGE" .
+          echo "image=$IMAGE" >> $GITHUB_OUTPUT
 
       - name: Verify Docker image
         run: |
           IMAGE="${{ steps.build.outputs.image }}"
 
-          echo "Pulling image: $IMAGE"
-          docker pull "$IMAGE"
-
-          echo "Starting container..."
-          docker run -d --name charon-verify \
-            "$IMAGE" 2>&1
+          echo "Starting container from $IMAGE ..."
+          docker run -d --name charon-verify "$IMAGE" 2>&1
 
           # Wait for QR login output (timeout 30s)
           QR_FOUND=false
@@ -130,9 +118,23 @@ jobs:
 
           echo "✓ Image verification passed"
 
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push Docker image
+        run: |
+          IMAGE="${{ steps.build.outputs.image }}"
+          echo "Pushing $IMAGE ..."
+          docker push "$IMAGE"
+          echo "✓ Published $IMAGE"
+
       - name: Cleanup old untagged versions
         run: |
-          echo "Listing old untagged versions (tagged images are safe)..."
+          echo "Listing old untagged versions..."
           VERSIONS=$(gh api "users/${{ github.repository_owner }}/packages/container/charonanchor/versions" \
             --jq '.[] | select(.metadata.container.tags | length == 0) | .id' 2>/dev/null || echo "")
 
@@ -148,4 +150,4 @@ jobs:
               -X DELETE --silent && deleted=$((deleted + 1))
           done
 
-          echo "✓ Cleaned up $deleted old untagged version(s) (3.2.19 / 3.2.28 tagged images untouched)"
+          echo "✓ Cleaned up $deleted old untagged version(s) (tagged 3.2.19 / 3.2.28 untouched)"
