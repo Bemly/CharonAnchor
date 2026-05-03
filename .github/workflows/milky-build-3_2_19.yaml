@@ -3,10 +3,13 @@ name: Build CharonAnchor 3.2.19
 on:
   workflow_dispatch:
 
+permissions:
+  packages: write
+  contents: read
+
 jobs:
   build:
     uses: ./.github/workflows/build-milky.yaml
     with:
       version: "3.2.19"
       deb_url: "https://dldir1v6.qq.com/qqfile/qq/QQNT/c773cdf7/linuxqq_3.2.19-39038_amd64.deb"
-    secrets: inherit

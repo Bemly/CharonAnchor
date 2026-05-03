@@ -4,10 +4,13 @@ on:
   push:
   workflow_dispatch:
 
+permissions:
+  packages: write
+  contents: read
+
 jobs:
   build:
     uses: ./.github/workflows/build-milky.yaml
     with:
       version: "3.2.28"
       deb_url: "https://dldir1v6.qq.com/qqfile/qq/QQNT/f9cbaab2/linuxqq_3.2.28-48517_amd64.deb"
-    secrets: inherit
