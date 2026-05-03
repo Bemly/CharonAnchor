@@ -82,3 +82,42 @@ jobs:
 
           docker build -t ghcr.io/${OWNER}/charonanchor:3.2.28 .
           docker push ghcr.io/${OWNER}/charonanchor:3.2.28
+
+      - name: Verify Docker image
+        run: |
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+
+          echo "Pulling image for verification..."
+          docker pull ghcr.io/${OWNER}/charonanchor:3.2.28
+
+          echo "Checking binary..."
+          docker run --rm ghcr.io/${OWNER}/charonanchor:3.2.28 \
+            test -x /usr/local/bin/Lagrange.Milky && echo "✓ Binary executable"
+
+          echo "Checking native libs..."
+          docker run --rm ghcr.io/${OWNER}/charonanchor:3.2.28 \
+            ls -la /usr/local/bin/wrapper.node /usr/local/bin/libbugly.so /usr/local/bin/libcrbase.so /usr/local/bin/libsymbols.so
+
+          echo "✓ Image verification passed"
+
+      - name: Cleanup old untagged versions
+        run: |
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+
+          echo "Listing package versions..."
+          VERSIONS=$(gh api "users/${{ github.repository_owner }}/packages/container/charonanchor/versions" \
+            --jq '.[] | select(.metadata.container.tags | length == 0) | .id' 2>/dev/null || echo "")
+
+          if [ -z "$VERSIONS" ]; then
+            echo "No untagged versions to clean up"
+            exit 0
+          fi
+
+          deleted=0
+          for vid in $VERSIONS; do
+            echo "Deleting untagged version $vid..."
+            gh api "users/${{ github.repository_owner }}/packages/container/charonanchor/versions/$vid" \
+              -X DELETE --silent && deleted=$((deleted + 1))
+          done
+
+          echo "✓ Cleaned up $deleted old version(s)"
