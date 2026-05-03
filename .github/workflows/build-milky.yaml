@@ -140,21 +140,35 @@ jobs:
           echo "✓ Published $IMAGE"
 
       - name: Cleanup old untagged versions
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Listing old untagged versions..."
-          VERSIONS=$(gh api "users/${{ github.repository_owner }}/packages/container/charonanchor/versions" \
-            --jq '.[] | select(.metadata.container.tags | length == 0) | .id' 2>/dev/null || echo "")
+          set -euo pipefail
 
-          if [ -z "$VERSIONS" ]; then
+          echo "=== Listing all versions ==="
+          gh api "users/${{ github.repository_owner }}/packages/container/charonanchor/versions" \
+            --jq '.[] | "id=\(.id) tags=[\(.metadata.container.tags | join(", "))]"' || true
+
+          echo ""
+          echo "=== Listing untagged versions ==="
+          UNTAGGED=$(gh api "users/${{ github.repository_owner }}/packages/container/charonanchor/versions" \
+            --jq '.[] | select(.metadata.container.tags | length == 0) | .id' || echo "")
+
+          if [ -z "$UNTAGGED" ]; then
             echo "No untagged versions to clean up"
             exit 0
           fi
 
           deleted=0
-          for vid in $VERSIONS; do
-            echo "Deleting untagged version $vid..."
-            gh api "users/${{ github.repository_owner }}/packages/container/charonanchor/versions/$vid" \
-              -X DELETE --silent && deleted=$((deleted + 1))
+          for vid in $UNTAGGED; do
+            echo -n "Deleting untagged version $vid ... "
+            if gh api "users/${{ github.repository_owner }}/packages/container/charonanchor/versions/$vid" \
+              -X DELETE 2>&1; then
+              echo "✓"
+              deleted=$((deleted + 1))
+            else
+              echo "✗ FAILED"
+            fi
           done
 
           echo "✓ Cleaned up $deleted old untagged version(s) (tagged versions untouched)"
