@@ -6,7 +6,7 @@ Lagrange.Milky 本地签名服务
 
 失败的作品·卡戎 - 拉格兰的现实锚定点
 
-创造
+创建
 ============
 ```bash
 cd Lagrange.Milky
@@ -76,7 +76,7 @@ cd Lagrange.Milky/bin/Debug/net10.0
         //   bridge 模式 → host.docker.internal:6160（访问宿主机映射端口）
         //   host 模式   → 127.0.0.1:6160
         //   如果 Ayu.Core 配置了 WEBHOOK_SECRET，URL 需加 ?token=xxx
-        //   密码含 # 需写成 %23（Router 会自动解码比对）
+        //   密码含 # 需写成 %23
         "WebHook": { "Url": "http://host.docker.internal:6160/cgi-bin/router.sh/qq?token=your-token" }
     }
 }
@@ -93,7 +93,7 @@ curl -X POST http://127.0.0.1:616/api/send_private_message \
 
 消息段类型：`text`, `image`, `face`, `reply`, `record`, `video`, `file`, `mention`, `mention_all`, `forward`, `market_face`, `light_app`, `xml`
 
-Docker 神授说
+Docker 部署
 ============
 
 **bridge 模式（推荐）** — 端口映射 + `host.docker.internal` 访问宿主机：
@@ -107,7 +107,7 @@ docker run -d --name Lagrange \
   ghcr.io/bemly/charonanchor:3.2.28 Lagrange.Milky
 
 # WebHook 配置（appsettings.jsonc）：
-# "WebHook": { "Url": "http://host.docker.internal:6160/cgi-bin/router.sh/qq" }
+# "WebHook": { "Url": "http://host.docker.internal:6160/cgi-bin/router.sh/qq?token=xxx" }
 
 # 外部容器访问 API：
 # http://host.docker.internal:616/api
@@ -122,7 +122,7 @@ docker run -d --name Lagrange \
   ghcr.io/bemly/charonanchor:3.2.28 Lagrange.Milky
 
 # WebHook 配置（appsettings.jsonc）：
-# "WebHook": { "Url": "http://127.0.0.1:6160/cgi-bin/router.sh/qq" }
+# "WebHook": { "Url": "http://127.0.0.1:6160/cgi-bin/router.sh/qq?token=xxx" }
 
 # 外部容器访问 API：
 # http://127.0.0.1:616/api
@@ -130,10 +130,12 @@ docker run -d --name Lagrange \
 
 > `--add-host host.docker.internal:host-gateway` 仅在 Linux 需要，Docker Desktop（Mac/Windows）内置支持。
 
+> WebHook URL token 如果含特殊字符需要 URL 编码：`#` → `%23`，`<` → `%3C`。Ayu.Core router 会自动解码比对。
+
 自我投影
 ============
 通过切换分支选择版本：
-- `Lagrange-3.2.28` · 当前分支（内置本地签名）
+- `Lagrange` · 当前分支（内置本地签名，推荐）
 - `3.2.28-48517` · C++ HTTP 服务（封存）
 - `3.2.19-39038` · C++ HTTP 服务（封存）
 
