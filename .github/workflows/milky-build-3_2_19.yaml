@@ -62,6 +62,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Docker image
+        id: build
         run: |
           OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
 
@@ -81,3 +82,65 @@ jobs:
 
           docker build -t ghcr.io/${OWNER}/charonanchor:3.2.19 .
           docker push ghcr.io/${OWNER}/charonanchor:3.2.19
+
+          echo "image=ghcr.io/${OWNER}/charonanchor:3.2.19" >> $GITHUB_OUTPUT
+
+      - name: Verify Docker image
+        run: |
+          IMAGE="${{ steps.build.outputs.image }}"
+          PC_NAME="CT$(openssl rand -hex 6 | tr '[:lower:]' '[:upper:]')"
+
+          echo "Pulling image: $IMAGE"
+          docker pull "$IMAGE"
+
+          echo "Starting container with PC name: $PC_NAME"
+          docker run -d --name charon-verify \
+            --hostname "$PC_NAME" \
+            "$IMAGE" 2>&1
+
+          # Wait for QR login output (timeout 30s)
+          QR_FOUND=false
+          for i in $(seq 1 30); do
+            sleep 1
+            LOGS=$(docker logs charon-verify 2>&1 || true)
+            if echo "$LOGS" | grep -qiE "qr|qrcode|qlogo|scan.*qr|二维码|login.*url|http.*qq.*qr"; then
+              echo "✓ QR login output detected at ${i}s"
+              QR_FOUND=true
+              break
+            fi
+          done
+
+          if [ "$QR_FOUND" = false ]; then
+            echo "::warning::QR code not detected in 30s, dumping logs:"
+            docker logs charon-verify 2>&1 || true
+          fi
+
+          docker stop charon-verify 2>/dev/null || true
+          docker rm charon-verify 2>/dev/null || true
+
+          if [ "$QR_FOUND" = false ]; then
+            echo "::error::Verification failed: no QR login output"
+            exit 1
+          fi
+
+          echo "✓ Image verification passed"
+
+      - name: Cleanup old untagged versions
+        run: |
+          echo "Listing old untagged versions (tagged images are safe)..."
+          VERSIONS=$(gh api "users/${{ github.repository_owner }}/packages/container/charonanchor/versions" \
+            --jq '.[] | select(.metadata.container.tags | length == 0) | .id' 2>/dev/null || echo "")
+
+          if [ -z "$VERSIONS" ]; then
+            echo "No untagged versions to clean up"
+            exit 0
+          fi
+
+          deleted=0
+          for vid in $VERSIONS; do
+            echo "Deleting untagged version $vid..."
+            gh api "users/${{ github.repository_owner }}/packages/container/charonanchor/versions/$vid" \
+              -X DELETE --silent && deleted=$((deleted + 1))
+          done
+
+          echo "✓ Cleaned up $deleted old untagged version(s) (3.2.19 / 3.2.28 tagged images untouched)"
