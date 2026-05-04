@@ -65,8 +65,8 @@ public class CharonSignProvider : BotSignProvider, IDisposable
     {
         _loader = new WrapperLoader(workingDirectory, version);
 
-        // Use V2 for versions >= 3.2.28 (offset >= 0x50000000)
-        _useV2 = WrapperLoader.VersionOffsets.TryGetValue(version, out var offset) && offset >= 0x50000000;
+        // V2 (int return) for 3.2.28+, V1 (long return) for 3.2.19
+        _useV2 = version != "3.2.19";
 
         if (!_loader.Initialize())
         {
