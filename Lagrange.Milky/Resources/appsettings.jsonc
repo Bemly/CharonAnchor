@@ -38,7 +38,7 @@
 
             // Device Name
             // Only valid when logging in without Keystore
-            "DeviceName": "deepin",
+            // "DeviceName": "LGR-Milky",
 
             // Whether to try to log in automatically after disconnection
             // "AutoReLogin": true,
