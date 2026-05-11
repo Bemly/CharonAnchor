@@ -35,8 +35,8 @@ public class BotAppInfo
         Os = "Linux",
         Kernel = "Linux",
         VendorOs = "linux",
-        Qua = "V1_LNX_NQ_3.2.26_46494_GW_B",
-        CurrentVersion = "3.2.26-46494",
+        Qua = "V1_LNX_NQ_3.2.28_48517_GW_B",
+        CurrentVersion = "3.2.28-48517",
         PtVersion = "2.0.0",
         SsoVersion = 19,
         PackageName = "com.tencent.qq",
@@ -51,7 +51,7 @@ public class BotAppInfo
         },
         AppId = 1600001615,
         SubAppId = 537345891,
-        AppClientVersion = 46494
+        AppClientVersion = 48517
     };
 
     private static readonly BotAppInfo MacOs = new()
