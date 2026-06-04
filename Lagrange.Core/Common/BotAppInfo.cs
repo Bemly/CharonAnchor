@@ -28,15 +28,15 @@ public class BotAppInfo
 
     public int SubAppId { get; init; }
 
-    public ushort AppClientVersion { get; init; }
+    public int AppClientVersion { get; init; }
 
     private static readonly BotAppInfo Linux = new()
     {
         Os = "Linux",
         Kernel = "Linux",
         VendorOs = "linux",
-        Qua = "V1_LNX_NQ_3.2.28_48517_GW_B",
-        CurrentVersion = "3.2.28-48517",
+        Qua = "V1_LNX_NQ_3.2.29_260528_GW_B",
+        CurrentVersion = "3.2.29-260528",
         PtVersion = "2.0.0",
         SsoVersion = 19,
         PackageName = "com.tencent.qq",
@@ -51,7 +51,7 @@ public class BotAppInfo
         },
         AppId = 1600001615,
         SubAppId = 537345891,
-        AppClientVersion = 48517
+        AppClientVersion = 260528
     };
 
     private static readonly BotAppInfo MacOs = new()

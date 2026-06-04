@@ -31,7 +31,7 @@ namespace Lagrange.Core.NativeAPI.NativeModel.Common
 
         public int SubAppId = 0;
 
-        public ushort AppClientVersion = 0;
+        public int AppClientVersion = 0;
 
         public static implicit operator BotAppInfo(BotAppInfoStruct info)
         {

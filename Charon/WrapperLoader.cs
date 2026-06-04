@@ -17,6 +17,7 @@ public class WrapperLoader : IDisposable
     {
         ["3.2.19"] = 0x5ADE220,
         ["3.2.28"] = 0x57E1131,
+        ["3.2.29"] = 0x5BD3EA1,
     };
 
     private readonly string _workingDirectory;
