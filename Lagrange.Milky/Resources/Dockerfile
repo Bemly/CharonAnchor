@@ -2,7 +2,6 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine-aot AS build
 
 WORKDIR /app/src
 
-COPY --link Charon/*.csproj Charon/
 COPY --link Lagrange.Codec/*.csproj Lagrange.Codec/
 COPY --link Lagrange.Core/*.csproj Lagrange.Core/
 COPY --link Lagrange.Milky/*.csproj Lagrange.Milky/
@@ -12,7 +11,7 @@ COPY --link Lagrange.Proto.Generator/*.csproj Lagrange.Proto.Generator/
 RUN dotnet restore Lagrange.Milky
 
 COPY --link . .
-RUN dotnet publish Lagrange.Milky -c Release -p:DebugType=none -p:StripSymbols=true -p:OptimizationPreference=Size -o /app/bin
+RUN dotnet publish Lagrange.Milky -c Release -p:DebugType=none -o /app/bin
 
 
 FROM alpine

@@ -1,144 +1,62 @@
-# CharonAnchor
+<div align="center">
 
-<img src="Charon.png" width="200" height="200" align="right">
+![Lagrange.Core](https://socialify.git.ci/KonataDev/Lagrange.Core/image?description=1&descriptionEditable=An%20Implementation%20of%20NTQQ%20Protocol%2C%20with%20Pure%20C%23%2CDerived%20from%20Konata.Core&font=Jost&forks=1&issues=1&logo=https%3A%2F%2Fstatic.live.moe%2Flagrange.jpg&name=1&pattern=Diagonal%20Stripes&pulls=1&stargazers=1&theme=Auto)
 
-Lagrange.Milky 本地签名服务
+[![Image](https://trendshift.io/api/badge/repositories/3486)](https://trendshift.io/repositories/3486)
 
-失败的作品·卡戎 - 拉格兰的现实锚定点
+</div>
 
-创造
-============
-```bash
-cd Lagrange.Milky
-dotnet build
-```
+## Usage
 
-支持的版本:
-- `3.2.19-39038` · SIGN_OFFSET=0x5ADE220
-- `3.2.28-48517` · SIGN_OFFSET=0x57E1131
+### Integrating into .NET projects
 
-锚定
-============
-将以下文件放在同一目录：
-- `Lagrange.Milky` · 主程序
-- `wrapper.node` · 签名模块（从 Lagrange.Milky 依赖提取）
-- `libsymbols.so` · 符号补丁
-- `libbugly.so` · 依赖库
-- `libcrbase.so` · 依赖库
+Add the [NuGet package](https://www.nuget.org/packages/Lagrange.Core/) to the project.
 
-运行：
-```bash
-cd Lagrange.Milky/bin/Debug/net10.0
-./Lagrange.Milky
-```
+For more library usage, please refer to the [documentation](https://lagrangedev.github.io/Lagrange.Doc/v2/Lagrange.Core) of Lagrange.Core.
 
-人为构造
-============
+### Integrating into projects of other languages
 
-首次运行会生成 `appsettings.jsonc`，编辑后重启生效。
+If you are using other languages, the module [Lagrange.Core.NativeAPI](https://lagrangedev.github.io/Lagrange.Doc/v2/Lagrange.Core.NativeAPI/) provides a C ABI-compatible wrapper for 64-bit native libraries.
 
-```jsonc
-{
-    // 日志级别
-    "Logging": {
-        "LogLevel": { "Default": "Information" }
-    },
-    // 核心设置
-    "Core": {
-        // 服务器连接
-        "Server": {
-            "AutoReconnect": true,           // 断线自动重连
-            "UseIPv6Network": false,         // 是否使用 IPv6
-            "GetOptimumServer": true         // 自动选择最快服务器
-        },
-        // 签名服务（本地签名无需修改）
-        "Signer": {
-            "Url": ""
-        },
-        // 登录设置
-        "Login": {
-            "Uin": 0,                        // 账号，0 则扫码登录
-            "Password": null,                // 密码，null 则扫码
-            "DeviceName": "BemlyCharon",     // 设备名称
-            "AutoReLogin": true,             // 断线自动重登
-            "CompatibleQrCode": false,       // ASCII 兼容二维码
-            "UseOnlineCaptchaResolver": true // 在线验证码识别
-        }
-    },
-    // HTTP 服务设置
-    "Milky": {
-        "Host": "*",                         // 监听地址，* 为所有网卡
-        "Port": 616,                         // 监听端口（容器内 616，-p 映射）
-        "Prefix": "/",                       // URL 路径前缀
-        "AccessToken": "your-token",         // API 令牌，null 则不验证（生产务必设置）
-        "EnabledWebSocket": false,           // 是否启用 WebSocket
-        // WebHook 回调 URL：
-        //   bridge 模式 → host.docker.internal:6160（访问宿主机映射端口）
-        //   host 模式   → 127.0.0.1:6160
-        //   如果 Ayu.Core 配置了 WEBHOOK_SECRET，URL 需加 ?token=xxx
-        //   密码含 # 需写成 %23（Router 会自动解码比对）
-        "WebHook": { "Url": "http://host.docker.internal:6160/cgi-bin/router.sh/qq?token=your-token" }
-    }
-}
-```
+### Providing web service to bot applications
 
-**API 调用示例：**
+The project [Lagrange.Milky](https://github.com/LagrangeDev/LagrangeV2/tree/main/Lagrange.Milky) implements [Milky](https://milky.ntqqrev.org/) protocol. You can use it to provide web service to bot applications like NoneBot ~~and Saltify~~.
 
-```bash
-curl -X POST http://127.0.0.1:616/api/send_private_message \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer your-token" \
-  -d '{"user_id": 10000, "message": [{"type": "text", "data": {"text": "Hello"}}]}'
-```
+Check [Lagrange.Milky README](https://github.com/LagrangeDev/LagrangeV2/tree/main/Lagrange.Milky#readme) for more information.
 
-消息段类型：`text`, `image`, `face`, `reply`, `record`, `video`, `file`, `mention`, `mention_all`, `forward`, `market_face`, `light_app`, `xml`
+## Appendix
 
-Docker 神授说
-============
+### Disclaimer
 
-**bridge 模式（推荐）** — 端口映射 + `host.docker.internal` 访问宿主机：
+The Lagrange.Core project, including its developers, contributors, and affiliated individuals or entities, hereby explicitly disclaim any association with, support for, or endorsement of any form of illegal behavior. This disclaimer extends to any use or application of the Lagrange.Core project that may be contrary to local, national, or international laws, regulations, or ethical guidelines.
 
-```bash
-# 启动（需 --add-host 支持 host.docker.internal）
-docker run -d --name Lagrange \
-  --add-host host.docker.internal:host-gateway \
-  -p 616:616 \
-  -v /vol1/1000/Lagrange:/root \
-  ghcr.io/bemly/charonanchor:3.2.28 Lagrange.Milky
+Lagrange.Core is an open-source software project designed to facilitate lawful and ethical applications in its intended use cases. It is the responsibility of each user to ensure that their usage of Lagrange.Core complies with all applicable laws and regulations in their jurisdiction.
 
-# WebHook 配置（appsettings.jsonc）：
-# "WebHook": { "Url": "http://host.docker.internal:6160/cgi-bin/router.sh/qq" }
+The developers and contributors of Lagrange.Core assume no liability whatsoever for any actions taken by users that violate the law or engage in any form of illicit activity. Users are solely responsible for their own actions and any consequences that may arise from the use of Lagrange.Core.
 
-# 外部容器访问 API：
-# http://host.docker.internal:616/api
-```
+Furthermore, any discussions, suggestions, or guidance provided by the Lagrange.Core community, including its developers, contributors, and users, should not be interpreted as legal advice. It is strongly recommended that users seek independent legal counsel to understand the legal implications of their actions and ensure compliance with the relevant laws and regulations.
 
-**host 模式** — 共享宿主机网络，`127.0.0.1` 直通：
+By using or accessing Lagrange.Core, the user acknowledges and agrees to release the developers, contributors, and affiliated individuals or entities from any and all liability arising from the use or misuse of the project, including any legal consequences incurred as a result of their actions.
 
-```bash
-docker run -d --name Lagrange \
-  --network host \
-  -v /vol1/1000/Lagrange:/root \
-  ghcr.io/bemly/charonanchor:3.2.28 Lagrange.Milky
+Please use Lagrange.Core responsibly and in accordance with the law.
 
-# WebHook 配置（appsettings.jsonc）：
-# "WebHook": { "Url": "http://127.0.0.1:6160/cgi-bin/router.sh/qq" }
+### Feedback
 
-# 外部容器访问 API：
-# http://127.0.0.1:616/api
-```
+[Join Telegram Chat](https://t.me/+6HNTeJO0JqtlNmRl)
 
-> `--add-host host.docker.internal:host-gateway` 仅在 Linux 需要，Docker Desktop（Mac/Windows）内置支持。
+### Related Projects
 
-自我投影
-============
-通过切换分支选择版本：
-- `Lagrange-3.2.28` · 当前分支（内置本地签名）
-- `3.2.28-48517` · C++ HTTP 服务（封存）
-- `3.2.19-39038` · C++ HTTP 服务（封存）
-
-------------
-真相是这样的：一个脆弱的灵魂打造了这个破碎又诡异的牢笼，
-而在这个牢笼之中，一切行动都被赋予了"理由"。
-拉格兰伸出双手，紧紧抱住卡戎。它的眼睛闪着光芒。
-看到这一幕，她问道："……你就是我那时候看见的指引之光吗？"
+<table>
+<tr>
+  <td><a href="https://github.com/LagrangeDev/Lagrange.Core">Lagrange.Core</a></td>
+  <td>NTQQ Protocol Implementation（👈Here</td>
+</tr>
+<tr>
+  <td><a href="https://github.com/whitechi73/OpenShamrock">OpenShamrock</a></td>
+  <td>Based on Xposed, OneBot Bot Framework</td>
+</tr>
+<tr>
+  <td><a href="https://github.com/chrononeko/chronocat">Chronocat</a></td>
+  <td>Based on Electron, modular Satori Bot Framework</td>
+</tr>
+</table>

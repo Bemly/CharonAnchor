@@ -33,7 +33,7 @@ public class MilkyHttpApiService(ILogger<MilkyHttpApiService> logger, IOptions<M
         _listener.Prefixes.Add($"http://{_host}:{_port}{_prefix}/");
         _listener.Start();
 
-        foreach (var prefix in _listener.Prefixes) _logger.LogServerRunning(prefix);
+        foreach (string prefix in _listener.Prefixes) _logger.LogServerRunning(prefix);
 
         _cts = CancellationTokenSource.CreateLinkedTokenSource(token);
         _task = GetHttpContextLoopAsync(_cts.Token);
@@ -65,8 +65,8 @@ public class MilkyHttpApiService(ILogger<MilkyHttpApiService> logger, IOptions<M
         var request = context.Request;
         var identifier = request.RequestTraceIdentifier;
         var remote = request.RemoteEndPoint;
-        var method = request.HttpMethod;
-        var rawUrl = request.RawUrl;
+        string method = request.HttpMethod;
+        string? rawUrl = request.RawUrl;
 
         try
         {
@@ -77,10 +77,10 @@ public class MilkyHttpApiService(ILogger<MilkyHttpApiService> logger, IOptions<M
             var handler = await GetApiHandlerAsync(context, token);
             if (handler == null) return;
 
-            var parameter = await GetParameterAsync(context, handler.ParameterType, token);
+            object? parameter = await GetParameterAsync(context, handler.ParameterType, token);
             if (parameter == null) return;
 
-            var result = await GetResultAsync(context, handler, parameter, token);
+            object? result = await GetResultAsync(context, handler, parameter, token);
             if (result == null) return;
 
             await SendWithLoggerAsync(context, result, token);
@@ -126,15 +126,12 @@ public class MilkyHttpApiService(ILogger<MilkyHttpApiService> logger, IOptions<M
 
     private bool ValidateAccessToken(HttpListenerContext context)
     {
-        if (_token == null) return true;
+        if (string.IsNullOrEmpty(_token)) return true;
 
         string? authorization = context.Request.Headers["Authorization"];
         if (authorization == null) return false;
-        if (!authorization.StartsWith("Bearer")) return false;
-
-        if (_token == string.Empty && authorization.Length == 6) return true;
-
-        return authorization[7..] == _token;
+        if (!authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)) return false;
+        return authorization.AsSpan(7).SequenceEqual(_token);
     }
 
     private async Task<IApiHandler?> GetApiHandlerAsync(HttpListenerContext context, CancellationToken token)
