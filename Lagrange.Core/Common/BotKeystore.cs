@@ -25,19 +25,19 @@ public class BotKeystore
     public string Qimei { get; set; } = string.Empty;
     public string DeviceName { get; set; } = string.Empty;
 
-    public static BotKeystore CreateEmpty()
+    public static BotKeystore CreateEmpty(string? deviceName = null)
     {
         var guid = new byte[16];
         Random.Shared.NextBytes(guid);
-        
+
         var androidId = new byte[8];
         Random.Shared.NextBytes(androidId);
-        
+
         return new BotKeystore
         {
             Guid = guid,
             AndroidId = Convert.ToHexString(androidId),
-            DeviceName = $"Lagrange-{Random.Shared.Next(0, 16777215):X6}",
+            DeviceName = deviceName ?? $"Lagrange-{Random.Shared.Next(0, 16777215):X6}",
         };
     }
 }

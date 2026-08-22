@@ -56,7 +56,7 @@ public static class HostApplicationBuilderExtension
             var ks = File.Exists(ksPath)
                 ? Serializer.JsonDeserialize<BotKeystore>(File.ReadAllText(ksPath))
                     ?? throw new Exception("Failed to deserialize BotKeystore")
-                : BotKeystore.CreateEmpty();
+                : BotKeystore.CreateEmpty(configuration.Login.DeviceName);
 
             var appInfo = configuration.Protocol.AppInfo
                 ?? BotAppInfo.ProtocolToAppInfo[(Protocols)configuration.Protocol.Platform];

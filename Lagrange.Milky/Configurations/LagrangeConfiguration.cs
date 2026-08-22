@@ -15,12 +15,13 @@ public class LagrangeQrCodeConfiguration(bool compatible = false)
     public bool Compatible { get; } = compatible;
 }
 
-public class LagrangeLoginConfiguration(long uin, string? password = null, bool autoReLogin = false, bool useOnlineCaptchResolver = true)
+public class LagrangeLoginConfiguration(long uin, string? password = null, bool autoReLogin = false, bool useOnlineCaptchResolver = true, string? deviceName = null)
 {
     public long Uin { get; } = uin;
     public string? Password { get; } = password;
     public bool AutoReLogin { get; } = autoReLogin;
     public bool UseOnlineCaptchResolver { get; } = useOnlineCaptchResolver;
+    public string? DeviceName { get; } = deviceName;
 }
 
 public class LagrangeServerConfiguration(bool autoReconnect = true, bool useIPv6Network = false, bool getOptimumServer = true)
