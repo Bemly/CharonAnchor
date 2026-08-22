@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Formats.Asn1;
 using Lagrange.Core.Common.Entity;
 using Lagrange.Core.Internal.Events.System;
@@ -6,33 +5,13 @@ using Lagrange.Core.Internal.Packets.Message;
 using Lagrange.Core.Message.Entities;
 using Lagrange.Core.Utility;
 using Lagrange.Core.Utility.Binary;
-using Lagrange.Core.Utility.Extension;
 
 
 namespace Lagrange.Core.Message;
 
-internal class MessagePacker
+internal class MessagePacker(BotContext context)
 {
-    private readonly BotContext _context;
-    
-    private readonly List<IMessageEntity> _factory;
-    
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "All the types are preserved in the csproj by using the TrimmerRootAssembly attribute")]
-    [UnconditionalSuppressMessage("Trimming", "IL2062", Justification = "All the types are preserved in the csproj by using the TrimmerRootAssembly attribute")]
-    [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "All the types are preserved in the csproj by using the TrimmerRootAssembly attribute")]
-    public MessagePacker(BotContext context)
-    {
-        _context = context;
-        _factory = [];
-
-        foreach (var type in typeof(MessagePacker).Assembly.GetTypes())
-        {
-            if (type.HasImplemented<IMessageEntity>())
-            {
-                _factory.Add((IMessageEntity?)Activator.CreateInstance(type) ?? throw new InvalidOperationException());
-            }
-        }
-    }
+    private readonly List<IMessageEntity> _factory = MessageEntityRegistry.Create();
 
     public async Task<BotMessage> Parse(CommonMessage msg)
     {
@@ -41,19 +20,19 @@ internal class MessagePacker
 
         var contact = await ResolveContact(contentHead.Type, routingHead);
         var receiver = await ResolveReceiver(contentHead.Type, routingHead);
-        var message = new BotMessage(contact, receiver, DateTime.Now)
+        var message = new BotMessage(contact, receiver, DateTimeOffset.Now.ToUnixTimeSeconds())
         {
             MessageId = contentHead.MsgUid, // MsgUid & 0xFFFFFFFF are the same to random
-            Time = DateTimeOffset.FromUnixTimeSeconds(contentHead.Time).DateTime,
+            Time = contentHead.Time,
             Sequence = contentHead.Sequence,
             ClientSequence = contentHead.ClientSequence,
             Random = contentHead.Random
         };
-        
+
         if (msg.MessageBody is null)
             return message;
-        
-        if (ParsePttRichText(msg.MessageBody.RichText) is { } record) 
+
+        if (ParsePttRichText(msg.MessageBody.RichText) is { } record)
         {
             message.Entities.Add(record);
         }
@@ -74,7 +53,7 @@ internal class MessagePacker
 
         foreach (var entity in message.Entities)
         {
-            await entity.Postprocess(_context, message);
+            await entity.Postprocess(context, message);
         }
 
         return message;
@@ -85,29 +64,30 @@ internal class MessagePacker
         switch (type)
         {
             case 166:
-                var friend = await _context.CacheContext.ResolveFriend(routingHead.FromUin);
+                var friend = await context.CacheContext.ResolveFriend(routingHead.FromUin);
                 return friend ?? new BotFriend(routingHead.FromUin, routingHead.FromUid, string.Empty, string.Empty, string.Empty, string.Empty, null!);
 
             case 141:
-                return (await _context.CacheContext.ResolveStranger(routingHead.ToUid)).CloneWithSource(routingHead.CommonC2C.FromTinyId);
+                return (await context.CacheContext.ResolveStranger(routingHead.ToUid)).CloneWithSource(routingHead.CommonC2C.FromTinyId);
             case 82:
-                var items = await _context.CacheContext.ResolveMember(routingHead.Group.GroupCode, routingHead.FromUin);
+                var items = await context.CacheContext.ResolveMember(routingHead.Group.GroupCode, routingHead.FromUin);
                 if (items != null) return items.Value.Item2;
 
+                long now = DateTimeOffset.Now.ToUnixTimeSeconds();
                 var dummyGroup = new BotGroup(routingHead.Group.GroupCode, routingHead.Group.GroupName, 0, 0, 0, null, null, null);
-                return new BotGroupMember(dummyGroup, routingHead.FromUin, routingHead.FromUid, routingHead.Group.GroupCard, GroupMemberPermission.Member, 0, routingHead.Group.GroupCard, null, DateTime.Now, DateTime.Now, DateTime.Now);
+                return new BotGroupMember(dummyGroup, routingHead.FromUin, routingHead.FromUid, routingHead.Group.GroupCard, GroupMemberPermission.Member, 0, routingHead.Group.GroupCard, null, now, now, now);
 
             default:
                 throw new NotImplementedException();
         }
     }
-    
+
     private async Task<BotContact> ResolveReceiver(int type, RoutingHead routingHead)
     {
         switch (type)
         {
             case 166:
-                var friend = await _context.CacheContext.ResolveFriend(routingHead.ToUin);
+                var friend = await context.CacheContext.ResolveFriend(routingHead.ToUin);
                 if (friend == null)
                 {
                     return new BotFriend(routingHead.ToUin, routingHead.ToUid, string.Empty, string.Empty, string.Empty, string.Empty, null!);
@@ -115,13 +95,14 @@ internal class MessagePacker
 
                 return friend;
             case 141:
-                return (await _context.CacheContext.ResolveStranger(routingHead.ToUid)).CloneWithSource(routingHead.CommonC2C.FromTinyId);
+                return (await context.CacheContext.ResolveStranger(routingHead.ToUid)).CloneWithSource(routingHead.CommonC2C.FromTinyId);
             case 82:
-                var items = await _context.CacheContext.ResolveMember(routingHead.Group.GroupCode, routingHead.ToUin);
+                var items = await context.CacheContext.ResolveMember(routingHead.Group.GroupCode, routingHead.ToUin);
                 if (items == null)
                 {
+                    long now = DateTimeOffset.Now.ToUnixTimeSeconds();
                     var dummyGroup = new BotGroup(routingHead.Group.GroupCode, routingHead.Group.GroupName, 0, 0, 0, null, null, null);
-                    return new BotGroupMember(dummyGroup, routingHead.ToUin, routingHead.ToUid, routingHead.Group.GroupCard, GroupMemberPermission.Member, 0, routingHead.Group.GroupCard, null, DateTime.Now, DateTime.Now, DateTime.Now);
+                    return new BotGroupMember(dummyGroup, routingHead.ToUin, routingHead.ToUid, routingHead.Group.GroupCard, GroupMemberPermission.Member, 0, routingHead.Group.GroupCard, null, now, now, now);
                 }
 
                 return items.Value.Item2;
@@ -142,7 +123,7 @@ internal class MessagePacker
             case BotStranger:
                 throw new NotSupportedException();
         }
-        
+
         if (message.Receiver is BotGroup group)
         {
             routingHead.Group = new Grp { GroupUin = group.GroupUin };
@@ -189,7 +170,7 @@ internal class MessagePacker
                 FileIdCrcMedia = resp.CrcMedia
             }
         };
-            
+
         var proto = new PbSendMsgReq
         {
             RoutingHead = new SendRoutingHead
@@ -248,19 +229,19 @@ internal class MessagePacker
                 },
                 Random = msg.Random,
                 Sequence = msg.Sequence,
-                Time = new DateTimeOffset(msg.Time).ToUnixTimeSeconds(),
+                Time = msg.Time,
                 ClientSequence = msg.ClientSequence,
                 MsgUid = msg.MessageId,
             },
             MessageBody = new MessageBody { RichText = new RichText { Elems = [] } }
         };
-        
+
         proto.RoutingHead.FromUin = msg.Contact.Uin;
-        proto.RoutingHead.FromUid = _context.CacheContext.ResolveCachedUid(msg.Contact.Uin) ?? "";
+        proto.RoutingHead.FromUid = context.CacheContext.ResolveCachedUid(msg.Contact.Uin) ?? "";
         if (msg.Receiver is BotFriend f)
         {
             proto.RoutingHead.ToUin = f.Uin;
-            proto.RoutingHead.ToUid = _context.CacheContext.ResolveCachedUid(f.Uin) ?? "";
+            proto.RoutingHead.ToUid = context.CacheContext.ResolveCachedUid(f.Uin) ?? "";
         }
 
         foreach (var entity in msg.Entities)
@@ -275,21 +256,21 @@ internal class MessagePacker
     private RecordEntity? ParsePttRichText(RichText richText)
     {
         if (richText.Ptt is not { } ptt) return null;
-        
+
         var kv = new BinaryPacket(stackalloc byte[100]);
         kv.Write("filetype", Prefix.Int32 | Prefix.LengthOnly);
         kv.Write("0", Prefix.Int32 | Prefix.LengthOnly);
         kv.Write("codec", Prefix.Int32 | Prefix.LengthOnly);
         kv.Write("1", Prefix.Int32 | Prefix.LengthOnly);
-            
+
         Span<byte> innerSpan = stackalloc byte[200];
         Span<byte> outerSpan = stackalloc byte[300];
-            
+
         var inner = new AsnWriter(AsnEncodingRules.DER);
         inner.PushSequence();
         inner.WriteInteger(1);
         inner.WriteInteger(0);
-        inner.WriteInteger((int)(_context.BotUin < 0x8000_0000 ? _context.BotUin : _context.BotUin - 0x1_0000_0000));
+        inner.WriteInteger((int)(context.BotUin < 0x8000_0000 ? context.BotUin : context.BotUin - 0x1_0000_0000));
         inner.WriteOctetString(ptt.GroupFileKey ?? ptt.FileUuid ?? ReadOnlySpan<byte>.Empty);
         inner.WriteInteger(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
         inner.WriteOctetString(kv.CreateReadOnlySpan());
@@ -302,9 +283,9 @@ internal class MessagePacker
         outer.WriteOctetString(innerSpan[..length]); // inner
         outer.WriteOctetString(ReadOnlySpan<byte>.Empty);   // “empty”
         outer.PopSequence();
-            
+
         outer.TryEncode(outerSpan, out length);
-            
+
         return new RecordEntity
         {
             FileUrl = $"https://grouptalk.c2c.qq.com/?ver=2&rkey={Convert.ToHexString(outerSpan[..length])}&voice_codec=1&filetype=0",

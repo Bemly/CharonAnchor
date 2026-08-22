@@ -1,13 +1,14 @@
 using System.Buffers;
 using System.Security.Cryptography;
 using Lagrange.Core.Common.Entity;
+using Lagrange.Core.Common.Response;
 using Lagrange.Core.Exceptions;
 using Lagrange.Core.Internal.Events.Message;
 using Lagrange.Core.Internal.Events.System;
 using Lagrange.Core.Internal.Packets.Service;
-using Lagrange.Core.Internal.Services;
 using Lagrange.Core.Message;
 using Lagrange.Core.Message.Entities;
+using Lagrange.Core.Services;
 using Lagrange.Core.Utility;
 using Lagrange.Core.Utility.Cryptography;
 using Lagrange.Core.Utility.Extension;
@@ -42,9 +43,75 @@ internal class OperationLogic(BotContext context) : ILogic
         return true;
     }
 
+    public Task GroupRecallPoke(ulong groupUin, ulong messageSequence, ulong messageTime, ulong tipsSeqId) =>
+        RecallPoke(true, groupUin, messageSequence, messageTime, tipsSeqId);
+
+    public Task FriendRecallPoke(ulong peerUin, ulong messageSequence, ulong messageTime, ulong tipsSeqId) =>
+        RecallPoke(false, peerUin, messageSequence, messageTime, tipsSeqId);
+
+    private async Task RecallPoke(bool isGroup, ulong peerUin, ulong messageSequence, ulong messageTime, ulong tipsSeqId) =>
+        await context.EventContext.SendEvent<RecallPokeEventResp>(new RecallPokeEventReq(isGroup, peerUin, messageSequence, messageTime, tipsSeqId));
+
+    public async Task<bool> SetStatus(uint status)
+    {
+        if (status > int.MaxValue) throw new ArgumentOutOfRangeException(nameof(status));
+
+        var result = await context.EventContext.SendEvent<SetStatusEventResp>(new SetStatusEventReq((int)status, 0, 0));
+        return result.Success;
+    }
+
+    public async Task<bool> SetCustomStatus(uint faceId, string text)
+    {
+        var result = await context.EventContext.SendEvent<SetStatusEventResp>(new SetStatusEventReq(10, 2000, 0, new SetStatusCustomExtEvent(faceId, text, 1)));
+        return result.Success;
+    }
+
     public async Task GroupRename(long groupUin, string name)
     {
         await context.EventContext.SendEvent<GroupRenameEventResp>(new GroupRenameEventReq(groupUin, name));
+    }
+
+    public async Task RemarkGroup(long groupUin, string remark)
+    {
+        await context.EventContext.SendEvent<GroupRemarkEventResp>(new GroupRemarkEventReq(groupUin, remark));
+    }
+
+    public async Task<BotGroupClockInResult> GroupClockIn(long groupUin)
+    {
+        var response = await context.EventContext.SendEvent<GroupClockInEventResp>(new GroupClockInEventReq(groupUin));
+        return response.Result;
+    }
+
+    public async Task<bool> MuteGroupGlobal(long groupUin, bool isMute)
+    {
+        await context.EventContext.SendEvent<GroupMuteGlobalEventResp>(new GroupMuteGlobalEventReq(groupUin, isMute));
+        return true;
+    }
+
+    public async Task<bool> MuteGroupMember(long groupUin, long targetUin, uint duration)
+    {
+        if (context.CacheContext.ResolveCachedUid(targetUin) is not { } uid)
+        {
+            await context.CacheContext.GetMemberList(groupUin, true);
+            uid = context.CacheContext.ResolveCachedUid(targetUin);
+        }
+
+        if (uid == null) return false;
+
+        await context.EventContext.SendEvent<GroupMuteMemberEventResp>(new GroupMuteMemberEventReq(groupUin, uid, duration));
+        return true;
+    }
+
+    public async Task<bool> GroupTransfer(long groupUin, long targetUin)
+    {
+        await context.EventContext.SendEvent<GroupTransferEventResp>(new GroupTransferEventReq(groupUin, targetUin));
+        return true;
+    }
+
+    public async Task<(uint RemainAtAllCountForUin, uint RemainAtAllCountForGroup)> GroupRemainAtAll(long groupUin)
+    {
+        var response = await context.EventContext.SendEvent<FetchGroupAtAllRemainEventResp>(new FetchGroupAtAllRemainEventReq(groupUin));
+        return (response.RemainAtAllCountForUin, response.RemainAtAllCountForGroup);
     }
 
     public async Task GroupSetSpecialTitle(long groupUin, long targetUin, string title)
@@ -67,9 +134,56 @@ internal class OperationLogic(BotContext context) : ILogic
         await context.EventContext.SendEvent<GroupMemberRenameEventResp>(new GroupMemberRenameEventReq(groupUin, uid, name));
     }
 
+    public async Task<bool> KickGroupMember(long groupUin, long targetUin, bool rejectAddRequest, string reason)
+    {
+        if (context.CacheContext.ResolveCachedUid(targetUin) is not { } uid)
+        {
+            await context.CacheContext.GetMemberList(groupUin, true);
+            uid = context.CacheContext.ResolveCachedUid(targetUin);
+        }
+
+        if (uid == null) return false;
+
+        var response = await context.EventContext.SendEvent<GroupKickMemberEventResp>(new GroupKickMemberEventReq(groupUin, uid, rejectAddRequest, reason));
+
+        return response.ResultCode == 0;
+    }
+
     public async Task GroupQuit(long groupUin)
     {
         await context.EventContext.SendEvent<GroupQuitEventResp>(new GroupQuitEventReq(groupUin));
+    }
+
+    public async Task SetGroupTodo(long groupUin, ulong sequence)
+    {
+        await context.EventContext.SendEvent<GroupSetTodoEventResp>(new GroupSetTodoEventReq(groupUin, sequence));
+    }
+
+    public async Task<BotGetGroupTodoResult> GetGroupTodo(long groupUin)
+    {
+        var response = await context.EventContext.SendEvent<GroupGetTodoEventResp>(new GroupGetTodoEventReq(groupUin));
+        return response.Result;
+    }
+
+    public async Task FinishGroupTodo(long groupUin)
+    {
+        await context.EventContext.SendEvent<GroupFinishTodoEventResp>(new GroupFinishTodoEventReq(groupUin));
+    }
+
+    public async Task RemoveGroupTodo(long groupUin)
+    {
+        await context.EventContext.SendEvent<GroupRemoveTodoEventResp>(new GroupRemoveTodoEventReq(groupUin));
+    }
+
+    public async Task SetPinFriend(long friendUin, bool isPin)
+    {
+        var friend = await context.CacheContext.ResolveFriend(friendUin) ?? throw new InvalidTargetException(friendUin);
+        await context.EventContext.SendEvent<SetPinFriendEventResp>(new SetPinFriendEventReq(friend.Uid, isPin));
+    }
+
+    public async Task SetPinGroup(long groupUin, bool isPin)
+    {
+        await context.EventContext.SendEvent<SetPinGroupEventResp>(new SetPinGroupEventReq(groupUin, isPin));
     }
 
     public async Task<string> GroupFSDownload(long groupUin, string fileId)
@@ -79,11 +193,62 @@ internal class OperationLogic(BotContext context) : ILogic
         return response.FileUrl;
     }
 
+    public async Task<ulong> FetchGroupFSSpace(long groupUin)
+    {
+        var response = await context.EventContext.SendEvent<GroupFSSpaceEventResp>(new GroupFSSpaceEventReq(groupUin));
+        if (response.ResultCode != 0) throw new OperationException(response.ResultCode, response.RetMsg);
+
+        return response.TotalSpace - response.UsedSpace;
+    }
+
+    public async Task<uint> FetchGroupFSCount(long groupUin)
+    {
+        var response = await context.EventContext.SendEvent<GroupFSCountEventResp>(new GroupFSCountEventReq(groupUin));
+        if (response.ResultCode != 0) throw new OperationException(response.ResultCode, response.RetMsg);
+
+        return response.FileCount;
+    }
+
+    public async Task<List<IBotFSEntry>> FetchGroupFSList(long groupUin, string targetDirectory)
+    {
+        const uint fileCount = 20;
+        uint startIndex = 0;
+        var entries = new List<IBotFSEntry>();
+
+        while (true)
+        {
+            var response = await context.EventContext.SendEvent<GroupFSListEventResp>(new GroupFSListEventReq(groupUin, targetDirectory, startIndex, fileCount));
+
+            if (response.ResultCode != 0) throw new OperationException(response.ResultCode, response.RetMsg);
+
+            entries.AddRange(response.FileEntries);
+            if (response.IsEnd) break;
+            startIndex += fileCount;
+        }
+
+        return entries;
+    }
+
     public async Task GroupFSMove(long groupUin, string fileId, string parentDirectory, string targetDirectory) => await context.EventContext.SendEvent<GroupFSMoveEventResp>(new GroupFSMoveEventReq(groupUin, fileId, parentDirectory, targetDirectory));
 
     public async Task GroupFSDelete(long groupUin, string fileId) => await context.EventContext.SendEvent<GroupFSDeleteEventResp>(new GroupFSDeleteEventReq(groupUin, fileId));
 
-    public async Task<(ulong, DateTime)> SendFriendFile(long targetUin, Stream fileStream, string? fileName)
+    public async Task GroupFSCreateFolder(long groupUin, string name, string parentFolderId = "/")
+    {
+        await context.EventContext.SendEvent<GroupFSCreateFolderEventResp>(new GroupFSCreateFolderEventReq(groupUin, name, parentFolderId));
+    }
+
+    public async Task GroupFSDeleteFolder(long groupUin, string folderId)
+    {
+        await context.EventContext.SendEvent<GroupFSDeleteFolderEventResp>(new GroupFSDeleteFolderEventReq(groupUin, folderId));
+    }
+
+    public async Task GroupFSRenameFolder(long groupUin, string folderId, string newFolderName)
+    {
+        await context.EventContext.SendEvent<GroupFSRenameFolderEventResp>(new GroupFSRenameFolderEventReq(groupUin, folderId, newFolderName));
+    }
+
+    public async Task<(ulong, long)> SendFriendFile(long targetUin, Stream fileStream, string? fileName)
     {
         fileName = ResolveFileName(fileStream, fileName);
 
@@ -148,7 +313,7 @@ internal class OperationLogic(BotContext context) : ILogic
         var sendResult = await context.EventContext.SendEvent<SendMessageEventResp>(new SendFriendFileEventReq(friend, request, result, sequence, random));
         if (sendResult.Result != 0) throw new OperationException(sendResult.Result);
 
-        return (sequence, DateTimeOffset.FromUnixTimeSeconds(sendResult.SendTime).UtcDateTime);
+        return (sequence, sendResult.SendTime);
     }
 
     private static string ResolveFileName(Stream fileStream, string? fileName)
@@ -248,6 +413,12 @@ internal class OperationLogic(BotContext context) : ILogic
         return resp.Extra;
     }
 
+    public async Task<BotStrangerGroupInfo> FetchStrangerGroupInfo(ulong groupUin)
+    {
+        var response = await context.EventContext.SendEvent<FetchStrangerGroupInfoEventResp>(new FetchStrangerGroupInfoEventReq(groupUin));
+        return response.Info;
+    }
+
     public async Task<List<BotGroupNotificationBase>> FetchGroupNotifications(ulong count, ulong start)
     {
         var req = new FetchGroupNotificationsEventReq(count, start);
@@ -260,6 +431,12 @@ internal class OperationLogic(BotContext context) : ILogic
         var req = new FetchFilteredGroupNotificationsEventReq(count, start);
         var resp = await context.EventContext.SendEvent<FetchFilteredGroupNotificationsEventResp>(req);
         return resp.GroupNotifications;
+    }
+
+    public async Task<List<BotFriendRequest>> FetchFriendRequests()
+    {
+        var response = await context.EventContext.SendEvent<FetchFriendRequestsEventResp>(new FetchFriendRequestsEventReq());
+        return response.Requests;
     }
 
     public async Task<BotStranger> FetchStranger(long uid)
@@ -373,8 +550,8 @@ internal class OperationLogic(BotContext context) : ILogic
 
         return response.Url;
 
-        static BotMessage CreateFakeFriendMessage(long uin) => BotMessage.CreateCustomFriend(uin, string.Empty, uin, string.Empty, DateTime.Now, []);
-        static BotMessage CreateFakeGroupMessage(long uin) => BotMessage.CreateCustomGroup(uin, 0, string.Empty, DateTime.Now, []);
+        static BotMessage CreateFakeFriendMessage(long uin) => BotMessage.CreateCustomFriend(uin, string.Empty, uin, string.Empty, DateTimeOffset.Now.ToUnixTimeSeconds(), []);
+        static BotMessage CreateFakeGroupMessage(long uin) => BotMessage.CreateCustomGroup(uin, 0, string.Empty, DateTimeOffset.Now.ToUnixTimeSeconds(), []);
         static RichMediaEntityBase CreateFakeEntity<T>(string fileUuid, uint ttl) where T : RichMediaEntityBase, new()
         {
             return new T

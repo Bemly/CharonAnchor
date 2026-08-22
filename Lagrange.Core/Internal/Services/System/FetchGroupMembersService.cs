@@ -1,9 +1,10 @@
 using Lagrange.Core.Common;
 using Lagrange.Core.Common.Entity;
 using Lagrange.Core.Exceptions;
-using Lagrange.Core.Internal.Events;
 using Lagrange.Core.Internal.Events.System;
 using Lagrange.Core.Internal.Packets.Service;
+using Lagrange.Core.Services;
+using Lagrange.Core.Utility;
 
 namespace Lagrange.Core.Internal.Services.System;
 
@@ -11,11 +12,11 @@ namespace Lagrange.Core.Internal.Services.System;
 [Service("OidbSvcTrpcTcp.0xfe7_3")]
 internal class FetchGroupMembersService : OidbService<FetchGroupMembersEventReq, FetchGroupMembersEventResp, FetchGroupMembersRequest, FetchGroupMembersResponse>
 {
-    private protected override uint Command => 0xfe7;
+    protected override uint Command => 0xfe7;
 
-    private protected override uint Service => 3;
+    protected override uint Service => 3;
 
-    private protected override Task<FetchGroupMembersRequest> ProcessRequest(FetchGroupMembersEventReq request, BotContext context)
+    protected override Task<FetchGroupMembersRequest> ProcessRequest(FetchGroupMembersEventReq request, BotContext context)
     {
         return Task.FromResult(new FetchGroupMembersRequest
         {
@@ -37,7 +38,7 @@ internal class FetchGroupMembersService : OidbService<FetchGroupMembersEventReq,
         });
     }
 
-    private protected override async Task<FetchGroupMembersEventResp> ProcessResponse(FetchGroupMembersResponse response, BotContext context)
+    protected override async Task<FetchGroupMembersEventResp> ProcessResponse(FetchGroupMembersResponse response, BotContext context)
     {
         var group = await context.CacheContext.ResolveGroup(response.GroupUin);
         if (group == null) throw new InvalidTargetException(null, response.GroupUin);
@@ -52,9 +53,9 @@ internal class FetchGroupMembersService : OidbService<FetchGroupMembersEventReq,
                 (int)(raw.Level?.Level ?? 0),
                 raw.MemberCard.MemberCard,
                 raw.SpecialTitle,
-                DateTimeOffset.FromUnixTimeSeconds(raw.JoinTimestamp).DateTime,
-                DateTimeOffset.FromUnixTimeSeconds(raw.LastMsgTimestamp).DateTime,
-                DateTimeOffset.FromUnixTimeSeconds(raw.ShutUpTimestamp).DateTime
+                raw.JoinTimestamp,
+                raw.LastMsgTimestamp,
+                raw.ShutUpTimestamp
             ))],
             response.Cookie
         );

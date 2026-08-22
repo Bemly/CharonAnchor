@@ -2,12 +2,12 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine-aot AS build
 
 WORKDIR /app/src
 
-COPY --link Lagrange.Codec/*.csproj Lagrange.Codec/
-COPY --link Lagrange.Core/*.csproj Lagrange.Core/
-COPY --link Lagrange.Milky/*.csproj Lagrange.Milky/
-COPY --link Lagrange.Milky.Implementation.Api.Generator/*.csproj Lagrange.Milky.Implementation.Api.Generator/
-COPY --link Lagrange.Proto/*.csproj Lagrange.Proto/
-COPY --link Lagrange.Proto.Generator/*.csproj Lagrange.Proto.Generator/
+COPY --link Lagrange.Milky/*.csproj             Lagrange.Milky/
+COPY --link Lagrange.Core/*.csproj              Lagrange.Core/
+COPY --link Lagrange.Core.Generator/*.csproj    Lagrange.Core.Generator/
+COPY --link Lagrange.Proto.Generator/*.csproj   Lagrange.Proto.Generator/
+COPY --link Lagrange.Proto/*.csproj             Lagrange.Proto/
+COPY --link Lagrange.Milky.Generator/*.csproj   Lagrange.Milky.Generator/
 RUN dotnet restore Lagrange.Milky
 
 COPY --link . .

@@ -1,12 +1,10 @@
 using System.Collections.Frozen;
-using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Lagrange.Core.Common;
 using Lagrange.Core.Common.Entity;
+using Lagrange.Core.Events;
 using Lagrange.Core.Exceptions;
-using Lagrange.Core.Internal.Events;
-using Lagrange.Core.Internal.Services;
-using Lagrange.Core.Utility.Extension;
+using Lagrange.Core.Services;
 
 namespace Lagrange.Core.Internal.Context;
 
@@ -22,39 +20,16 @@ internal class ServiceContext
 
     private readonly BotContext _context;
 
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "All the types are preserved in the csproj by using the TrimmerRootAssembly attribute")]
-    [UnconditionalSuppressMessage("Trimming", "IL2062", Justification = "All the types are preserved in the csproj by using the TrimmerRootAssembly attribute")]
-    [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "All the types are preserved in the csproj by using the TrimmerRootAssembly attribute")]
     public ServiceContext(BotContext context)
     {
         _context = context;
 
-        var services = new Dictionary<string, IService>();
+        var services = new Dictionary<string, IService>(StringComparer.Ordinal);
         var servicesEventType = new Dictionary<Type, (ServiceAttribute, IService)>();
+        AddBuiltInServices(context.Config.Protocol, services, servicesEventType);
+        AddCustomServices(context.Config.Protocol, context.Config.CustomServices, services, servicesEventType);
 
-        foreach (var type in typeof(IService).Assembly.GetTypes())
-        {
-            foreach (var attribute in type.GetCustomAttributes<EventSubscribeAttribute>())
-            {
-                if ((~attribute.Protocol & context.Config.Protocol) != Protocols.None) continue; // skip if not supported
-
-                if (type.GetCustomAttribute<ServiceAttribute>() is { } attr && type.HasImplemented<IService>())
-                {
-                    if (!services.TryGetValue(attr.Command, out var service))
-                    {
-                        service = (IService?)Activator.CreateInstance(type) ?? throw new InvalidOperationException("Failed to create service instance");
-                        services[attr.Command] = service;
-                        if (attr.DisableLog) _disabledLog.Add(attr.Command);
-                    }
-
-                    servicesEventType[attribute.EventType] = !servicesEventType.ContainsKey(attribute.EventType)
-                        ? (attr, service)
-                        : throw new InvalidOperationException($"Multiple services for event type: {attribute.EventType}");
-                }
-            }
-        }
-
-        _services = services.ToFrozenDictionary();
+        _services = services.ToFrozenDictionary(StringComparer.Ordinal);
         _servicesEventType = servicesEventType.ToFrozenDictionary();
     }
 
@@ -68,7 +43,7 @@ internal class ServiceContext
 
     public async ValueTask<(BotSsoPacket, ServiceAttribute)> Resolve(ProtocolEvent @event)
     {
-        if (!_servicesEventType.TryGetValue(@event.GetType(), out var handler)) return default;
+        if (!_servicesEventType.TryGetValue(@event.GetType(), out var handler)) throw new ServiceNotFoundException(@event.GetType());
 
         var (attr, service) = handler;
         if (!handler.Attribute.DisableLog) _context.LogTrace(Tag, "Outgoing SSOFrame: {0}", handler.Attribute.Command);
@@ -81,4 +56,67 @@ internal class ServiceContext
         Interlocked.CompareExchange(ref _sequence, 5000000, 9900000);
         return Interlocked.Increment(ref _sequence);
     }
+
+    private void AddBuiltInServices(
+        Protocols protocol,
+        Dictionary<string, IService> services,
+        Dictionary<Type, (ServiceAttribute, IService)> servicesEventType)
+    {
+        var (builtInServices, builtInEventTypes) = ServiceRegistry.Create(protocol, _disabledLog);
+        foreach ((string command, var service) in builtInServices) services.Add(command, service);
+
+        foreach (var (eventType, registration) in builtInEventTypes)
+        {
+            servicesEventType.Add(eventType, registration);
+        }
+    }
+
+    private void AddCustomServices(
+        Protocols protocol,
+        IReadOnlyList<IService> customServices,
+        Dictionary<string, IService> services,
+        Dictionary<Type, (ServiceAttribute, IService)> servicesEventType)
+    {
+        ArgumentNullException.ThrowIfNull(customServices);
+
+        foreach (var service in customServices.ToArray())
+        {
+            if (service is null) throw new ServiceRegistrationException("Custom protocol services cannot contain null entries.");
+
+            var serviceType = service.GetType();
+            var attribute = serviceType.GetCustomAttribute<ServiceAttribute>(false) ?? throw new ServiceRegistrationException($"Custom protocol service {serviceType} must have {nameof(ServiceAttribute)}.");
+            if (string.IsNullOrWhiteSpace(attribute.Command)) throw new ServiceRegistrationException($"Custom protocol service {serviceType} must specify a non-empty command.");
+
+            var subscriptions = serviceType.GetCustomAttributes<EventSubscribeAttribute>(false).ToArray();
+            ValidateSubscriptions(serviceType, subscriptions);
+            
+            var activeSubscriptions = subscriptions.Where(subscription => IsActive(subscription.Protocols, protocol)).ToArray();
+            if (subscriptions.Length > 0 && activeSubscriptions.Length == 0) continue;
+
+            if (!services.TryAdd(attribute.Command, service)) throw new ServiceRegistrationException($"Multiple protocol services are registered for command '{attribute.Command}'.");
+
+            if (attribute.DisableLog) _disabledLog.Add(attribute.Command);
+
+            foreach (var subscription in activeSubscriptions)
+            {
+                var eventType = subscription.EventType;
+                if (servicesEventType.ContainsKey(eventType)) throw new ServiceRegistrationException($"Multiple protocol services are registered for event type '{eventType}'.");
+
+                servicesEventType.Add(eventType, (attribute, service));
+            }
+        }
+    }
+
+    private static void ValidateSubscriptions(Type serviceType, EventSubscribeAttribute[] subscriptions)
+    {
+        var eventTypes = new HashSet<Type>();
+        foreach (var subscription in subscriptions)
+        {
+            if (!typeof(ProtocolEvent).IsAssignableFrom(subscription.EventType)) throw new ServiceRegistrationException($"Event type '{subscription.EventType}' on {serviceType} must derive from {nameof(ProtocolEvent)}.");
+            if (subscription.Protocols == Protocols.None) throw new ServiceRegistrationException($"Event subscription '{subscription.EventType}' on {serviceType} must specify at least one protocol.");
+            if (!eventTypes.Add(subscription.EventType)) throw new ServiceRegistrationException($"Custom protocol service {serviceType} registers event type '{subscription.EventType}' more than once.");
+        }
+    }
+
+    private static bool IsActive(Protocols supported, Protocols selected) => (~supported & selected) == Protocols.None;
 }

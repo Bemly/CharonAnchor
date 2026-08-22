@@ -3,9 +3,9 @@ using System.Text;
 using Lagrange.Core.Common;
 using Lagrange.Core.Common.Entity;
 using Lagrange.Core.Exceptions;
-using Lagrange.Core.Internal.Events;
 using Lagrange.Core.Internal.Events.System;
 using Lagrange.Core.Internal.Packets.Service;
+using Lagrange.Core.Services;
 using Lagrange.Core.Utility;
 
 namespace Lagrange.Core.Internal.Services.System;
@@ -111,8 +111,8 @@ internal class FetchStrangerService : BaseService<FetchStrangerEventReqBase, Fet
             Encoding.UTF8.GetString(bytes[103]),
             numbers[105],
             (BotGender)numbers[20009],
-            DateTimeOffset.FromUnixTimeSeconds((long)numbers[20026]).DateTime,
-            month != 0 && day != 0 ? new DateTime(year != 0 ? year : 1, month, day) : null,
+            (long)numbers[20026],
+            month != 0 && day != 0 ? new DateTimeOffset(year != 0 ? year : 1, month, day, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds() : null,
             numbers[20037],
             Encoding.UTF8.GetString(bytes[27394]),
             Encoding.UTF8.GetString(bytes[20003]),
