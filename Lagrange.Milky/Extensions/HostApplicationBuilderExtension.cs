@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using CharonAnchor;
 using Lagrange.Core.Common;
 using Lagrange.Core.Common.Interface;
 using Lagrange.Core.Events.EventArgs;
@@ -31,7 +32,11 @@ public static class HostApplicationBuilderExtension
             ?? throw new Exception("Failed to load 'Lagrange' configuration");
         builder.Services.AddSingleton(configuration);
 
-        builder.Services.TryAddSingleton<BotSignProvider, HttpSigner>();
+        // CharonSignProvider (本地签名，直接调用 wrapper.node)
+        builder.Services.AddSingleton<BotSignProvider>(sp => new CharonSignProvider(
+            AppContext.BaseDirectory,
+            "3.2.32"
+        ));
         builder.Services.AddSingleton(sp =>
         {
             var environment = sp.GetRequiredService<IHostEnvironment>();
