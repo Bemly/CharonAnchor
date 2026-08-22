@@ -1,7 +1,6 @@
 name: Build CharonAnchor 3.2.29
 
 on:
-  push:
   workflow_dispatch:
 
 permissions:

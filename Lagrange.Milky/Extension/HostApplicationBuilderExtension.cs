@@ -40,7 +40,7 @@ public static class HostApplicationBuilderExtension
             // CharonSignProvider (本地签名)
             .AddSingleton<BotSignProvider>(sp => new CharonSignProvider(
                 AppContext.BaseDirectory,
-                "3.2.29"
+                "3.2.32"
             ))
             // BotConfig
             .AddSingleton(services =>

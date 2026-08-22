@@ -1,0 +1,16 @@
+name: Build CharonAnchor 3.2.32
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  packages: write
+  contents: read
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-milky.yaml
+    with:
+      version: "3.2.32"
+      deb_url: "https://qqdl.gtimg.cn/qqfile/QQNT/9.9.33/release/3f89efc5/QQ_3.2.32_260812_amd64_01.deb"
