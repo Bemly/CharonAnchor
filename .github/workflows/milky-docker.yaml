@@ -2,33 +2,26 @@ name: Build Lagrange.Milky image
 
 on:
   push:
-    branches:
-      - main
-      - master
+    branches: [ main ]
     paths:
       - .github/workflows/milky-docker.yaml
-      - Lagrange.Milky/**
+      - Lagrange.Codec/**
       - Lagrange.Core/**
-      - Lagrange.Core.Generator/**
-      - Lagrange.Proto.Generator/**
+      - Lagrange.Milky/**
+      - Lagrange.Milky.Implementation.Api.Generator/**
       - Lagrange.Proto/**
-      - Lagrange.Milky.Generator/**
+      - Lagrange.Proto.Generator/**
   pull_request:
-    branches:
-      - main
-      - master
+    branches: [ main ]
     paths:
       - .github/workflows/milky-docker.yaml
-      - Lagrange.Milky/**
+      - Lagrange.Codec/**
       - Lagrange.Core/**
-      - Lagrange.Core.Generator/**
-      - Lagrange.Proto.Generator/**
+      - Lagrange.Milky/**
+      - Lagrange.Milky.Implementation.Api.Generator/**
       - Lagrange.Proto/**
-      - Lagrange.Milky.Generator/**
+      - Lagrange.Proto.Generator/**
   workflow_dispatch:
-
-permissions:
-  packages: write
 
 jobs:
   build:
@@ -75,7 +68,7 @@ jobs:
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           tags: ${{ env.REGISTRY_IMAGE }}
-          outputs: type=image,push-by-digest=true,name-canonical=true,push=${{ github.event_name != 'pull_request' }}
+          outputs: type=image,push-by-digest=true,name-canonical=true,push=true
 
       - name: Export digest
         run: |
@@ -92,7 +85,6 @@ jobs:
           retention-days: 1
 
   merge:
-    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     needs:
       - build
@@ -125,8 +117,9 @@ jobs:
           images: ${{ env.REGISTRY_IMAGE }}
           tags: |
             type=ref,event=branch
-            type=raw,value=main,enable=${{ github.ref_name == 'master' }}
-            type=raw,value=master,enable=${{ github.ref_name == 'main' }}
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
 
       - name: Create manifest list and push
         working-directory: ${{ runner.temp }}/digests

@@ -2,29 +2,25 @@ name: Build Lagrange.Milky
 
 on:
   push:
-    branches:
-      - main
-      - master
+    branches: [ main ]
     paths:
       - .github/workflows/milky-build.yaml
-      - Lagrange.Milky/**
+      - Lagrange.Codec/**
       - Lagrange.Core/**
-      - Lagrange.Core.Generator/**
-      - Lagrange.Proto.Generator/**
+      - Lagrange.Milky/**
+      - Lagrange.Milky.Implementation.Api.Generator/**
       - Lagrange.Proto/**
-      - Lagrange.Milky.Generator/**
+      - Lagrange.Proto.Generator/**
   pull_request:
-    branches:
-      - main
-      - master
+    branches: [ main ]
     paths:
       - .github/workflows/milky-build.yaml
-      - Lagrange.Milky/**
+      - Lagrange.Codec/**
       - Lagrange.Core/**
-      - Lagrange.Core.Generator/**
-      - Lagrange.Proto.Generator/**
+      - Lagrange.Milky/**
+      - Lagrange.Milky.Implementation.Api.Generator/**
       - Lagrange.Proto/**
-      - Lagrange.Milky.Generator/**
+      - Lagrange.Proto.Generator/**
   workflow_dispatch:
 
 jobs:

@@ -2,9 +2,7 @@
 
 on:
   push:
-    branches:
-      - main
-      - master
+    branches: [ main ]
     paths:
       - Lagrange.Codec/**
       - Lagrange.Core/**
@@ -12,9 +10,7 @@ on:
       - Lagrange.Proto.Generator/**
       - Lagrange.Core.NativeAPI/**
   pull_request:
-    branches:
-      - main
-      - master
+    branches: [ main ]
     paths:
       - Lagrange.Codec/**
       - Lagrange.Core/**
