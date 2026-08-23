@@ -86,6 +86,7 @@ payload:      组A字段(sub_3387CA0) + 组B(0x3387ED0) + 组C含vector<u16>(0x3
 
 ### 修复路径（按可行性排序）
 1. **实现 MSF-NG 传输层**（核心剩余工作）：从 msf_session_impl.cc / tcp_channel_connector.cc 逆向 ECDH Key V2（曲线/KDF/密钥协商时机）与帧加密算法（定位锚点：字符串 "Generate ECDH Key V2 Succeed" @VA 0x87D2B6、"reKey to no aes key"、"ECDH pub key info: cipher_ver:{}, key_ver:{}"；注意 gdb 动态调试会被 wrapper 反调试掐断发送步骤——**只能静态逆向或磁盘补丁**）
+   - **⚠️ 2026-08-24 更正**："reKey to no aes key" 是 MMKV 存储加密的日志，不是传输层的！ECDH Key V2 与帧加密已破解，见 [project_msfng_transport.md](project_msfng_transport.md)
 2. **密码登录绕行测试**：config 设 Password，走 wtlogin.login/SsoNTLogin 路径；但若 wtlogin 命令全部强制走 MSF-NG 会话则同样被阻
 3. **等社区**：协议变更影响所有纯协议第三方实现（NapCat 用官方二进制不受影响）；上游适配后对照移植
 4. 已完成部分可直接复用：新信封 body 模板、TLV 集合验证、传输帧格式、完整地址表

@@ -1,0 +1,6 @@
+# IDA analysis workspace — keep only small text artifacts
+*
+!.gitignore
+!extract*.py
+!out/
+out/*.asm

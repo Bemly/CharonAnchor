@@ -5,6 +5,7 @@
 - [Project Status](project_status.md) — Fork LagrangeV2 + CharonSignProvider 嵌入方案
 - [Sign Function Analysis](project_sign_function_analysis.md) — sub_57E1131 完整逆向，DLFJ 检查逻辑，环境检测
 - [QR Login Rework](project_qr_login_rework.md) — 3.2.32 登录流程重构逆向：trans_emp 静默丢弃根因、UnusualDeviceMgr、TLV 0x3F
+- [MSF-NG Transport](project_msfng_transport.md) — MSF-NG 传输层逆向：ECDH Key V2（P-256+MD5）、帧格式、QQ TEA 加密、编解码管线
 
 ## 实现过程
 
