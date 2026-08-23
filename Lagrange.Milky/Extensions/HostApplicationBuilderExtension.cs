@@ -33,10 +33,18 @@ public static class HostApplicationBuilderExtension
         builder.Services.AddSingleton(configuration);
 
         // CharonSignProvider (本地签名，直接调用 wrapper.node)
-        builder.Services.AddSingleton<BotSignProvider>(sp => new CharonSignProvider(
-            AppContext.BaseDirectory,
-            "3.2.32"
-        ));
+        if (Environment.GetEnvironmentVariable("CHARON_SIGNER") == "remote")
+        {
+            Console.Error.WriteLine("[PROBE] using REMOTE HttpSigner");
+            builder.Services.TryAddSingleton<BotSignProvider, HttpSigner>();
+        }
+        else
+        {
+            builder.Services.AddSingleton<BotSignProvider>(sp => new CharonSignProvider(
+                AppContext.BaseDirectory,
+                Environment.GetEnvironmentVariable("CHARON_VERSION") ?? "3.2.32"
+            ));
+        }
         builder.Services.AddSingleton(sp =>
         {
             var environment = sp.GetRequiredService<IHostEnvironment>();

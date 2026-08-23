@@ -24,6 +24,11 @@ internal class WtLogin : StructBase
     
     public ReadOnlyMemory<byte> BuildTransEmp31(byte[]? unusualSig)
     {
+        if (Environment.GetEnvironmentVariable("CHARON_NEWWTLOGIN") == "1")
+        {
+            Console.Error.WriteLine($"[NEW31] sending official template {WtLoginNewTemplates.TransEmp31.Length}B");
+            return WtLoginNewTemplates.TransEmp31.ToArray();
+        }
         using var writer = new BinaryPacket(stackalloc byte[300]);
         writer.Write<ushort>(0);
         writer.Write(AppInfo.AppId);
@@ -49,6 +54,20 @@ internal class WtLogin : StructBase
 
     public ReadOnlyMemory<byte> BuildTransEmp12()
     {
+        if (Environment.GetEnvironmentVariable("CHARON_NEWWTLOGIN") == "1")
+        {
+            var body = WtLoginNewTemplates.TransEmp12.ToArray();
+            var sig = Keystore.State.QrSig;
+            if (sig is { Length: > 0 })
+            {
+                int sigOff = 0x2C;
+                int copy = Math.Min(sig.Length, body.Length - sigOff);
+                Array.Copy(sig, 0, body, sigOff, copy);
+                Console.Error.WriteLine($"[NEW12] patched QrSig {copy}B");
+            }
+            Console.Error.WriteLine($"[NEW12] sending {body.Length}B");
+            return body;
+        }
         using var writer = new BinaryPacket(stackalloc byte[100]);
         writer.Write<ushort>(0);
         writer.Write(AppInfo.AppId);
