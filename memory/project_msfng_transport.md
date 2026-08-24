@@ -279,6 +279,22 @@ ECDHBody { f2: bytes 业务proto, f3: {f1: varint scene, f2: bytes cmd} }  // f1
 2. 找 MSFRequest 构造者（NodeAPI 层）看 +152/+176/+200 填什么值
 3. 抓官方客户端登录前流量做字节级对照（最直接但需环境）
 
+### 【2026-08-24 收尾】调用链追到 NodeAPI 层，盲试宣告失效
+
+- `NodeIKernelMSFService::sendMsfRequest(4 args)` NAPI @0x3B86690 → IKernelMSFService vtable+88
+- `SendMsfRequestV3` (sub_5413BB0, kernel_depends.cpp:219) → MSF 引擎 vtable+224 注册
+- 每层依赖注入，逐层逆向边际收益递减
+- **实验矩阵已穷尽内容层变体**（ECDHBody 有无/encFlag/ts编码/scene/reserve rich）全部静默 →
+  缺的是「会话级元数据」（MSFRequest 必填字段的真实值：设备 ID/注册 token 类），盲试命中率低
+
+**下一轮最高价值动作（二选一）**：
+1. **抓真实流量对照**：NAS napcat 容器重连时 tcpdump（不能动生产！需用户决策），
+   或本机起一次性 NTQQ 容器登录测试号抓 establish/kx 真实字节
+2. 读完 sub_64FD710（1666B pack 最终组装）拿三必填串的确切 wire 位置，
+   再从 NodeAPI 层反推填充值
+
+拿到真实 establish 字节后与我们的帧 diff，一次就能定位缺失的元数据。
+
 ### 待完成（下次会话按序）
 1. ~~SsoEstablishShareKey schema~~ 已破解并实现（MsfNgKeyExchange.cs + PacketContext.EstablishMsfNgSessionAsync），遗留 3 个 NAS 确认点见上
 2. Ping/心跳信道循环接入 SocketContext（模板已提取）
