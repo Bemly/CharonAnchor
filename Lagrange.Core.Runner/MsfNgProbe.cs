@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using System.Diagnostics;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
@@ -50,26 +51,83 @@ internal static class MsfNgProbe
 
         uint seq = 0x623800;
 
-        async Task SendAndLog(string name, ReadOnlyMemory<byte> frame)
+        async Task SendAndLog(string name, ReadOnlyMemory<byte> frame, int observeSeconds = 8)
         {
             Console.WriteLine($"[probe] === {name} frame={frame.Length}B");
             await stream.WriteAsync(frame, cts.Token);
-            byte[]? response = await ReadFrameWithTimeoutAsync(stream, TimeSpan.FromSeconds(8));
-            if (response is null)
+
+            var watch = Stopwatch.StartNew();
+            while (watch.Elapsed.TotalSeconds < observeSeconds)
             {
-                Console.WriteLine("[probe] no response");
-                return;
+                byte[]? response = await ReadFrameWithTimeoutAsync(stream, TimeSpan.FromSeconds(Math.Min(5, observeSeconds - watch.Elapsed.TotalSeconds)));
+                if (response is null)
+                {
+                    if (!client.Connected)
+                    {
+                        Console.WriteLine("[probe] connection closed by server");
+                        return;
+                    }
+                    continue;
+                }
+                string file = Path.Combine(dumpDir, $"rsp-{name}-{DateTime.Now:HHmmssfff}.bin");
+                await File.WriteAllBytesAsync(file, response, cts.Token);
+                Console.WriteLine($"[probe] <- ({response.Length}B) t+{watch.Elapsed.TotalSeconds:F1}s: {Convert.ToHexString(response)}");
+                Console.WriteLine($"[probe] decoded: {DecodeServerResponse(response)}");
             }
-            string file = Path.Combine(dumpDir, $"rsp-{name}-{DateTime.Now:HHmmss}.bin");
-            await File.WriteAllBytesAsync(file, response, cts.Token);
-            Console.WriteLine($"[probe] <- ({response.Length}B): {Convert.ToHexString(response)}");
-            Console.WriteLine($"[probe] decoded: {DecodeServerResponse(response)}");
+            Console.WriteLine($"[probe] observation ended, connected={client.Connected}");
         }
 
-        // isolated: kx with proper length-prefixed busi on a fresh state (no prior hello)
-        await SendAndLog("kx-direct-prefix", AssembleWrapped(13, ++seq, head, keyExchangeCommand, 0));
+        // experiment A: kx with populated reserve fields (traceparent style)
+        byte[] headRichReserve = BuildHeadReserve(packer, keyExchangeCommand);
+        await SendAndLog("kx-rich-reserve", AssembleSeqFrame(13, ++seq, headRichReserve, BuildKxBusi(keyExchangeCommand, 0)), observeSeconds: 20);
 
+        // experiment B: plain kx again, long window to catch async push / FIN
+        await SendAndLog("kx-longwatch", AssembleWrapped(13, ++seq, head, keyExchangeCommand, 0), observeSeconds: 20);
+
+        Console.WriteLine("[probe] done");
         return 0;
+    }
+
+    private static byte[] BuildKxBusi(string command, int sceneId)
+    {
+        var request = MsfNgKeyExchange.BuildRequestVariant(out _, command, ReadOnlyMemory<byte>.Empty, TsEncoding.VarInt);
+        var inner = new ProtoWriter();
+        inner.WriteVarInt(1, (ulong)sceneId);
+        inner.WriteBytes(2, Encoding.UTF8.GetBytes(command));
+        var body = new ProtoWriter();
+        body.WriteBytes(2, request);
+        body.WriteBytes(3, inner.ToArray());
+        return body.ToArray();
+    }
+
+    private static byte[] BuildHeadReserve(MsfNgPacker packer, string command)
+    {
+        string hex = "0123456789abcdef";
+        var traceChars = new char[55];
+        traceChars[0] = '0'; traceChars[1] = '1'; traceChars[2] = '-';
+        for (int i = 3; i < 35; i++) traceChars[i] = hex[RandomNumberGenerator.GetInt32(16)];
+        traceChars[35] = '-';
+        for (int i = 36; i < 52; i++) traceChars[i] = hex[RandomNumberGenerator.GetInt32(16)];
+        traceChars[52] = '-'; traceChars[53] = '0'; traceChars[54] = '1';
+        string traceParent = new(traceChars);
+
+        var reserve = new ProtoWriter();
+        reserve.WriteBytes(12, new byte[] { 0x01 });            // f12: placeholder uid marker
+        reserve.WriteBytes(13, Encoding.UTF8.GetBytes(traceParent)); // f13: traceparent
+        reserve.WriteVarInt(21, 32);                            // f21: msgType
+        reserve.WriteVarInt(26, 100);                           // f26: ntCoreVersion
+
+        using var writer = new BinaryPacket(stackalloc byte[0x200]);
+        writer.EnterLengthBarrier<int>();
+        writer.Write(command, Prefix.Int32 | Prefix.WithPrefix);
+        writer.Write("", Prefix.Int32 | Prefix.WithPrefix);
+
+        int reserveLen = 4 + 4 + reserve.ToArray().Length;
+        writer.Write(reserveLen);
+        writer.Write(4 + reserve.ToArray().Length);
+        writer.Write(reserve.ToArray());
+        writer.ExitLengthBarrier<int>(true);
+        return writer.CreateReadOnlySpan().ToArray();
     }
 
     private static byte[] BuildHead(MsfNgPacker packer, string command)

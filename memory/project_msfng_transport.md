@@ -220,6 +220,65 @@ resize(ctlen+16)+append 确认无误。
 2. 或 handler 对 KeyExchangeRequest 有额外前置字段要求
 3. 对照：心跳 busi 是纯 protobuf 且成功——普通命令 vs trpc 命令的 busi 包装可能不同
 
+### 【决定性突破 2026-08-24】busi 长度前缀
+
+`EncodeBusiBuff` (sub_63F9290) = `wr_bytes(task+128/136)` —— **busi wire 格式 = `[u32 len+4][data]`**（与字符串/barrier 同约定）！
+
+此前所有 "Parse pack failed" 的根因：裸 busi 的首字节被服务器当作长度字段。
+
+加前缀后：SsoKeyExchange / SSO.HelloPush 帧被服务器**完整解析并静默处理**（不再报错）。
+静默原因待查（候选）：ReserveFields 缺设备数据、handler 内部失败无响应、响应走 push 通道。
+
+ECDHBody 包装层（sub_2966BC0，SendSSORequestWithECDH 用）：
+```
+ECDHBody { f2: bytes 业务proto, f3: {f1: varint scene, f2: bytes cmd} }  // f1 块仅扩展模式
+```
+
+### 【当前推理状态 2026-08-24 晚】静默原因排查思路（防遗忘）
+
+**已确认事实链**：
+1. Ping/Pong ✓、心跳（空 busi）✓、head 结构 ✓（cmd 回显证明）、busi [len+4] 前缀 ✓
+2. 加前缀后 SsoKeyExchange / SSO.HelloPush 不再报错 → 帧解析层 100% 通过
+3. 处理器收到包但**不回任何帧**（8s 窗口内）
+
+**静默候选原因（按可能性排序）**：
+- A. **ReserveFields 缺设备/会话数据**：真实客户端的 reserve 含 uid/设备标识/qimei 类字段，
+  服务器 handler 可能校验后静默拒绝。f12/f13/f15/f16 的实际内容语义未定。
+  对照 legacy SsoReserveFields：TraceParent="01-"+32hex+"-"+16hex+"-01"、Uid、MsgType=32(f21)、NtCoreVersion=100(可能 f26)
+- B. **响应走 push 异步通道**：trpc.* 响应可能经 trpc.qqaccess.dispatch.Push 下发，
+  需要 8s+ 观察窗或保持连接等 push。未验证！
+- C. **连接未注册**：官方流程 connect 后可能先发 Client.RegisterProxy / SSO 注册族命令
+- D. **handler 内部异常无响应**（如 KeyExchangeRequest 内容非法但解析通过）
+
+**已排除**：
+- ECDHBody 包装有无 → 无差别
+- encFlag 0 vs 2（零密钥 TEA 外层）→ 无差别
+- f4 ts 编码 varint/fixed64/fixed32 → 无差别
+- scene id 0/1 → 无差别
+- ReqHead str2(codec+8) 空 vs uin → 无差别
+
+**下一步实验计划**：
+1. 探针加「长观察窗 + 连接关闭检测」：发 kx 后读 20s，检测 FIN/push 帧
+2. reserve 填 traceparent 风格数据（f12="01-..."? 字段语义靠猜，试错）
+3. 若仍静默：反编译 DecodeECDHBody 对应的服务端请求处理入口（客户端镜像：找谁调 sub_2966810 decode 的兄弟 encode 路径）——即查 sendSSORequest 发送层 vtable+72 实现里对 body 的最终包装
+4. 备选：抓一次官方客户端完整登录流量对照（NAS tcpdump 或本机 mitm）
+
+### 【2026-08-24 深夜】MSFSDK 打包链逆向（进行中）
+
+- `MSF::MSFSDK::sendPacket` (0x649F180)：薄封装，分配 seq 后交给全局引擎 unk_8ED6B78 的 vtable+40
+- `MSF::MSFSDK::pack` (0x649F520)：组帧入口，**校验 MSFRequest 三个必填字符串 +152/+176/+200**（空则返回 null 不发包！）
+- MSFRequest 布局（部分）：`+0 seq(int) +16 flag byte +38/+44/+50 三个子对象 +128 busi ptr +136 busi len +152/+176/+200 必填str +248/+272/+296 可选str`
+- 最终组装 sub_64FD710 (1666B，仅 pack 调用) —— 未读完
+- task+40(cmd)/+144(uin)/+128(busi) 与 EncodeBasic/ReqHead/BusiBuff 的偏移互相印证 ✓
+
+**推断**：探针静默的原因很可能是服务器 handler 校验请求元数据（对应 MSFRequest 必填字段的内容，
+如设备 ID/注册信息）失败后静默丢弃。这些字段在真实客户端由 NodeAPI 层填充。
+
+**候选下一步**：
+1. 读完 sub_64FD710 弄清三必填串进入 wire 的位置
+2. 找 MSFRequest 构造者（NodeAPI 层）看 +152/+176/+200 填什么值
+3. 抓官方客户端登录前流量做字节级对照（最直接但需环境）
+
 ### 待完成（下次会话按序）
 1. ~~SsoEstablishShareKey schema~~ 已破解并实现（MsfNgKeyExchange.cs + PacketContext.EstablishMsfNgSessionAsync），遗留 3 个 NAS 确认点见上
 2. Ping/心跳信道循环接入 SocketContext（模板已提取）
