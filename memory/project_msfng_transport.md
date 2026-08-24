@@ -295,6 +295,52 @@ ECDHBody { f2: bytes 业务proto, f3: {f1: varint scene, f2: bytes cmd} }  // f1
 
 拿到真实 establish 字节后与我们的帧 diff，一次就能定位缺失的元数据。
 
+### 【重大突破 2026-08-24】三必填串 = @SEC 签名三元组！
+
+sub_64FD710 = `CreateRequestData`（TestModule.cpp），关键日志：
+```
+"cmd:%s, seq: %d, secSigLen=%d, secDeviceTokenLen=%d, secExtraLen=%d"   (@SEC tag, line 52)
+"FATAL ERROR: sigs lost, uin:%s, tcmd:%s, seqId:%d"                     (line 24, 任一为空)
+"imei:%s"                                                                (line 66, 全局 byte_8ED5950)
+```
+
+**MSFRequest+38/+44/+50 = secSig / secDeviceToken / secExtra**（wrapper.node 签名输出三元组，
+即 CharonSignProvider.GetSecSign 的 sign/token/extra 同源数据）！
+
+静默根因定论：kx/establish handler 校验请求签名数据，探针未携带 → 静默丢弃。
+心跳白名单豁免签名所以成功。
+
+CreateRequestData 组装（v36 = new 0x100）：
+- +8 = seq(builder+268)、+12 = unk_8ED5934 全局（appid?）
+- +80 = string(builder+16)（req+20 串 + req+16 flag）
+- +128 = string(builder+112) = req+128 busi ✓
+- +152 = IMEI 全局串
+- 签名三元组经 v41 容器 → sub_562B1F0(&v40, v41) 继续
+
+pack 里 req+248/+272/+296 三串（可选）进 flags 对象 v10（bits 1/2/4）。
+
+**下一步**：
+1. 反编译 sub_562B1F0 找 secSig/secDeviceToken/secExtra 的 wire 位置（pb 字段号）
+2. 探针集成签名输出重发 kx —— CharonSignProvider 已有 GetSecSign 能力！
+
+### 【2026-08-24 续】sigs 追踪结论
+
+- `CreateRequestData` 中 a4/a5/a6(secSig/secDeviceToken/secExtra) **只做非空校验+长度日志**，
+  不直接写入输出 → sigs 在更上游（NodeAPI sendMsfRequest 参数层）就已填进 MSFRequest 其他字段
+- `NodeIKernelMSFService::sendMsfRequest(cmd_str, str2, data, callback)` NAPI @0x3B86690
+  → IKernelMSFService vtbl+88 → SendMsfRequestV3 (kernel_depends.cpp:219, 校验 session)
+  → MSF 引擎 vtbl+224 注册
+- ByteSizeLong (sub_6552A60) 分析：sigs 容器 message 有 repeated 段(a1+32/40) +
+  flags 位域 optional strings(a1+48/56/64/72...)，字段号 ≤15；精确 pb 字段号仍未定
+- MSFRequest 布局疑点：+8/+14/+20「字符串」间距仅 6B，与 libc++ string(24B) 矛盾，
+  可能是 string_view 或 IDA 类型误判，待后续核实
+
+**对实现的指导意义**：MSF-NG 命令需要签名三元组，CharonSignProvider.GetSecSign 已能产出
+（sign/token/extra 同源）。剩余工作 = 确定 sigs 在 KeyExchangeRequest/ECDHBody 里的
+确切 pb 字段号。两条路：
+1. 反编译 MSF 引擎 vtbl+224 实现（接收 4 参并构造 MSFRequest 处）
+2. 抓官方流量对照（仍是金标准）
+
 ### 待完成（下次会话按序）
 1. ~~SsoEstablishShareKey schema~~ 已破解并实现（MsfNgKeyExchange.cs + PacketContext.EstablishMsfNgSessionAsync），遗留 3 个 NAS 确认点见上
 2. Ping/心跳信道循环接入 SocketContext（模板已提取）
