@@ -199,6 +199,27 @@ SsoEstablishShareKey 只出现在白名单/hash 表构造器里（0x6402bce/0x65
 2. 反编译 sso_manager 区域 0x64d0753/0x64d42ec/0x64d6bba 等使用命令表的函数
 3. 或者：先跑通 SsoKeyExchange（sendSSORequest 路径已完整逆向），它可能才是登录用的建钥命令
 
+### 【已破解 2026-08-24】ReqHead 全版本结构（v12/v13/v20/v21）
+
+- **v13** (sub_63FCBB0, codec_processor_v13.cc)：`[u32 barrier含自身][str cmd(task+40)][str X(codec+8, 心跳时"")][reserveFields]`
+- **v20** (sub_63FCE80)：`[barrier][u32 seq][str cmd][str uin|u32 4(空时)][strA][strB][strC][reserveFields]`
+- v12 = sub_63FA760、v21 = sub_63FD380 同族
+- **ReserveFields** (sub_63FB4A0) protobuf：`f12/f13/f15/f16: bytes, f21: varint=32(MsgType), f23/f24: 嵌套msg, f26: varint, f32: bytes`；
+  无任何字段时输出空 → 调用者写 `[u32 8][u32 4]`（barrier 包空 barrier）——心跳观察到的 tail 由此而来 ✓
+- 心跳观察的 head 完全吻合 v13：cmd="Heartbeat.Alive"、X=""、reserve 空
+
+### 【联调进展 2026-08-24 续】head 结构已过服务器解析
+
+带 v13 式 head 的 kx/establish 帧：服务器**不再丢弃**，错误响应里回显 cmd 字符串
+（`"Parse pack failed." + str(46)="trpc.login.ecdh.EcdhService.SsoKeyExchange"`）——
+**head 解析通过**，失败收敛到 busi 层。GCM 输出布局 [IV][CT][TAG] 经 sub_2972C90 尾部
+resize(ctlen+16)+append 确认无误。
+
+**下一步方向**：
+1. trpc.* 命令的 busi 可能需要 trpc frame 头包装（ver/reqid/service/method pb），查 sendSSORequest 发送层 vtable+72 的实现
+2. 或 handler 对 KeyExchangeRequest 有额外前置字段要求
+3. 对照：心跳 busi 是纯 protobuf 且成功——普通命令 vs trpc 命令的 busi 包装可能不同
+
 ### 待完成（下次会话按序）
 1. ~~SsoEstablishShareKey schema~~ 已破解并实现（MsfNgKeyExchange.cs + PacketContext.EstablishMsfNgSessionAsync），遗留 3 个 NAS 确认点见上
 2. Ping/心跳信道循环接入 SocketContext（模板已提取）

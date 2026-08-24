@@ -46,34 +46,28 @@ internal static class MsfNgProbe
         byte[] headUinStr2 = BuildHeadV13(packer, keyExchangeCommand, uin.ToString(), new byte[] { 0x08, 0x04 });
         byte[] headUidField = BuildHeadV13(packer, keyExchangeCommand, "", new byte[] { 0x08, 0x04 });
 
-        var variants = new (string Name, Func<uint, ReadOnlyMemory<byte>> Build)[]
-        {
-            ("head-reserve-f12", s => AssembleSeqFrame(13, s, headEmptyReserve, MsfNgKeyExchange.BuildRequestVariant(out _, keyExchangeCommand, ReadOnlyMemory<byte>.Empty, TsEncoding.VarInt))),
-            ("head-str2-uin", s => AssembleSeqFrame(13, s, headUinStr2, MsfNgKeyExchange.BuildRequestVariant(out _, keyExchangeCommand, ReadOnlyMemory<byte>.Empty, TsEncoding.VarInt))),
-        };
+        byte[] head = BuildHeadV13(packer, keyExchangeCommand, "", new byte[] { 0x08, 0x04 });
 
         uint seq = 0x623800;
-        foreach (var variant in variants)
+
+        async Task SendAndLog(string name, ReadOnlyMemory<byte> frame)
         {
-            seq++;
-            ReadOnlyMemory<byte> frame = variant.Build(seq);
-
-            Console.WriteLine($"[probe] === variant={variant.Name} seq=0x{seq:X} frame={frame.Length}B");
+            Console.WriteLine($"[probe] === {name} frame={frame.Length}B");
             await stream.WriteAsync(frame, cts.Token);
-
             byte[]? response = await ReadFrameWithTimeoutAsync(stream, TimeSpan.FromSeconds(8));
             if (response is null)
             {
                 Console.WriteLine("[probe] no response");
-                continue;
+                return;
             }
-
-            string file = Path.Combine(dumpDir, $"rsp-{variant.Name}-{seq:X}.bin");
+            string file = Path.Combine(dumpDir, $"rsp-{name}-{DateTime.Now:HHmmss}.bin");
             await File.WriteAllBytesAsync(file, response, cts.Token);
             Console.WriteLine($"[probe] <- ({response.Length}B): {Convert.ToHexString(response)}");
-            string decoded = DecodeServerResponse(response);
-            Console.WriteLine($"[probe] decoded: {decoded}");
+            Console.WriteLine($"[probe] decoded: {DecodeServerResponse(response)}");
         }
+
+        // isolated: kx with proper length-prefixed busi on a fresh state (no prior hello)
+        await SendAndLog("kx-direct-prefix", AssembleWrapped(13, ++seq, head, keyExchangeCommand, 0));
 
         return 0;
     }
@@ -105,7 +99,11 @@ internal static class MsfNgProbe
         writer.Write((byte)0);
         writer.Write(string.Empty, Prefix.Int32 | Prefix.WithPrefix);
         writer.Write(headAndBody);
-        writer.Write(busi.Span);
+        if (busi.Length > 0)
+        {
+            writer.Write(busi.Length + 4);
+            writer.Write(busi.Span);
+        }
         writer.ExitLengthBarrier<int>(true);
         return writer.ToArray();
     }
@@ -128,6 +126,56 @@ internal static class MsfNgProbe
         writer.ExitLengthBarrier<int>(true);
         return writer.CreateReadOnlySpan().ToArray();
     }
+
+    private static ReadOnlyMemory<byte> AssembleWrapped(int protocol, uint seq, byte[] head, string command, int sceneId)
+    {
+        var request = MsfNgKeyExchange.BuildRequestVariant(out _, command, ReadOnlyMemory<byte>.Empty, TsEncoding.VarInt);
+
+        var inner = new ProtoWriter();
+        inner.WriteVarInt(1, (ulong)sceneId);
+        inner.WriteBytes(2, Encoding.UTF8.GetBytes(command));
+
+        var body = new ProtoWriter();
+        body.WriteBytes(2, request);
+        body.WriteBytes(3, inner.ToArray());
+
+        return AssembleSeqFrame(protocol, seq, head, body.ToArray());
+    }
+
+    private static ReadOnlyMemory<byte> AssembleTea2Frame(int protocol, uint seq, byte[] headAndBody, string command, int sceneId)
+    {
+        var request = MsfNgKeyExchange.BuildRequestVariant(out _, command, ReadOnlyMemory<byte>.Empty, TsEncoding.VarInt);
+        var inner = new ProtoWriter();
+        inner.WriteVarInt(1, (ulong)sceneId);
+        inner.WriteBytes(2, Encoding.UTF8.GetBytes(command));
+        var body = new ProtoWriter();
+        body.WriteBytes(2, request);
+        body.WriteBytes(3, inner.ToArray());
+
+        byte[] bodyBytes = body.ToArray();
+        var busi = new byte[4 + bodyBytes.Length];
+        BinaryPrimitives.WriteInt32BigEndian(busi.AsSpan(), bodyBytes.Length + 4);
+        bodyBytes.CopyTo(busi.AsSpan(4));
+
+        var plain = new byte[headAndBody.Length + busi.Length];
+        headAndBody.CopyTo(plain, 0);
+        busi.CopyTo(plain, headAndBody.Length);
+
+        var cipher = TeaProvider.Encrypt(plain, ZeroTeaKey);
+
+        using var writer = new BinaryPacket(cipher.Length + 0x40);
+        writer.EnterLengthBarrier<int>();
+        writer.Write(protocol);
+        writer.Write((byte)MsfNgEncrypt.ZeroKey);
+        writer.Write(seq);
+        writer.Write((byte)0);
+        writer.Write(string.Empty, Prefix.Int32 | Prefix.WithPrefix);
+        writer.Write(cipher);
+        writer.ExitLengthBarrier<int>(true);
+        return writer.ToArray();
+    }
+
+    private static readonly byte[] ZeroTeaKey = new byte[16];
 
     private static string DecodeServerResponse(byte[] response)
     {
@@ -162,7 +210,6 @@ internal static class MsfNgProbe
         return "undecodable";
     }
 
-    private static readonly byte[] ZeroTeaKey = new byte[16];
 
     private static string DescribePlain(ReadOnlySpan<byte> plain)
     {
