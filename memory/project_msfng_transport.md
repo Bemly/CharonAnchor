@@ -124,13 +124,60 @@ MsfNgPacker.Parse 通过 cmdLen 合理性检查自动拒绝（pong bytes[14..18]
 - `PacketContext` 收发双分支接入：MSF-NG 模式跳过 secInfo（reserve 槽位未实现），按 HeadSequence/BasicSequence 双序列号匹配 pending task
 - 回归测试 `Lagrange.Core.Test/Packets/MsfNgPackerTest.cs`：心跳帧与 pcap 样本字节级比对（除 trace 内 hash+时间戳）通过；全量 66 测试通过
 
+### 【已破解 2026-08-24】SsoEstablishShareKey 会话建钥协议（kernel_ecdh_service.cc）
+
+函数锚点：
+- `encodeKeyExchangeRequest` = sub_296B7B0（kernel_ecdh_service.cc:482-550）
+- `decodeKeyExchangeResponse` = sub_296C1E0（:567-639）
+- `ComputeShareKey` = sub_29727F0（ecdh_util.cc:87）＝**裸 ECDH X 坐标**（P-256，512B 缓冲，无 MD5！与 wtlogin ECDH_ST 的 isHash=true 不同）
+- `AESEncryptForLogin` = sub_296D080 ＝ **AES-256-GCM**，wire 格式 `[IV12][CT][TAG16]`
+- 摘要 = SHA256（sub_8AD49A0）
+- 发送入口 `nt::wrapper::KernelECDHService::sendSSORequest` = sub_296A3C0
+
+协议：
+```
+请求 KeyExchangeRequest {
+  f1: bytes 客户端临时公钥(65B uncompressed)
+  f2: varint flag=1
+  f3: bytes AES-GCM(share=ECDH(eph, SERVER_STATIC_PUB), inner{f1: cmd字符串, f2: 业务body})
+  f4: varint unix秒
+  f5: bytes AES-GCM(HARD_AES_KEY32, SHA256(clientPub ++ payload ++ BE64(unixSec)))
+}
+响应 KeyExchangeResponse {
+  f1: bytes AES-GCM(share2=ECDH(eph, f3公钥), secrets{f1: bytes, f2: bytes, f3: expiry秒})
+  f2: bytes ECDSA-SHA256 签名
+  f3: bytes 服务端临时公钥(65B)
+}
+```
+
+解混淆常量（变换：每字节 nibble-swap 后 XOR (0xB7+i)，i 从 0 计）：
+- 请求侧服务端静态公钥 @B94EF0..+64 尾 E8：`049D1423332735980EDABE7E9EA451B3395B6F35250DB8FC56F25889F628CBAE3E8E73077914071EEEBC108F4E0170057792BB17AA303AF652313D17C1AC815E79` ✓在曲线上
+- 响应验签公钥 @B94F31..+64 尾 55：`04453977B048D0B72C1A7D50C36EBE881B69BBDD51A5C662D08A1BAF1236CE92CBB95460F573FE7A5B0ED9CCFEE01EB4DFB6E6ECFA16A090E3ED8F5847A9DAF984` ✓在曲线上
+- 摘要加密密钥 @B961A0(32B)：`E2733BF403149913CBF80C7A95168BD4CA6935EE53CD39764BEEBE2E007E3AEE`
+
+待 NAS 联调确认的疑点：
+1. 解密侧密文起点实测为 f1[3..len-16]（+3 偏移），与加密侧 [IV][CT][TAG] 不一致——可能有 3 字节版本头
+2. secrets.f1/f2 哪个是 16B codec TEA 会话键未定；PacketContext.EstablishMsfNgSessionAsync 目前取 len==16 者否则 MD5(f1)
+3. ECDSA 签名验签输入顺序（clientPub++f3++f1 vs a4缓冲++f3++f1）
+
+另：SsoSecureAccess 数据通道用 **HPKE(RFC9180)** 密钥调度（psk_id_hash/info_hash/secret/key/base_nonce/exp 标签，sub_8B2DCB0），与建钥通道是两套。
+
+### 【已破解 2026-08-24】21B Ping 包
+静态模板 @unk_F762B0（BuildPingPacket=sub_63DE7B0，tcp_channel_connector.cc:156）：
+```
+00 00 00 15 | 01 33 52 39 | [u32 uin 补丁@8] | 04 "MSF" | [u32 pingIndex 补丁@17]
+```
+StartPing(:188) 每次 ping 递增 *(connector+312)。信道层帧不走 codec。
+
+### 命令白名单情报（sub_6402B70 表）
+`trpc.login.ecdh.EcdhService.SsoQRLoginGenQr`（QR 出码走 trpc！）、SsoNTLoginPasswordLogin/EasyLogin/AuthLogin 族、SsoOIDB0x916a-d、OidbSvcTrpcTcp.0x11ec_1 等大量 Oidb。legacy `wtlogin.trans_emp` 不在此表。
+
 ### 待完成（下次会话按序）
-1. `SsoEstablishShareKey` 请求/响应 protobuf schema → 填充 MsfNgPacker.SessionKey（DecodeECDHBody/ComputeShareKey 字符串 @0x8ca739/0x8ca763 附近；base_nonce @0x8ca175）
-2. 21B Ping 包构造（BuildPingPacket tcp_channel_connector.cc:156 / StartPing:188，需 IDA 反编译该函数——缓存里没有）
-3. 真实命令帧验证（wtlogin 等）：确认 basic-cmd 为空是否通用（还是仅心跳），NAS 抓包对照
-4. RspHead 后的 reserve-fields 跳过 + zlib busi 解压未实现（现返回 region[X..] 原始区域）
-5. NAS 联调：UseMsfNgTransport=true 对照 qq.pcap
-6. ⚠️ 本地预存构建问题（与 MSF-NG 无关）：Lagrange.Core.slnx 中 NativeAPI（DateTime vs long）与 Milky 生成器分部方法（CS8795）报错，干净 HEAD 同样存在
+1. ~~SsoEstablishShareKey schema~~ 已破解并实现（MsfNgKeyExchange.cs + PacketContext.EstablishMsfNgSessionAsync），遗留 3 个 NAS 确认点见上
+2. Ping/心跳信道循环接入 SocketContext（模板已提取）
+3. NAS 联调：UseMsfNgTransport=true + EstablishMsfNgSessionAsync 抓包对照 qq.pcap，解决上述疑点
+4. RspHead 后的 reserve-fields 跳过 + zlib busi 解压未实现
+5. ⚠️ 本地预存构建问题（与 MSF-NG 无关）：Lagrange.Core.slnx 中 NativeAPI（DateTime vs long）与 Milky 生成器分部方法（CS8795）报错，干净 HEAD 同样存在
 
 ### 工具链备忘
 - objdump 全量反汇编（1.2GB 文本）grep 锚点比 IDA xref 快得多：`objdump -d --no-show-raw-insn wrapper3232.node > full_disasm.txt` 然后 `grep -E "# 0xADDR\b"`

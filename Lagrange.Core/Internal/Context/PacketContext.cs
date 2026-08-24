@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Security.Cryptography;
 using Lagrange.Core.Common;
 using Lagrange.Core.Common.Entity;
 using Lagrange.Core.Internal.Packets.Struct;
@@ -111,6 +112,22 @@ internal class PacketContext
         });
 
         return new ValueTask<BotSsoPacket>(tcs, 0);
+    }
+
+    public async Task<bool> EstablishMsfNgSessionAsync()
+    {
+        var request = MsfNgKeyExchange.BuildRequest(out var ephemeral, MsfNgKeyExchange.Command, ReadOnlyMemory<byte>.Empty);
+        var sso = new BotSsoPacket(MsfNgKeyExchange.Command, request);
+        var options = new ServiceAttribute(MsfNgKeyExchange.Command, RequestType.Simple, EncryptType.NoEncrypt);
+
+        var response = await SendPacket(sso, options);
+        if (response.Data.IsEmpty) return false;
+
+        var keys = MsfNgKeyExchange.ParseResponse(response.Data.Span, ephemeral);
+        if (keys is null) return false;
+
+        _msfNgPacker.SessionKey = keys.Secret1.Length == 16 ? keys.Secret1 : keys.Secret2.Length == 16 ? keys.Secret2 : MD5.HashData(keys.Secret1);
+        return true;
     }
 
     public void DispatchPacket(ReadOnlySpan<byte> buffer)
