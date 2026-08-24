@@ -39,6 +39,9 @@ internal static class MsfNgKeyExchange
     ];
 
     public static byte[] BuildRequest(out EcdhProvider ephemeral, string command, ReadOnlyMemory<byte> body)
+        => BuildRequestVariant(out ephemeral, command, body, TsEncoding.VarInt);
+
+    public static byte[] BuildRequestVariant(out EcdhProvider ephemeral, string command, ReadOnlyMemory<byte> body, TsEncoding tsEncoding, bool flagAsFixed32 = false)
     {
         ephemeral = new EcdhProvider(EllipticCurve.Prime256V1);
         byte[] clientPub = ephemeral.PackPublic(false);
@@ -63,9 +66,21 @@ internal static class MsfNgKeyExchange
 
         var writer = new ProtoWriter();
         writer.WriteBytes(1, clientPub);
-        writer.WriteVarInt(2, 1);
+        if (flagAsFixed32) writer.WriteFixed32(2, 1);
+        else writer.WriteVarInt(2, 1);
         writer.WriteBytes(3, payload);
-        writer.WriteVarInt(4, (ulong)timestamp);
+        switch (tsEncoding)
+        {
+            case TsEncoding.VarInt:
+                writer.WriteVarInt(4, (ulong)timestamp);
+                break;
+            case TsEncoding.Fixed64:
+                writer.WriteFixed64(4, (ulong)timestamp);
+                break;
+            default:
+                writer.WriteFixed32(4, (uint)timestamp);
+                break;
+        }
         writer.WriteBytes(5, digestCipher);
         return writer.ToArray();
     }
@@ -173,6 +188,26 @@ internal sealed class ProtoWriter
         WriteVarIntRaw(value);
     }
 
+    public void WriteFixed32(int field, uint value)
+    {
+        WriteTag(field, WireType.Fixed32);
+        EnsureCapacity(4);
+        _buffer[_length++] = (byte)value;
+        _buffer[_length++] = (byte)(value >> 8);
+        _buffer[_length++] = (byte)(value >> 16);
+        _buffer[_length++] = (byte)(value >> 24);
+    }
+
+    public void WriteFixed64(int field, ulong value)
+    {
+        WriteTag(field, WireType.Fixed64);
+        EnsureCapacity(8);
+        for (int i = 0; i < 8; i++)
+        {
+            _buffer[_length++] = (byte)(value >> (8 * i));
+        }
+    }
+
     public void WriteBytes(int field, ReadOnlySpan<byte> value)
     {
         WriteTag(field, WireType.LengthDelimited);
@@ -214,7 +249,16 @@ internal sealed class ProtoWriter
 internal enum WireType : uint
 {
     VarInt = 0,
+    Fixed64 = 1,
     LengthDelimited = 2,
+    Fixed32 = 5,
+}
+
+internal enum TsEncoding
+{
+    VarInt,
+    Fixed64,
+    Fixed32,
 }
 
 internal static class ProtoReader
@@ -241,6 +285,16 @@ internal static class ProtoReader
                     if (!TryReadVarInt(data, ref position, out var length) || length > (uint)(data.Length - position)) return false;
                     fields.Add(field, new FieldValue(WireType.LengthDelimited, 0, data.Slice(position, (int)length).ToArray()));
                     position += (int)length;
+                    break;
+                case WireType.Fixed64:
+                    if (position + 8 > data.Length) return false;
+                    fields.Add(field, new FieldValue(WireType.Fixed64, BinaryPrimitives.ReadUInt64LittleEndian(data.Slice(position)), default));
+                    position += 8;
+                    break;
+                case WireType.Fixed32:
+                    if (position + 4 > data.Length) return false;
+                    fields.Add(field, new FieldValue(WireType.Fixed32, BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(position)), default));
+                    position += 4;
                     break;
                 default:
                     return false;

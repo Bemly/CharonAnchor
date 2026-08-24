@@ -16,9 +16,60 @@ internal class MsfNgPacker(BotContext context) : StructBase(context)
 
     public byte[]? SessionKey { get; set; }
 
+    public uint Sequence { get; set; }
+
     public ReadOnlyMemory<byte> BuildProtocol12(BotSsoPacket sso, ServiceAttribute options) => BuildFrame(sso, options, 12);
 
     public ReadOnlyMemory<byte> BuildProtocol13(BotSsoPacket sso, ServiceAttribute options) => BuildFrame(sso, options, 13);
+
+    public static byte[] BuildPing(uint uin, uint index)
+    {
+        byte[] ping =
+        [
+            0x00, 0x00, 0x00, 0x15,
+            0x01, 0x33, 0x52, 0x39,
+            0x00, 0x00, 0x00, 0x00,
+            0x04, 0x4D, 0x53, 0x46, 0x05,
+            0x00, 0x00, 0x00, 0x00
+        ];
+        BinaryPrimitives.WriteUInt32BigEndian(ping.AsSpan(8), uin);
+        BinaryPrimitives.WriteUInt32BigEndian(ping.AsSpan(17), index);
+        return ping;
+    }
+
+    public ReadOnlyMemory<byte> BuildUnauthenticatedFrame(string command, ReadOnlySpan<byte> body, string uin, int protocol = 13)
+    {
+        var head = new BinaryPacket(stackalloc byte[0x200]);
+        head.EnterLengthBarrier<int>();
+        head.Write(command, Prefix.Int32 | Prefix.WithPrefix);
+        head.Write(ReadOnlySpan<byte>.Empty, Prefix.Int32 | Prefix.WithPrefix);
+        head.Write(BuildTrace(), Prefix.Int32 | Prefix.WithPrefix);
+        head.ExitLengthBarrier<int>(true);
+        head.Write(8);
+        head.Write(4);
+
+        var headSpan = head.CreateReadOnlySpan();
+        var writer = new BinaryPacket(headSpan.Length + body.Length + 0x80);
+        writer.EnterLengthBarrier<int>();
+        writer.Write(protocol);
+        writer.Write((byte)MsfNgEncrypt.Plain);
+        if (uin.Length > 0)
+        {
+            writer.Write(uin, Prefix.Int32 | Prefix.WithPrefix);
+        }
+        else
+        {
+            writer.Write(4);
+        }
+        writer.Write((byte)0);
+        writer.Write(string.Empty, Prefix.Int32 | Prefix.WithPrefix);
+        writer.Write(headSpan);
+        writer.Write(body);
+        writer.ExitLengthBarrier<int>(true);
+        head.Dispose();
+
+        return writer.ToArray();
+    }
 
     private ReadOnlyMemory<byte> BuildFrame(BotSsoPacket sso, ServiceAttribute options, int protocol)
     {

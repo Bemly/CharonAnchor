@@ -13,9 +13,14 @@ namespace Lagrange.Core.Runner;
 
 internal static class Program
 {
-    private static async Task Main()
+    private static async Task Main(string[] args)
     {
-        
+        if (args.Length > 0 && args[0] == "msfng-probe")
+        {
+            await MsfNgProbe.RunAsync(args.Skip(1).ToArray());
+            return;
+        }
+
         Console.OutputEncoding = Encoding.UTF8;
         Console.InputEncoding = Encoding.UTF8;
         

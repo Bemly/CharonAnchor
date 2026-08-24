@@ -172,6 +172,33 @@ StartPing(:188) 每次 ping 递增 *(connector+312)。信道层帧不走 codec�
 ### 命令白名单情报（sub_6402B70 表）
 `trpc.login.ecdh.EcdhService.SsoQRLoginGenQr`（QR 出码走 trpc！）、SsoNTLoginPasswordLogin/EasyLogin/AuthLogin 族、SsoOIDB0x916a-d、OidbSvcTrpcTcp.0x11ec_1 等大量 Oidb。legacy `wtlogin.trans_emp` 不在此表。
 
+### 【重大突破 2026-08-24】本机实连联调（探针 Lagrange.Core.Runner msfng-probe）
+
+**已打通**：
+- Ping/Pong：21B ping 被接受，pong = 镜像 ping 21B + 尾部 4B（0x6EBB39B8，含义待定）
+- **心跳 codec 帧被服务器接受并正确回包**（74B）：echo 客户端 seq @[19..23)、srvSeq=0x33 起、时间戳 0x6A8BE112 ✓✓
+- Establish 帧到达命令处理层：错误响应 enc=2 零密钥 TEA（密文起点 = basic 后即 offset15），解出 RspHead：
+  `[X=0x36][seq echo@4][retCode=-10006(0xFFFFD87A)@8][str"Parse pack failed."][空串们][ts][4][4]`
+  ——确认 decode_rsphead2 的 a4[1]=seq@4（回显）、a4[2]=retCode@8
+
+**变体矩阵结论**（服务器行为）：
+- basic-cmd 非空 → 静默丢弃；basic-cmd 空 → 接受 ✓
+- ver12/ver20 → 丢弃；ver13 → 接受；ver21 → 有响应但同样报错
+- unauth uin-str 样式（[str uin] 或 [u32 4]）→ 全部丢弃
+- **唯一到达应用层的形态：`[len][ver13][enc0][seq][x=0][str ""][busi]`**（与心跳完全同构）
+- busi 带 ReqHead(心跳式) → 丢弃；busi 直接是 KeyExchangeRequest proto → "Parse pack failed"
+- f4 ts 的 varint/fixed64/fixed32 编码无差别 → 错误不在字段编码层
+
+**关键架构发现**：sub_296A3C0 (sendSSORequest) 发送的 cmd 是 `trpc.login.ecdh.EcdhService.SsoKeyExchange`
+——kernel_ecdh_service.cc 的 encode/decodeKeyExchangeRequest 属于 SsoKeyExchange 登录通道！
+SsoEstablishShareKey 只出现在白名单/hash 表构造器里（0x6402bce/0x65ea71a/0x65eeb89），
+真正的请求构造代码还没定位（可能在 sso_manager 0x64d 区域，经命令表查 cmd）。
+
+**下一步（establish 攻坚）**：
+1. 反编译 sub_65E9A5E/sub_65ED7D6 hash 表的 value 结构（cmd → handler/flag 映射）
+2. 反编译 sso_manager 区域 0x64d0753/0x64d42ec/0x64d6bba 等使用命令表的函数
+3. 或者：先跑通 SsoKeyExchange（sendSSORequest 路径已完整逆向），它可能才是登录用的建钥命令
+
 ### 待完成（下次会话按序）
 1. ~~SsoEstablishShareKey schema~~ 已破解并实现（MsfNgKeyExchange.cs + PacketContext.EstablishMsfNgSessionAsync），遗留 3 个 NAS 确认点见上
 2. Ping/心跳信道循环接入 SocketContext（模板已提取）
