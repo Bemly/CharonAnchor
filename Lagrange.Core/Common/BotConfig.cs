@@ -49,6 +49,11 @@ public class BotConfig
     public bool AutoReLogin { get; set; } = true;
 
     /// <summary>
+    /// Use the MSF-NG transport codec (QQ NT 3.2.x) instead of the legacy MSF codec
+    /// </summary>
+    public bool UseMsfNgTransport { get; set; } = false;
+
+    /// <summary>
     /// The Sign Provider for the bot, if null, the bot will use the default sign provider
     /// </summary>
     public BotSignProvider? SignProvider { get; set; }

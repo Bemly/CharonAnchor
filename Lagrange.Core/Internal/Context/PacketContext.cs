@@ -13,6 +13,7 @@ internal class PacketContext
     private readonly BotKeystore _keystore;
     private readonly SsoPacker _ssoPacker;
     private readonly ServicePacker _servicePacker;
+    private readonly MsfNgPacker _msfNgPacker;
 
     internal readonly BotSignProvider SignProvider;
 
@@ -24,6 +25,7 @@ internal class PacketContext
         _keystore = context.Keystore;
         _ssoPacker = new SsoPacker(context);
         _servicePacker = new ServicePacker(context);
+        _msfNgPacker = new MsfNgPacker(context);
 
         SignProvider = context.Config.SignProvider ?? context.Config.Protocol switch
         {
@@ -46,42 +48,54 @@ internal class PacketContext
             {
                 ReadOnlyMemory<byte> frame;
 
-                switch (options.RequestType)
+                if (_context.Config.UseMsfNgTransport)
                 {
-                    case RequestType.D2Auth:
+                    frame = options.RequestType switch
                     {
-                        if (SignProvider.IsWhiteListCommand(packet.Command))
+                        RequestType.D2Auth => _msfNgPacker.BuildProtocol12(packet, options),
+                        RequestType.Simple => _msfNgPacker.BuildProtocol13(packet, options),
+                        _ => throw new InvalidOperationException($"Unknown RequestType: {options.RequestType}")
+                    };
+                }
+                else
+                {
+                    switch (options.RequestType)
+                    {
+                        case RequestType.D2Auth:
                         {
-                            var secInfo = await SignProvider.GetSecSign(_keystore.Uin, packet.Command, packet.Sequence, packet.Data);
-                            var sso = _ssoPacker.BuildProtocol12(packet, secInfo);
-                            frame = _servicePacker.BuildProtocol12(sso, options);
-                        }
-                        else
-                        {
-                            var sso = _ssoPacker.BuildProtocol12(packet, null);
-                            frame = _servicePacker.BuildProtocol12(sso, options);
-                        }
+                            if (SignProvider.IsWhiteListCommand(packet.Command))
+                            {
+                                var secInfo = await SignProvider.GetSecSign(_keystore.Uin, packet.Command, packet.Sequence, packet.Data);
+                                var sso = _ssoPacker.BuildProtocol12(packet, secInfo);
+                                frame = _servicePacker.BuildProtocol12(sso, options);
+                            }
+                            else
+                            {
+                                var sso = _ssoPacker.BuildProtocol12(packet, null);
+                                frame = _servicePacker.BuildProtocol12(sso, options);
+                            }
 
-                        break;
-                    }
-                    case RequestType.Simple:
-                    {
-                        if (SignProvider.IsWhiteListCommand(packet.Command))
-                        {
-                            var secInfo = await SignProvider.GetSecSign(_keystore.Uin, packet.Command, packet.Sequence, packet.Data);
-                            var sso = _ssoPacker.BuildProtocol13(packet, secInfo);
-                            frame = _servicePacker.BuildProtocol13(packet, sso, options);
+                            break;
                         }
-                        else
+                        case RequestType.Simple:
                         {
-                            var sso = _ssoPacker.BuildProtocol13(packet, null);
-                            frame = _servicePacker.BuildProtocol13(packet, sso, options);
+                            if (SignProvider.IsWhiteListCommand(packet.Command))
+                            {
+                                var secInfo = await SignProvider.GetSecSign(_keystore.Uin, packet.Command, packet.Sequence, packet.Data);
+                                var sso = _ssoPacker.BuildProtocol13(packet, secInfo);
+                                frame = _servicePacker.BuildProtocol13(packet, sso, options);
+                            }
+                            else
+                            {
+                                var sso = _ssoPacker.BuildProtocol13(packet, null);
+                                frame = _servicePacker.BuildProtocol13(packet, sso, options);
+                            }
+                            break;
                         }
-                        break;
-                    }
-                    default:
-                    {
-                        throw new InvalidOperationException($"Unknown RequestType: {options.RequestType}");
+                        default:
+                        {
+                            throw new InvalidOperationException($"Unknown RequestType: {options.RequestType}");
+                        }
                     }
                 }
 
@@ -101,6 +115,12 @@ internal class PacketContext
 
     public void DispatchPacket(ReadOnlySpan<byte> buffer)
     {
+        if (_context.Config.UseMsfNgTransport)
+        {
+            DispatchMsfNgPacket(buffer);
+            return;
+        }
+
         var service = _servicePacker.Parse(buffer);
         var sso = _ssoPacker.Parse(service);
 
@@ -119,6 +139,33 @@ internal class PacketContext
         else
         {
             Task.Run(() => _context.EventContext.HandleServerPacket(sso));
+        }
+    }
+
+    private void DispatchMsfNgPacket(ReadOnlySpan<byte> buffer)
+    {
+        var packet = _msfNgPacker.Parse(buffer);
+        if (packet is null) return; // channel level frame e.g. heartbeat pong
+
+        SsoPacketValueTaskSource? tcs;
+        if (!_pendingTasks.TryRemove(packet.HeadSequence, out tcs) &&
+            !_pendingTasks.TryRemove(packet.BasicSequence, out tcs))
+        {
+            var sso = packet.RetCode == 0
+                ? new BotSsoPacket(packet.Command, packet.Payload, packet.HeadSequence)
+                : new BotSsoPacket(packet.Command, packet.HeadSequence, packet.RetCode, packet.Extra);
+            Task.Run(() => _context.EventContext.HandleServerPacket(sso));
+            return;
+        }
+
+        if (packet is { RetCode: not 0, Extra: var extra })
+        {
+            string msg = $"Packet '{packet.Command}' returns {packet.RetCode} with seq: {packet.HeadSequence}, extra: {extra}";
+            tcs.SetException(new InvalidOperationException(msg));
+        }
+        else
+        {
+            tcs.SetResult(new BotSsoPacket(packet.Command, packet.Payload, packet.HeadSequence));
         }
     }
 }

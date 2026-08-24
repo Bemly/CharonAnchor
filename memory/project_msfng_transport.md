@@ -48,21 +48,21 @@ type: project
 [u32 BE totalLen]
 [u32 BE protocolVer]     心跳=13；trans_emp 观测=12 → codec_processor_v12/v13/v20/v21 对应
 [u8   encFlag]           0=明文（心跳/未建立会话时实测为 0）
-[u32 BE connSeq]         客户端连接内递增计数（0x6238bf→c0→…，服务端响应回显此值）
-[u8   x]                 观测=0
-[ReqHead …]              版本相关的虚拟函数（vtable+32）
-[BusiBuff …]             若 encFlag≠0 则整体 TEA 加密
+[u32 BE seq]             客户端连接内递增计数 0x006238BF→C2（含原以为独立的 x 字节，x=seq 最低位前的 0）
+[u8   x]                 恒 0
+[str cmd]                basic 层命令串，心跳实测为空 [00000004]，真实命令在 ReqHead
+[ReqHead …]              版本相关的虚拟函数（vtable+32），见下节逐字段语义
+[BusiBuff …]             encFlag≠0 时与 ReqHead 一起整体 TEA 加密
 ```
-服务端帧同构：seq 为服务端自己的计数器（0x39 起），多一个 echo=客户端 seq 的 u32。
+服务端 pong 为信道层帧非 codec 帧：80B，srvSeq u32@[15..19)=57 起，echo clientSeq u32@[19..23)。
 
 ### 编解码管线（codec_processor.cc）
 ```
 EncodePacket @0x63F8BA0: EncodeBasic(0x63F9050) → EncodeReqHead(virtual vtbl+32)
-                         → EncodeBusiBuff(0x63F9290) → EncodeFinal(0x63F9360: concat basic+(head+busi)，busi 按 encFlag TEA)
+                         → EncodeBusiBuff(0x63F9290) → EncodeFinal(0x63F9360)
 DecodePacket @0x63F9620: DecodeBasic(0x63F9D40) → DecryptBody(0x63FD870, encFlag≠0 时)
                          → DecodeRspHead(0x63F9E40) → DecodeReserveFields(vtbl+40) → DecodeBusiBuff(0x63F9FF0, 可 zlib 解压)
-EncodeBasic 输出: [u32 len 占位回填][u32 ver][u8 enc][u32 seq][u8 x][cmd string]
-reader 原语: rd_u32 不推进指针需显式 skip(4)；rd_back=绝对 seek；rd_str_a/b 读长度前缀字符串
+reader 原语: 全部"只读不推进"需显式 skip；rd_back=绝对 seek；字符串 [len含自身][len-4 数据]
 ```
 日志行号锚点：EncodeBasic:303 / EncodePacket:122-169 / EncryptBody:357 / DecodePacket:181-258 / DecodeBusiBuff:533
 
@@ -90,13 +90,47 @@ PushServiceDirect.VoipPushAck / MessageSvc.PbSendMsg / QQConnectLogin.pre_auth_e
 - 会话对象布局线索（MMKV reKey 函数 0x6593F00 佐证的是存储而非传输）：+160=key ptr、+137=flag、+192=channel state
 - MSF::MSFSDK 公开 API 在 dynsym（sendPacket/disconnect/isConnected/setMSFConfig<14 种>/notifyLoginSuccess 等 1505 个导出符号）
 
+### 【已破解 2026-08-24】ReqHead/RspHead 字段语义（pcap+IDA 双重验证）
+
+**读取原语真实语义**（此前记忆有误，已修正）：
+- `rd_u32`(0x8901700)/`rd_u8`(0x89016B0) **只读不推进指针**，必须显式 `rd_skip`
+- `rd_back` = 绝对寻址 seek（非相对回退）
+- `wr_bytes`(0x63FAF50) = 写 `[u32 (len+4)][data]` —— **所有字符串/长度屏障都是"长度含自身"约定**（与 Lagrange BinaryPacket 的 `Prefix.Int32|WithPrefix` 和 `EnterLengthBarrier+Exit(true)` 语义完全一致，可直接复用）
+- `rd_str_a` 读 `[u32 len][len-4 bytes]`
+
+**客户端帧（EncodeBasic 0x63F9050 + pcap 实测）**：
+```
+[u32 totalLen 回填][u32 ver][u8 enc][u32 seq][u8 x=0][str cmd]
+```
+- 心跳实测：seq=0x6238BF→C2 每包递增；**basic 层 cmd 为空串 `[00000004]`**，真实命令名在 ReqHead 里
+- ReqHead = `[u32 barrier含自身=100][str 真实cmd][str ""][str trace]` + 尾部 `[u32 8][u32 4]`
+- trace(69B) = `"b "` + 32位hex + protobuf{f23:{f1:"client_conn_seq", f2:"<unix秒>"}, f26:101}；
+  hex32 实测= b8b94290a9711ee10daa10064b7d5753（与设备 Guid 同值，来源待确认）
+- EncodeFinal(0x63F9360)：enc≠0 时对 **head+busi 整体 TEA**（ReqHead 在密文内！），final = basic ++ cipher
+
+**RspHead（DecodeRspHead 0x63F9E40）**：
+```
+[u32 X=headLen 含自身][u32 seq@4][u32 retCode@8][str extra@12][str cmd][str ?][vlint][bytes str_b][vlint]
+body 从 region[X..] 开始
+```
+
+**pong = 信道层帧，不走 codec**：80B 固定形状，srvSeq u32@[15..19)=57(0x39起)、echo clientSeq u32@[19..23)。
+MsfNgPacker.Parse 通过 cmdLen 合理性检查自动拒绝（pong bytes[14..18]=0x30000000 超界）。
+
+### C# 传输层实现（2026-08-24 完成）
+
+- `Lagrange.Core/Internal/Packets/Struct/MsfNgPacker.cs`：BuildProtocol12/13、Parse→MsfNgPacket|null（信道帧返回 null）、SessionKey 属性（enc=1 用）、trace 构造器
+- `BotConfig.UseMsfNgTransport` 开关（默认 false，legacy 路径不变）
+- `PacketContext` 收发双分支接入：MSF-NG 模式跳过 secInfo（reserve 槽位未实现），按 HeadSequence/BasicSequence 双序列号匹配 pending task
+- 回归测试 `Lagrange.Core.Test/Packets/MsfNgPackerTest.cs`：心跳帧与 pcap 样本字节级比对（除 trace 内 hash+时间戳）通过；全量 66 测试通过
+
 ### 待完成（下次会话按序）
-1. ReqHead/RspHead 逐字段语义（用 pcap 样本 + 已知管线迭代验证最快，不必再啃 IDA）：
-   客户端 head 区实测 `00 00 00 04 | 00 00 00 64`；body 区 `[u32 0x13]"Heartbeat.Alive"+[00000004][TLV 0x49]73B[protobuf tail][00000008][00000004]`
-2. `SsoEstablishShareKey` 请求/响应 protobuf schema（DecodeECDHBody/ComputeShareKey 字符串 @0x8ca739/0x8ca763 附近；base_nonce @0x8ca175）
-3. 21B Ping 包构造（BuildPingPacket tcp_channel_connector.cc:156 / StartPing:188）
-4. C# 传输层：新建 MsfNgPacker 对位 ServicePacker/SsoPacker，SocketContext 策略切换点已勘察（IClientListener seam）
-5. 联调：NAS 上对照 qq.pcap
+1. `SsoEstablishShareKey` 请求/响应 protobuf schema → 填充 MsfNgPacker.SessionKey（DecodeECDHBody/ComputeShareKey 字符串 @0x8ca739/0x8ca763 附近；base_nonce @0x8ca175）
+2. 21B Ping 包构造（BuildPingPacket tcp_channel_connector.cc:156 / StartPing:188，需 IDA 反编译该函数——缓存里没有）
+3. 真实命令帧验证（wtlogin 等）：确认 basic-cmd 为空是否通用（还是仅心跳），NAS 抓包对照
+4. RspHead 后的 reserve-fields 跳过 + zlib busi 解压未实现（现返回 region[X..] 原始区域）
+5. NAS 联调：UseMsfNgTransport=true 对照 qq.pcap
+6. ⚠️ 本地预存构建问题（与 MSF-NG 无关）：Lagrange.Core.slnx 中 NativeAPI（DateTime vs long）与 Milky 生成器分部方法（CS8795）报错，干净 HEAD 同样存在
 
 ### 工具链备忘
 - objdump 全量反汇编（1.2GB 文本）grep 锚点比 IDA xref 快得多：`objdump -d --no-show-raw-insn wrapper3232.node > full_disasm.txt` 然后 `grep -E "# 0xADDR\b"`
