@@ -41,11 +41,15 @@ internal static class MsfNgProbe
         }, BotAppInfo.ProtocolToAppInfo[Protocols.Linux]);
         var packer = new MsfNgPacker(context);
 
+        const string keyExchangeCommand = "trpc.login.ecdh.EcdhService.SsoKeyExchange";
+        byte[] headEmptyReserve = BuildHeadV13(packer, keyExchangeCommand, "", new byte[] { 0x08, 0x04 });
+        byte[] headUinStr2 = BuildHeadV13(packer, keyExchangeCommand, uin.ToString(), new byte[] { 0x08, 0x04 });
+        byte[] headUidField = BuildHeadV13(packer, keyExchangeCommand, "", new byte[] { 0x08, 0x04 });
+
         var variants = new (string Name, Func<uint, ReadOnlyMemory<byte>> Build)[]
         {
-            ("ts-fixed64", s => AssembleSeqFrame(13, s, Array.Empty<byte>(), MsfNgKeyExchange.BuildRequestVariant(out _, EstablishCommand, ReadOnlyMemory<byte>.Empty, TsEncoding.Fixed64))),
-            ("ts-fixed32", s => AssembleSeqFrame(13, s, Array.Empty<byte>(), MsfNgKeyExchange.BuildRequestVariant(out _, EstablishCommand, ReadOnlyMemory<byte>.Empty, TsEncoding.Fixed32))),
-            ("ts-varint-baseline", s => AssembleSeqFrame(13, s, Array.Empty<byte>(), MsfNgKeyExchange.BuildRequestVariant(out _, EstablishCommand, ReadOnlyMemory<byte>.Empty, TsEncoding.VarInt))),
+            ("head-reserve-f12", s => AssembleSeqFrame(13, s, headEmptyReserve, MsfNgKeyExchange.BuildRequestVariant(out _, keyExchangeCommand, ReadOnlyMemory<byte>.Empty, TsEncoding.VarInt))),
+            ("head-str2-uin", s => AssembleSeqFrame(13, s, headUinStr2, MsfNgKeyExchange.BuildRequestVariant(out _, keyExchangeCommand, ReadOnlyMemory<byte>.Empty, TsEncoding.VarInt))),
         };
 
         uint seq = 0x623800;
@@ -104,6 +108,25 @@ internal static class MsfNgProbe
         writer.Write(busi.Span);
         writer.ExitLengthBarrier<int>(true);
         return writer.ToArray();
+    }
+
+    private static byte[] BuildHeadV13(MsfNgPacker packer, string command, string secondString, byte[] reservePb)
+    {
+        var method = typeof(MsfNgPacker).GetMethod("BuildTrace", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        _ = method!.Invoke(packer, null);
+
+        using var writer = new BinaryPacket(stackalloc byte[0x200]);
+        writer.EnterLengthBarrier<int>();
+        writer.Write(command, Prefix.Int32 | Prefix.WithPrefix);
+        writer.Write(secondString, Prefix.Int32 | Prefix.WithPrefix);
+
+        // reserve fields: outer barrier incl self wrapping inner barrier incl self + protobuf
+        int reserveLen = 4 + 4 + reservePb.Length;
+        writer.Write(reserveLen);
+        writer.Write(4 + reservePb.Length);
+        writer.Write(reservePb);
+        writer.ExitLengthBarrier<int>(true);
+        return writer.CreateReadOnlySpan().ToArray();
     }
 
     private static string DecodeServerResponse(byte[] response)
