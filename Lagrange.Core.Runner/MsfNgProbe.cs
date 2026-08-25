@@ -29,6 +29,27 @@ internal static class MsfNgProbe
         string? replayFile = Environment.GetEnvironmentVariable("CHARON_REPLAY_FRAME");
         if (replayFile is not null)
         {
+            // optional sign check: CHARON_SIGN_TEST="cmd|seq|bodyFile|uin" -> print sig hex and exit
+            string? signTest = Environment.GetEnvironmentVariable("CHARON_SIGN_TEST");
+            if (signTest is not null)
+            {
+                var parts = signTest.Split('|');
+                string sCmd = parts[0];
+                int sSeq = int.Parse(parts[1]);
+                byte[] sBody = await File.ReadAllBytesAsync(parts[2]);
+                long sUin = parts.Length > 3 ? long.Parse(parts[3]) : 0;
+                var provider = new CharonAnchor.CharonSignProvider(signDir, "3.2.32");
+                using (provider)
+                {
+                    Console.WriteLine($"[sigtest] cmd={sCmd} seq={sSeq} body={sBody.Length}B uin={sUin}");
+                    var info = await provider.GetSecSign(sUin, sCmd, sSeq, sBody);
+                    if (info is null) { Console.WriteLine("[sigtest] FAILED"); return 9; }
+                    Console.WriteLine($"[sigtest] sign={Convert.ToHexString(info.SecSign)}");
+                    Console.WriteLine($"[sigtest] token={Convert.ToHexString(info.SecToken)} extra={Convert.ToHexString(info.SecExtra)}");
+                }
+                return 0;
+            }
+
             using var replayClient = new TcpClient();
             await replayClient.ConnectAsync(Host, Port);
             Console.WriteLine($"[probe] connected {Host}:{Port}");

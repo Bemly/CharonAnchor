@@ -31,6 +31,15 @@ internal class WtLogin : StructBase
             Console.Error.WriteLine($"[NEW31] sending official template {WtLoginNewTemplates.TransEmp31.Length}B");
             return WtLoginNewTemplates.TransEmp31.ToArray();
         }
+        return BuildCode2dPacket(0x31, BuildTransEmp31Body(unusualSig).Span, EncryptMethod.EM_ECDH_ST);
+    }
+
+    /// <summary>
+    /// Raw code2d request body (fixed header + TLVs) carried inside an MSF-NG busi,
+    /// bypassing the legacy OICQ 0x810/0x812 wrapping.
+    /// </summary>
+    public ReadOnlyMemory<byte> BuildTransEmp31Body(byte[]? unusualSig)
+    {
         using var writer = new BinaryPacket(stackalloc byte[300]);
         writer.Write<ushort>(0);
         writer.Write(AppInfo.AppId);
@@ -38,7 +47,7 @@ internal class WtLogin : StructBase
         writer.Write(ReadOnlySpan<byte>.Empty); // TGT
         writer.Write<byte>(0);
         writer.Write(ReadOnlySpan<byte>.Empty, Prefix.Int16 | Prefix.LengthOnly);
-        
+
         using var tlvs = new TlvQrCode(_context);
         if (unusualSig != null) tlvs.Tlv11(unusualSig);
         tlvs.Tlv16();
@@ -48,10 +57,29 @@ internal class WtLogin : StructBase
         tlvs.Tlv35();
         tlvs.Tlv66();
         tlvs.TlvD1();
-        
-        writer.Write(tlvs.CreateReadOnlySpan());
 
-        return BuildCode2dPacket(0x31, writer.CreateReadOnlySpan(), EncryptMethod.EM_ECDH_ST);
+        writer.Write(tlvs.CreateReadOnlySpan());
+        return writer.ToArray();
+    }
+
+    /// <summary>
+    /// Wrapper-internal wtlogin payload (0x02-marked structure) for the MSF-NG busi —
+    /// this is what the official client actually puts on the wire (pcap-verified).
+    /// </summary>
+    public ReadOnlyMemory<byte> BuildTransEmp31Payload() => WtLoginNewTemplates.TransEmp31.ToArray();
+
+    public ReadOnlyMemory<byte> BuildTransEmp12Payload()
+    {
+        var body = WtLoginNewTemplates.TransEmp12.ToArray();
+        var sig = Keystore.State.QrSig;
+        if (sig is { Length: > 0 })
+        {
+            int sigOff = 0x2C;
+            int copy = Math.Min(sig.Length, body.Length - sigOff);
+            Array.Copy(sig, 0, body, sigOff, copy);
+            Console.Error.WriteLine($"[NG12] patched QrSig {copy}B");
+        }
+        return body;
     }
 
     public ReadOnlyMemory<byte> BuildTransEmp12()
@@ -70,6 +98,14 @@ internal class WtLogin : StructBase
             Console.Error.WriteLine($"[NEW12] sending {body.Length}B");
             return body;
         }
+        return BuildCode2dPacket(0x12, BuildTransEmp12Body().Span, EncryptMethod.EM_ECDH_ST);
+    }
+
+    /// <summary>
+    /// Raw code2d 0x12 polling body (qr_sig header + empty TLV set) for the MSF-NG busi.
+    /// </summary>
+    public ReadOnlyMemory<byte> BuildTransEmp12Body()
+    {
         using var writer = new BinaryPacket(stackalloc byte[100]);
         writer.Write<ushort>(0);
         writer.Write(AppInfo.AppId);
@@ -79,8 +115,7 @@ internal class WtLogin : StructBase
         writer.Write<byte>(0);
         writer.Write(ReadOnlySpan<byte>.Empty, Prefix.Int16 | Prefix.LengthOnly);
         writer.Write<ushort>(0); // tlv count = 0
-
-        return BuildCode2dPacket(0x12, writer.CreateReadOnlySpan(), EncryptMethod.EM_ECDH_ST);
+        return writer.ToArray();
     }
 
     public ReadOnlyMemory<byte> BuildQrlogin19(byte[] k) // VerifyCode

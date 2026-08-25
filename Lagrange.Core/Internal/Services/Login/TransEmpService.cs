@@ -22,8 +22,14 @@ internal class TransEmpService : BaseService<ProtocolEvent, ProtocolEvent>
         
         return new ValueTask<ReadOnlyMemory<byte>>(input switch
         {
-            TransEmp31EventReq r => _packet.Value.BuildTransEmp31(r.UnusualSig),
-            TransEmp12EventReq => _packet.Value.BuildTransEmp12(),
+            // MSF-NG busi = wrapper-internal payload (0x02-marked), pcap-verified;
+            // legacy path keeps the classic OICQ 0x810/0x812 wrapped packet
+            TransEmp31EventReq r => context.Config.UseMsfNgTransport
+                ? _packet.Value.BuildTransEmp31Payload()
+                : _packet.Value.BuildTransEmp31(r.UnusualSig),
+            TransEmp12EventReq => context.Config.UseMsfNgTransport
+                ? _packet.Value.BuildTransEmp12Payload()
+                : _packet.Value.BuildTransEmp12(),
             _ => throw new NotSupportedException()
         });
     }

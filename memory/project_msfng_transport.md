@@ -446,53 +446,72 @@ legacy 格式（无论签名）均被拒。这正是 MSF-NG 攻坚的价值所�
 ### ⚠️ TEA 链式重大更正（此前所有解密失败的总根因）
 Lagrange TeaProvider 的 CBC **不是标准 CBC**！是 pre-XOR 变体：
 ```
-加密: X_i = P_i ⊕ D_{i-1}out;  C_i = E(X_i) ⊕ C_{i-1}   (C_0=0)
-解密: D_in_i = D_{i-1}out ⊕ C_i;  P_i = D_i_out ⊕ C_{i-1}
+加密: X_i = P_i ⊕ C_{i-1};  C_i = E(X_i) ⊕ X_{i-1}   (X_0 = C_0 = 0)
+解密: D_in,i = D_out,i-1 ⊕ C_i;  P_i = D_out,i ⊕ C_{i-1}
 ```
-标准 CBC 解密（P_i = D(C_i)⊕C_{i-1}）对 QQ 帧全错。wrapper sub_85BC530 的 asm 与此一致。
-python 参考实现见会话脚本 dec_final.py（tea_dec_block + qq_dec_lagrange）。
+标准 CBC（P_i = D(C_i)⊕C_{i-1}）对 QQ 帧全错。wrapper sub_85BC530 的 asm 与此一致。
+python 参考实现见会话脚本 mkframes.py（tea_enc_block/tea_dec_block/qq_enc/qq_dec，已验证与 C# TeaProvider 双向一致）。
 
-### 官方 trans_emp 0x31 请求帧（qq.pcap C#3，690B，已完整解密）
+### ⚠️ wrapper TEA 填充 ≠ Lagrange TeaProvider 填充
+- Lagrange: fill=10-((len+1)&7)，总长=len+fill+7（尾部 7B trailer）
+- **wrapper（实证）**: pad=(5-len)&7，总长=len+pad+3，无尾部；布局=[hdr][pad rand][2 rand][data]
+- hdr=(rand&0xF8)|pad（高位随机：0xEA/0x22/0x92 都出现过）；hdr 后恒 2 字节随机（非长度）
+- Milky 用 TeaProvider.Encrypt → 服务端能解但结构校验不过 → "Parse pack failed."
+- 待做：C# WrapperTeaEncrypt（块算法同 TeaProvider，仅填充不同）
+
+### 官方 trans_emp 0x31 请求帧（qq.pcap C#3，690B，完整解密+逐字段解析）
 ```
-[len u32=690]
-[ver u32=12][enc u8=2]
-[basic] [u32 4][u8 x=0][str ""(00000004)]     ← 无D2常量4，非seq！（EncodeBasic: vtable+24 false → wr_bytes(d2空)=00000004）
-[cipher@14] = TEA_zero(以下全部，Lagrange链式):
-  [17B preamble] ea 79 28 65 fb | 00 00 01 2c | 00 | [u24 seq=6e3269] | 20 07 c2 77
-      ← seq 在 preamble 里且只有 3 字节！01 2c=300 常量；20 07 c2 77 恒定待解
-  [head v12 (batch_reqhead_63FA760.c 对应)]:
-    [00 00 08 04][00 00 00 00][00 00 00 00][01][00 00 00 00][04]
-    [str "wtlogin.trans_emp"][str ""][str 32hex="dca7d957..."](疑似MD5(Guid))[str ""]
-    [u16 0002](空短blob)
-    [reserve: [u32 0xc9]+197B 数据("b <同hash32>" trace 开头)]
-  [busi: [u32 len+4][TLV]]
-  [尾部若干 00]
+[len u32=690][ver u32=12][enc u8=2]
+[basic] [u32 4][u8 x=0][str ""(00000004)]   ← 无D2常量4，非seq！（EncodeBasic vtable+24 false 分支）
+[cipher@14] = TEA_zero(以下全部):
+  preamble: [u32 300][u32 seq=0x6E3269][u32 0x2007C277(常量,语义未知)]
+  head literal 20B: 00 00 08 04 00*9 01 00 00 00 00 04
+  [str "wtlogin.trans_emp"][str ""][str hash32(MD5(Guid)?)] [str ""][u16 0002]
+  [reserve [u32 len] pb:] f12="b "+hash32, f13=00, f15="700-<32hex>-<16hex>-01",
+    f23={client_conn_seq, ts}, f24={f1: 32B secSig!, f2: "V1_LNX_NQ_3.2.32_52194_GW_B"(QUA)}, f26=101
+  [busi [u32 len+4] wrapper内部载荷]: 02 01 64 开头 = 0x02标记+u16总长（与 WtLoginNewTemplates.TransEmp31 gdb 模板同构！）
+  [尾部 7B 00]
 ```
-- 时序：connect → ping21 → Heartbeat.Alive(v13 enc0 seq) → Client.CorrectTime(v13 enc0) → trans_emp(ver12 enc2)
-- **没有任何 kx/establish/register 前置**！trans_emp 直接第三帧发出
-- 轮询 0x12 同模板每 2s；seq 单调递增（69→6a）
-- unk_F76E90 确为 16 零字节（.rodata 无重定位）；enc=2↔零密钥铁证
-- 官方二进制 md5 与我们逆向的 wrapper.node 相同（26256bcb）
+- 经典 code2d TLV body 不是 busi！busi = wrapper 内部 0x02 载荷（gdb 模板即此格式）
+- 时序：connect→ping→Heartbeat.Alive(v13 enc0)→Client.CorrectTime(v13 enc0)→trans_emp(ver12 enc2)
+- 无任何 kx/establish/register 前置；轮询 0x12 同构每 2s；seq 单调递增
+- RspHead: [headLen][seq echo@4][retCode@8][str extra][str cmd]... 成功 retCode=0
+- unk_F76E90 确为全零（.rodata 无重定位）；enc=2↔零密钥铁证；官方二进制 md5 与我们的一致
 
-### 【里程碑】重放实验成功（2026-08-25 21:57 NAS）
-探针加 CHARON_REPLAY_FRAME 模式：原样重放 pcap 提取的 690B 帧 →
-**服务器 0.1s 回了 927B 响应**（[len][ver12][enc2]，含 "wtlogin.trans_emp" cmd 回显）！
-- 证明传输层/加密层理解 100% 正确，服务器接受该帧形态
-- 响应已解密存 official_rsp31_plain.bin（本地 opencode tmp）
-- 下一步 = 用我们自己的 TLV/Guid/seq 按官方模板重构请求（替换 busi+hash32+seq 三处）
+### 【里程碑】重放实验（2026-08-25 深夜 NAS）
+- 探针加 CHARON_REPLAY_FRAME 模式：原样重放官方帧 → **0.1s 回 927B retCode=0**（多次稳定复现）
+- 探针加 CHARON_SIGN_TEST 模式：本地 wrapper 对 trans_emp 签名【不再挂起】sign=32B token/extra 空
 
-### Milky 侧已完成的代码改动（本次会话）
-- MsfNgPacker.BuildFrame 补上 busi 缺失 bug（原实现从不写 sso.Data！）；
-  enc≠0 时 head+busi 整体加密 ✓ EncodeFinal 语义
-- PacketContext MSF-NG 分支恢复 D2Auth→v12/Simple→v13 原路由（与官方 wire 一致）
-- SocketContext.Connect 连接后发 21B ping（CHARON_MSFNG 或 Lagrange.Server.UseMsfNgTransport 配置）
-- Milky 配置接线 UseMsfNgTransport；Milky 构建修复：生成器改 opt-in（-p:MilkyUseGenerator=true），手写 impl 默认生效
-- 测试 71/71 过；已提交 GitHub（ae7361da）
-- ⚠️ 但 Milky 发的 ver12 帧仍是 v13 式 head → 依旧静默。需按上面官方模板重写 v12 head
+### 【核心剩余问题】服务器对请求做内容级完整性校验（secSig 绑定）
+隔离实验矩阵（frame_X.bin）：
+| 变体 | 结果 |
+|---|---|
+| 原样重放 | ✓ 多次成功 |
+| 仅改 seq / 仅翻密文 1 bit / 换 hash32 / 破坏 f24.f1 sig / busi 换成我方模板 | 全部静默 |
+| 全部官方值 + 我方加密链（frame_D/G） | 静默 ← 最诡异！明文逐字节相同仍被拒 |
+| Milky 自建帧（Lagrange padding + v13 式 head + code2d body） | "Parse pack failed."(-10006, cmd 回显) |
 
-### 待办（下次会话）
-1. 解析 official_req31_plain.bin / official_rsp31_plain.bin 全字段（尤其 17B preamble 语义、reserve 197B 内容、响应 body 的 TLV/state）
-2. MsfNgPacker 实现 BuildTransEmpRequest(busi)：官方模板 + 替换 hash32=MD5(Keystore.Guid)、seq、busi
-3. PacketContext 对 wtlogin.trans_emp 走新构造器；响应用现有 DispatchMsfNgPacket 匹配
-4. NAS 实测出码；然后 TransEmp12 轮询同路径
-5. GetSecSign(trans_emp) native 挂起问题仍未解（本实验未签名也通了——重放场景；自有请求是否需要 reserve.f24 签名待测）
+结论：secSig 绑定请求内容，服务器先验签后处理，验签不过=静默。
+**frame_D 之谜**：明文逐字节相同、加密链已验证正确（C# 双向验证），仅 cipher 随机性不同 → 仍静默。
+唯一自洽解释：sig 覆盖范围包含 TEA 填充随机字节（hdr/pad/mystery），或存在其他密文级校验。待动态确认。
+
+### 本地 wrapper 重算官方签名未命中（试过组合均 ≠ 原 sig 17CEC67F...）
+已试：(uin∈{0,3156037162,930505564}) × (body∈{busi356, plain667}) × seq=7221865。
+待动态 Hook 确定精确输入绑定。
+
+### Milky 侧代码改动（本次会话，已提交 ae7361da + 77964a04）
+- MsfNgPacker.BuildFrame 补 busi 缺失 bug（原实现从不写 sso.Data）；enc≠0 时 head+busi 整体加密 ✓
+- PacketContext: trans_emp 特殊路由 BuildTransEmpRequest（v12 官方模板结构，reserve 已按官方字段实现）
+- SocketContext.Connect 发 21B ping；Milky 配置 UseMsfNgTransport / CHARON_MSFNG=1
+- Milky 构建修复：生成器 opt-in（-p:MilkyUseGenerator=true），手写 impl 默认生效；71 测试过
+- WtLogin 新增 BuildTransEmp31Body/BuildTransEmp12Body（code2d 裸 body）+ BuildTransEmp31Payload/12Payload（0x02 内部载荷）
+
+### 下次会话行动清单（按序）
+1. **动态 Hook 官方客户端签名函数**(0x65E55D1)：NAS qq-official 镜像 + /tmp/qqdyn/gdbhooks.py 基础设施仍在。
+   启动客户端抓 QR 时 hook 入参(cmd,data,len,seq)+输出 buffer → 得 secSig 精确输入绑定；
+   同时 tcpdump 抓新鲜完整会话（新帧+新响应端到端样本）
+2. 用得到的绑定为「我们的 249B 模板 busi」计算真 sig → 替换进官方 plain 结构 → 重发，预期 retCode=0 出新码
+   （注意 f24.f2 QUA 版本：官方 52194 vs 我们 BotAppInfo 260812——需确认 wrapper 期望哪个）
+3. C# MsfNgPacker 补 WrapperTeaEncrypt + BuildTransEmpRequest 对齐真实 sig
+4. Milky 全链路出码 → TransEmp12Payload 轮询同路径
+5. GetSecSign(trans_emp) 在 Milky 内挂起问题仍未解（探针环境正常——对比初始化差异）

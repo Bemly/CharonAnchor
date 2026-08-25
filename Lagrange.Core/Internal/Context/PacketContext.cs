@@ -53,16 +53,17 @@ internal class PacketContext
                 Console.Error.WriteLine($"[TRACE] SendPacket enter cmd={packet.Command} type={options.RequestType} skipSign={skipSign}");
                 if (_context.Config.UseMsfNgTransport)
                 {
-                    // HANDOFF-MSFNG §7.1: wrap requests in MSF-NG frames. Routing mirrors the
-                    // official wire captures: Heartbeat.Alive (Simple/NoEncrypt) goes out as a
-                    // ver13 plaintext frame, wtlogin.trans_emp (D2Auth/EncryptEmpty) as a
-                    // ver12 zero-key-TEA frame — matching the pcap byte-for-byte at envelope level.
-                    frame = options.RequestType switch
-                    {
-                        RequestType.D2Auth => _msfNgPacker.BuildProtocol12(packet, options),
-                        RequestType.Simple => _msfNgPacker.BuildProtocol13(packet, options),
-                        _ => throw new InvalidOperationException($"Unknown RequestType: {options.RequestType}")
-                    };
+                    // HANDOFF-MSFNG §7.1: wtlogin.trans_emp uses the pcap-verified ver12 template
+                    // builder (official wire shape); everything else keeps the codec mapping
+                    // (Simple/NoEncrypt → v13 plaintext, matching official heartbeats).
+                    frame = packet.Command == "wtlogin.trans_emp"
+                        ? _msfNgPacker.BuildTransEmpRequest((uint)packet.Sequence, packet.Data.Span)
+                        : options.RequestType switch
+                        {
+                            RequestType.D2Auth => _msfNgPacker.BuildProtocol12(packet, options),
+                            RequestType.Simple => _msfNgPacker.BuildProtocol13(packet, options),
+                            _ => throw new InvalidOperationException($"Unknown RequestType: {options.RequestType}")
+                        };
                 }
                 else
                 {

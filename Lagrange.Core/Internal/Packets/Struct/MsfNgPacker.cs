@@ -22,6 +22,80 @@ internal class MsfNgPacker(BotContext context) : StructBase(context)
 
     public ReadOnlyMemory<byte> BuildProtocol13(BotSsoPacket sso, ServiceAttribute options) => BuildFrame(sso, options, 13);
 
+    /// <summary>
+    /// Builds a wtlogin.trans_emp request replicating the official 3.2.32 wire template
+    /// (pcap-verified): ver12 frame, no-D2 basic marker, v12 head with preamble, and the
+    /// raw code2d body (header + TLVs) as busi. See memory/project_msfng_transport.md.
+    /// </summary>
+    public ReadOnlyMemory<byte> BuildTransEmpRequest(uint sequence, ReadOnlySpan<byte> transEmpBody)
+    {
+        string hash32 = Convert.ToHexString(MD5.HashData(Keystore.Guid)).ToLowerInvariant();
+        long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+        var body = new BinaryPacket(0x400 + transEmpBody.Length);
+        body.Write((uint)300);                 // preamble constant
+        body.Write(sequence);                  // echoed by RspHead @4
+        body.Write((uint)0x2007C277);          // connection constant (semantics unknown)
+        body.Write(new byte[]                  // head literal block (official bytes)
+        {
+            0x00, 0x00, 0x08, 0x04,
+            0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x01,
+            0x00, 0x00, 0x00, 0x00,
+            0x04
+        });
+        body.Write("wtlogin.trans_emp", Prefix.Int32 | Prefix.WithPrefix);
+        body.Write(string.Empty, Prefix.Int32 | Prefix.WithPrefix);
+        body.Write(hash32, Prefix.Int32 | Prefix.WithPrefix);
+        body.Write(string.Empty, Prefix.Int32 | Prefix.WithPrefix);
+        body.Write((ushort)2);                 // empty short blob
+
+        var reserve = new ProtoWriter();
+        reserve.WriteBytes(12, Encoding.ASCII.GetBytes("b " + hash32));
+        reserve.WriteBytes(13, [0x00]);
+        reserve.WriteBytes(15, Encoding.ASCII.GetBytes($"700-{RandomHex(32)}-{RandomHex(16)}-01"));
+        var connSeq = new ProtoWriter();
+        connSeq.WriteBytes(1, Encoding.ASCII.GetBytes("client_conn_seq"));
+        connSeq.WriteBytes(2, Encoding.ASCII.GetBytes(now.ToString(CultureInfo.InvariantCulture)));
+        reserve.WriteBytes(23, connSeq.ToArray());
+        var sigs = new ProtoWriter();          // ReserveFields.f24: {f1: secSig, f2: deviceToken}
+        sigs.WriteBytes(1, RandomNumberGenerator.GetBytes(32));
+        sigs.WriteBytes(2, Encoding.ASCII.GetBytes(AppInfo.Qua));
+        reserve.WriteBytes(24, sigs.ToArray());
+        reserve.WriteVarInt(26, 101);
+
+        byte[] reserveBytes = reserve.ToArray();
+        body.Write(reserveBytes.Length + 4);
+        body.Write(reserveBytes);
+
+        body.Write(transEmpBody.Length + 4);   // EncodeBusiBuff convention
+        body.Write(transEmpBody);
+        body.Write(new byte[7]);               // official trailing zeros
+
+        byte[] plain = body.CreateReadOnlySpan().ToArray();
+        byte[] cipher = TeaProvider.Encrypt(plain, ZeroKey);
+
+        var writer = new BinaryPacket(cipher.Length + 0x40);
+        writer.EnterLengthBarrier<int>();
+        writer.Write((int)12);
+        writer.Write((byte)MsfNgEncrypt.ZeroKey);
+        writer.Write(4);                       // no-D2 marker (NOT a sequence)
+        writer.Write((byte)0);
+        writer.Write(string.Empty, Prefix.Int32 | Prefix.WithPrefix);
+        writer.Write(cipher);
+        writer.ExitLengthBarrier<int>(true);
+
+        return writer.ToArray();
+    }
+
+    private static string RandomHex(int length)
+    {
+        Span<byte> bytes = stackalloc byte[(length + 1) / 2];
+        RandomNumberGenerator.Fill(bytes);
+        return Convert.ToHexString(bytes)[..length].ToLowerInvariant();
+    }
+
     public static byte[] BuildPing(uint uin, uint index)
     {
         byte[] ping =
