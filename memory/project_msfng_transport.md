@@ -341,6 +341,17 @@ pack 里 req+248/+272/+296 三串（可选）进 flags 对象 v10（bits 1/2/4�
 1. 反编译 MSF 引擎 vtbl+224 实现（接收 4 参并构造 MSFRequest 处）
 2. 抓官方流量对照（仍是金标准）
 
+### 【2026-08-25】sigs 容器 message 字段表（serialize 提取）
+
+sub_6551D70 (CreateRequestData 内 v41 容器的 serialize) tag 常量（objdump 立即数为十进制！）：
+```
+0x42(f8,bytes) 0x48(f9,varint) 0x50(f10,varint) 0x58(f11,varint)
+0x62(f12,bytes) 0x6A(f13,bytes) 0x70(f14,varint) 0x7A(f15,bytes)
+```
+serialize 还通过 sub_5627F90(stream, fieldnum, str, target) 写 f8/f12/f13/f15/f16。
+注意：此容器装的是 req+248/272/296 三串+repeated，非 sigs 本身；sigs(a4/a5/a6) 仅校验不写入，
+真实填充在上游 NodeAPI 层。v20 式 head 有 5 个字符串槽位，是 sigs 候选位置。
+
 ### 待完成（下次会话按序）
 1. ~~SsoEstablishShareKey schema~~ 已破解并实现（MsfNgKeyExchange.cs + PacketContext.EstablishMsfNgSessionAsync），遗留 3 个 NAS 确认点见上
 2. Ping/心跳信道循环接入 SocketContext（模板已提取）
