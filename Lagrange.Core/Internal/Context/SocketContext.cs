@@ -4,6 +4,7 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using Lagrange.Core.Common;
 using Lagrange.Core.Internal.Network;
+using Lagrange.Core.Internal.Packets.Struct;
 
 namespace Lagrange.Core.Internal.Context;
 
@@ -45,14 +46,21 @@ internal class SocketContext : IClientListener, IDisposable
     public async Task<bool> Connect()
     {
         if (_client.Connected) return true;
-        
+
         var servers = await ResolveDns();
         if (_config.GetOptimumServer) await SortServers(servers);
         bool connected = await _client.Connect(servers[0]);
-        
-        if (connected) _context.LogInfo(Tag, "Connected to the server {0}", servers[0]);
+
+        if (connected)
+        {
+            _context.LogInfo(Tag, "Connected to the server {0}", servers[0]);
+
+            // MSF-NG channel-level handshake: the 21B ping activates the connection before
+            // any codec frame is sent (official client & probe behavior); pong is ignored
+            if (_config.UseMsfNgTransport) await _client.Send(MsfNgPacker.BuildPing((uint)_context.Keystore.Uin, 1));
+        }
         else _context.LogError(Tag, "Failed to connect to the server {0}", null,servers[0]);
-        
+
         return connected;
     }
     

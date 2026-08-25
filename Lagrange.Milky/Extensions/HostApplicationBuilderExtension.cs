@@ -57,6 +57,8 @@ public static class HostApplicationBuilderExtension
                 UseIPv6Network = configuration.Server.UseIPv6Network,
                 GetOptimumServer = configuration.Server.GetOptimumServer,
                 AutoReLogin = configuration.Login.AutoReLogin,
+                UseMsfNgTransport = Environment.GetEnvironmentVariable("CHARON_MSFNG") == "1"
+                    || configuration.Server.UseMsfNgTransport,
                 SignProvider = sp.GetRequiredService<BotSignProvider>(),
             };
 

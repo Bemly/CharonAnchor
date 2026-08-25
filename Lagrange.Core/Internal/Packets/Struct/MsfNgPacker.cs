@@ -90,7 +90,19 @@ internal class MsfNgPacker(BotContext context) : StructBase(context)
         head.Write(8);
         head.Write(4);
 
-        var plain = head.CreateReadOnlySpan();
+        // EncodeBusiBuff: busi wire format = [u32 len+4][data], omitted entirely when empty;
+        // EncodeFinal encrypts head+busi together as one region when enc != 0
+        var headSpan = head.CreateReadOnlySpan();
+        bool hasBusi = !sso.Data.IsEmpty;
+        int plainLength = headSpan.Length + (hasBusi ? 4 + sso.Data.Length : 0);
+        byte[] plain = new byte[plainLength];
+        headSpan.CopyTo(plain);
+        if (hasBusi)
+        {
+            BinaryPrimitives.WriteInt32BigEndian(plain.AsSpan(headSpan.Length), sso.Data.Length + 4);
+            sso.Data.Span.CopyTo(plain.AsSpan(headSpan.Length + 4));
+        }
+
         ReadOnlySpan<byte> cipher = flag switch
         {
             (byte)MsfNgEncrypt.Plain => plain,

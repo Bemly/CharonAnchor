@@ -4,6 +4,7 @@ using Lagrange.Core.Common;
 using Lagrange.Core.Common.Entity;
 using Lagrange.Core.Internal.Packets.Struct;
 using Lagrange.Core.Services;
+using Lagrange.Core.Utility.Cryptography;
 
 namespace Lagrange.Core.Test.Packets;
 
@@ -100,5 +101,49 @@ public class MsfNgPackerTest
         var options = new ServiceAttribute(HeartbeatCommand, RequestType.Simple, EncryptType.EncryptD2Key);
 
         Assert.Throws<InvalidOperationException>(() => packer.BuildProtocol13(sso, options));
+    }
+
+    [Test]
+    public void BuildFrame_WithBody_AppendsBusiLengthPrefixed()
+    {
+        var packer = CreatePacker();
+        byte[] body = [0xAA, 0xBB, 0xCC, 0xDD, 0xEE];
+        var sso = new BotSsoPacket("wtlogin.trans_emp", body, 0x6238C0);
+        var options = new ServiceAttribute("wtlogin.trans_emp", RequestType.D2Auth, EncryptType.NoEncrypt);
+
+        var frame = packer.BuildProtocol13(sso, options);
+
+        Assert.That(frame.Span[4..8].ToArray(), Is.EqualTo(new byte[] { 0, 0, 0, 13 })); // ver13
+        Assert.That(frame.Span[8], Is.EqualTo((byte)MsfNgEncrypt.Plain));
+
+        // locate the busi prefix directly before the body at the very end of the frame
+        int busiOffset = frame.Length - body.Length - 4;
+        Assert.That(BinaryPrimitives.ReadInt32BigEndian(frame.Span[busiOffset..]), Is.EqualTo(body.Length + 4));
+        Assert.That(frame.Span[(busiOffset + 4)..].ToArray(), Is.EqualTo(body));
+    }
+
+    [Test]
+    public void BuildZeroKeyFrame_EncryptsHeadAndBusiTogether()
+    {
+        var packer = CreatePacker();
+        byte[] body = [0x01, 0x02, 0x03, 0x04];
+        var sso = new BotSsoPacket("wtlogin.trans_emp", body, 0x6238C0);
+        var options = new ServiceAttribute("wtlogin.trans_emp", RequestType.D2Auth, EncryptType.EncryptEmpty);
+
+        var frame = packer.BuildProtocol13(sso, options);
+
+        Assert.That(frame.Span[8], Is.EqualTo((byte)MsfNgEncrypt.ZeroKey));
+        ReadOnlySpan<byte> cipher = frame.Span[18..];
+        Assert.That(cipher.Length % 8, Is.Zero);
+
+        Span<byte> plain = cipher.ToArray();
+        TeaProvider.Decrypt(cipher, plain, new byte[16]);
+        ReadOnlySpan<byte> decrypted = TeaProvider.CreateDecryptSpan(plain);
+
+        // decrypted region must contain both the ReqHead command and the busi;
+        // CreateDecryptSpan keeps the 7-byte TEA trailer, so body ends at ^7
+        string ascii = Encoding.ASCII.GetString(decrypted);
+        Assert.That(ascii, Does.Contain("wtlogin.trans_emp"));
+        Assert.That(decrypted[^11..^7].ToArray(), Is.EqualTo(body));
     }
 }

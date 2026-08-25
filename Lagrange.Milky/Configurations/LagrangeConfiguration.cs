@@ -24,11 +24,12 @@ public class LagrangeLoginConfiguration(long uin, string? password = null, bool 
     public string? DeviceName { get; } = deviceName;
 }
 
-public class LagrangeServerConfiguration(bool autoReconnect = true, bool useIPv6Network = false, bool getOptimumServer = true)
+public class LagrangeServerConfiguration(bool autoReconnect = true, bool useIPv6Network = false, bool getOptimumServer = true, bool useMsfNgTransport = false)
 {
     public bool AutoReconnect { get; } = autoReconnect;
     public bool UseIPv6Network { get; } = useIPv6Network;
     public bool GetOptimumServer { get; } = getOptimumServer;
+    public bool UseMsfNgTransport { get; } = useMsfNgTransport;
 }
 
 public class LagrangeProtocolConfiguration(LagrangeSignerConfiguration signer, Platform platform = Platform.Linux, BotAppInfo? appInfo = null)
