@@ -397,6 +397,22 @@ kx-f24-real 发送 → 仍静默
 **探针现状**：Lagrange.Core.Runner msfng-probe 已集成 CharonSignProvider，
 NAS 目录 /vol1/1000/msfng-probe/msfng-nas-publish 可随时重跑。
 
+### 【2026-08-25 战略转折】上游已有完整 SsoKeyExchange 实现！！
+
+web 搜索发现 Lagrange.Core Issue #247 + 本地代码核查：
+- **fork 里已有 KeyExchangeService.cs**（Internal/Services/Login/）：
+  [Service("trpc.login.ecdh.EcdhService.SsoKeyExchange", RequestType.D2Auth, EncryptType.EncryptEmpty)]
+- ServerPublicKey/VerifyHashKey 与我 IDA 逆向结果逐字节一致 ✓✓
+- WtExchangeLogic.cs (607行)：KeyExchange() → PasswordLogin 全流程现成
+- Issue #247 日志实证 legacy 帧下整条链成功：Key Exchange successfully → NTLoginPasswordLogin → Login Success
+
+**战略修正**：
+1. SsoKeyExchange 在 **legacy 帧**（ServicePacker D2Auth/EncryptEmpty）下即可工作，
+   不需要 MSF-NG 新帧——探针静默是因为 MSF-NG codec 层另有门槛（不影响登录！）
+2. **密码登录路径（WtExchangeLogic）可能从未被 2026-08 的服务端封锁**——
+   trans_emp 只挡 QR 登录。project_qr_login_rework.md 待办#2（密码登录绕行）一直没执行！
+3. MSF-NG 逆向成果保留价值：未来 QQ 强制迁移时的技术储备
+
 ### 待完成（下次会话按序）
 1. ~~SsoEstablishShareKey schema~~ 已破解并实现（MsfNgKeyExchange.cs + PacketContext.EstablishMsfNgSessionAsync），遗留 3 个 NAS 确认点见上
 2. Ping/心跳信道循环接入 SocketContext（模板已提取）

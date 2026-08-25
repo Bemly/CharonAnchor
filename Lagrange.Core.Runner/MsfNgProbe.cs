@@ -83,16 +83,17 @@ internal static class MsfNgProbe
         using (signProvider)
         {
             var kxRequest = MsfNgKeyExchange.BuildRequestVariant(out _, keyExchangeCommand, ReadOnlyMemory<byte>.Empty, TsEncoding.VarInt);
-            var secInfo = await signProvider.GetSecSign(uin, keyExchangeCommand, (int)(++seq), kxRequest);
+            uint frameSeq = ++seq; // signature must bind to the SAME seq carried by the frame
+            var secInfo = await signProvider.GetSecSign(uin, keyExchangeCommand, (int)frameSeq, kxRequest);
             if (secInfo is null)
             {
                 Console.WriteLine("[probe] GetSecSign failed");
                 return 3;
             }
-            Console.WriteLine($"[probe] secSig={secInfo.SecSign.Length}B token={secInfo.SecToken.Length}B extra={secInfo.SecExtra.Length}B");
+            Console.WriteLine($"[probe] secSig={secInfo.SecSign.Length}B token={secInfo.SecToken.Length}B extra={secInfo.SecExtra.Length}B seq={frameSeq}");
 
             byte[] headReal = BuildHeadV13WithSigs(packer, keyExchangeCommand, secInfo.SecSign, secInfo.SecToken, secInfo.SecExtra);
-            await SendAndLog("kx-f24-real", AssembleSeqFrame(13, ++seq, headReal, BuildKxBusi(keyExchangeCommand, 0)), observeSeconds: 12);
+            await SendAndLog("kx-f24-real", AssembleSeqFrame(13, frameSeq, headReal, BuildKxBusi(keyExchangeCommand, 0)), observeSeconds: 12);
         }
 
         Console.WriteLine("[probe] done");
