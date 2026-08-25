@@ -506,6 +506,57 @@ python 参考实现见会话脚本 mkframes.py（tea_enc_block/tea_dec_block/qq_
 - Milky 构建修复：生成器 opt-in（-p:MilkyUseGenerator=true），手写 impl 默认生效；71 测试过
 - WtLogin 新增 BuildTransEmp31Body/BuildTransEmp12Body（code2d 裸 body）+ BuildTransEmp31Payload/12Payload（0x02 内部载荷）
 
+## 【2026-08-26 凌晨·全面打通】自组帧获服务器接受！根因=长度字段差4
+
+### 💥 最终根因：帧长度字段必须含自身
+此前所有 python 变体静默的元凶：build_frame 写 `len(cipher)+14`（不含4字节前缀），
+正确值=`len(inner)+4`（总长含自身，与 ReadFrameAsync 语义一致）。修正后立即通。
+
+### 验证矩阵（修正 framing 后）
+| 变体 | 内容 | 结果 |
+|---|---|---|
+| M | 官方明文+新seq | ✓ 935B retCode=0（seq 自由！）|
+| N | M+随机32B假sig | ✓ **sig 完全不校验！** |
+| P | N+我方hash32(MD5(Guid)) | ✓ 设备自由 |
+| Q | P+busi=今日新鲜payload356 | ✓ |
+| R | Q但busi=纯随机 | ✗ 静默（busi 必须结构有效）|
+| T | 我方hash+8/23旧会话busi | ✓ **历史载荷也有效！** |
+| L3 | 全套我方+进程内注入sig | "Parse pack failed"(-10006) ← sig 无关，是旧 framing bug |
+
+### 有效请求配方（已验证）
+```
+[len u32 含自身][ver12][enc2][u32 4][x00][str ""]
+[TEA_zero(pad=(5-len)&7 无尾部, pre-XOR链):
+  [u32 300][u32 seq(任意)][u32 0x2007C277]
+  [20B literal 同官方]
+  [str cmd][str ""][str MD5(Guid)hex][str ""][u16 0002]
+  [reserve pb: f12/f13/f15/f23/f24{f1:任意32B,f2:QUA-pb}/f26=101]
+  [busi [u32 len+4][wrapper内部0x02载荷 356B]]
+  [7B 00]]
+```
+- secSig/hash32/seq 均不绑定；唯一硬要求=busi 是结构有效的 wrapper 载荷
+- 历史/他人载荷均可复用（可作静态模板嵌入！）
+
+### 响应（935B→payload 852B）
+`[u32 845][02][u16 841][1f 41 08 12...]` 之后高熵=**TEA加密**（密钥大概率派生自
+请求载荷内的设备/ECDH 材料——用他人载荷故解不开）。用自己生成的载荷即可解。
+
+### 动态 Hook 成果（gdb 注入法）
+- gdbhooks_inject.py：catch load wrapper.node → BP 0x65E55D1 → 第65击后 FinishBreakpoint 内
+  malloc+调用签名函数（同步上下文）→ 拿到完全初始化环境的 sig+extra
+- 签名函数本地直接调用=非确定性（未初始化状态），但既然 sig 不校验已无所谓
+- extra 输出=pb(f2: QUA) 格式确认；sign 输入=0x02 载荷本体
+
+### 下次会话行动清单
+1. **逆向 356B 载荷生成器**（锚点：sub_33853B0/sub_3392880/337C170，见 qr_login_rework 地址表）
+   弄清字段布局（设备随机数/ECDH公钥位置）→ 用自己的 Guid/密钥生成自有载荷
+2. 解密响应：用自有载荷内密钥材料派生 TEA key → 解出 QR url/image/state
+   （或对照官方客户端同帧解密验证密钥位置）
+3. Milky C# 集成：MsfNgPacker 补 WrapperTeaEncrypt + TransEmpRequest 对齐本配方；
+   TransEmpService busi 改用静态模板载荷（可先嵌入捕获的 356B！）
+4. 0x12 轮询：196B 载荷 `02 00 c4 ...`（byte[8]=01），同路径
+5. 出码后扫码 → token 流程回归现有 LoginEventReq(Tgtgt) 路径
+
 ### 下次会话行动清单（按序）
 1. **动态 Hook 官方客户端签名函数**(0x65E55D1)：NAS qq-official 镜像 + /tmp/qqdyn/gdbhooks.py 基础设施仍在。
    启动客户端抓 QR 时 hook 入参(cmd,data,len,seq)+输出 buffer → 得 secSig 精确输入绑定；
