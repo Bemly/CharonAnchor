@@ -566,3 +566,43 @@ python 参考实现见会话脚本 mkframes.py（tea_enc_block/tea_dec_block/qq_
 3. C# MsfNgPacker 补 WrapperTeaEncrypt + BuildTransEmpRequest 对齐真实 sig
 4. Milky 全链路出码 → TransEmp12Payload 轮询同路径
 5. GetSecSign(trans_emp) 在 Milky 内挂起问题仍未解（探针环境正常——对比初始化差异）
+
+## 【2026-08-26 凌晨·第二阶段】自有载荷 retCode=0！剩余=载荷body生成+响应解密
+
+### reserve 真实结构（此前解错！tag 是多字节 varint）
+```
+f12: 32B 裸 hash32          ← 不是 "b "+hash（那是 tag 字节 62 20 恰好拼成 "b "的误读）
+f13: 1B 00
+f15: 55B "00-<32hex>-<16hex>-01"   ← 前缀是 00- 不是 700-
+f23: pb{f1:"client_conn_seq", f2:"<ts>"}
+f24: pb{f1: 32B(任意,sig不校验), f3: pb{f2:"V1_LNX_NQ_3.2.32_52194_GW_B"}}  ← QUA 在 f3！
+f26: varint 101
+```
+修正后 C# 全套自组请求（自有 ECDH 密钥对+设备id+随机body）→ **retCode=0** ✓
+但响应仅 76B（vs 官方载荷 836B）→ body 区域随机导致服务器只回最小状态
+
+### 载荷 356B 结构（wrapper 内部 0x02 格式）
+```
+[02][u16 len][1f 41][08 12 00*6 03 87][00*4 13 00 00 33 74][00*4]
+[01 01][16B 设备id]
+[01 02 00 19][25B secp192k1 压缩公钥]     ← ECDH_ST 同曲线！
+[280B body]                                ← 随机→最小响应；有效内容→完整QR响应
+[03] 结束
+```
+- body 未校验结构但语义解析（随机=最小响应，真实=完整）
+- 响应格式: [u32 outerLen][02][u16 innerLen][1f 41 08 12...][加密区域]
+- 76B 最小响应内含 ~48B 加密状态（share/md5(share) 在扫描的偏移上均未解开）
+
+### C# 端到端验证程序
+/tmp/opencode/teacheck/Program.cs：EcdhProvider(secp192k1) 密钥对 → 自组载荷/帧
+→ 发送 msfwifi:8080 → retCode=0 ✓；WrapperTeaEncrypt/Decrypt 实现已验证
+
+### 下次会话行动清单（更新）
+1. **逆向载荷 body 生成**（IDA：sub_33853B0/sub_3392880/337C170）：280B 的构成
+   （大概率=加密的设备报告TLV，密钥与 pubkey/priv 相关）
+2. **Hook 响应解密**：官方客户端处理 0x31 响应时抓 (密文,明文,key) 三元组 → 反推密钥派生
+   （gdbhooks_parse.py 已有框架；需找对响应解析函数的正确入口/寄存器）
+3. 解出响应明文后：定位 qr_url/qr_sig/state 字段偏移
+4. Milky C# 集成：MsfNgPacker 补 WrapperTeaEncrypt（pad=(5-len)&7 无尾部 pre-XOR 链）
+   + BuildTransEmpRequest 用自有载荷 + 响应解密
+5. 0x12 轮询载荷（196B 格式 byte[8]=01）同路径
