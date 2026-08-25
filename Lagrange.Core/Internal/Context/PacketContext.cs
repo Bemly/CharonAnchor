@@ -49,6 +49,8 @@ internal class PacketContext
             {
                 ReadOnlyMemory<byte> frame;
 
+                bool skipSign = Environment.GetEnvironmentVariable("CHARON_SKIP_SIGN") == "1";
+                Console.Error.WriteLine($"[TRACE] SendPacket enter cmd={packet.Command} type={options.RequestType} skipSign={skipSign}");
                 if (_context.Config.UseMsfNgTransport)
                 {
                     frame = options.RequestType switch
@@ -64,30 +66,37 @@ internal class PacketContext
                     {
                         case RequestType.D2Auth:
                         {
-                            if (SignProvider.IsWhiteListCommand(packet.Command))
+                            if (SignProvider.IsWhiteListCommand(packet.Command) && !skipSign)
                             {
                                 var secInfo = await SignProvider.GetSecSign(_keystore.Uin, packet.Command, packet.Sequence, packet.Data);
+                                Console.Error.WriteLine("[TRACE] sign done");
                                 var sso = _ssoPacker.BuildProtocol12(packet, secInfo);
                                 frame = _servicePacker.BuildProtocol12(sso, options);
                             }
                             else
                             {
+                                Console.Error.WriteLine("[TRACE] building sso (no sign) v12");
                                 var sso = _ssoPacker.BuildProtocol12(packet, null);
+                                Console.Error.WriteLine("[TRACE] sso built v12");
                                 frame = _servicePacker.BuildProtocol12(sso, options);
+                                Console.Error.WriteLine("[TRACE] service frame built v12");
                             }
 
                             break;
                         }
                         case RequestType.Simple:
                         {
-                            if (SignProvider.IsWhiteListCommand(packet.Command))
+                            if (!skipSign && SignProvider.IsWhiteListCommand(packet.Command))
                             {
+                                Console.Error.WriteLine($"[TRACE] GetSecSign calling for {packet.Command}");
                                 var secInfo = await SignProvider.GetSecSign(_keystore.Uin, packet.Command, packet.Sequence, packet.Data);
+                                Console.Error.WriteLine($"[TRACE] GetSecSign returned for {packet.Command}");
                                 var sso = _ssoPacker.BuildProtocol13(packet, secInfo);
                                 frame = _servicePacker.BuildProtocol13(packet, sso, options);
                             }
                             else
                             {
+                                Console.Error.WriteLine("[TRACE] building sso (no sign) v13");
                                 var sso = _ssoPacker.BuildProtocol13(packet, null);
                                 frame = _servicePacker.BuildProtocol13(packet, sso, options);
                             }
@@ -100,7 +109,9 @@ internal class PacketContext
                     }
                 }
 
+                Console.Error.WriteLine($"[TRACE] socket send {frame.Length}B cmd={packet.Command}");
                 await _context.SocketContext.Send(frame);
+                Console.Error.WriteLine($"[TRACE] socket sent cmd={packet.Command}");
             }
             catch (Exception e)
             {

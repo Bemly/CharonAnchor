@@ -413,6 +413,22 @@ web 搜索发现 Lagrange.Core Issue #247 + 本地代码核查：
    trans_emp 只挡 QR 登录。project_qr_login_rework.md 待办#2（密码登录绕行）一直没执行！
 3. MSF-NG 逆向成果保留价值：未来 QQ 强制迁移时的技术储备
 
+### 【2026-08-25 夜】QR 实测真相 + 插桩诊断法（重要方法论）
+
+**Milky 容器卡死的根因**：GetSecSign 对 trans_emp 的 native 调用挂起（CHARON_SKIP_SIGN=1 环境变量可跳过）。
+跳过后 trans_emp 帧(571B)成功上线，**服务器零回包**（心跳正常）——legacy 格式 trans_emp 确认被拒。
+
+**插桩诊断法**（本次攻坚核心手段，比 IDA 快得多）：
+- SendEvent/Resolve/Build/SendPacket/SocketContext.Send 各节点 Console.Error.WriteLine("[TRACE] ...")
+- framework-dependent 发布（PublishAot=false 绕开 macOS 无 objcopy）→ ubuntu 容器跑
+- ubuntu 依赖清单照抄 Milky Dockerfile；DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 必须
+- docker commit 已装依赖的容器实现秒级重启迭代
+- ⚠️ 本地 macOS 构建 Milky 报生成器 CS8795 错误：手写了 EventExtension.impl.cs /
+  ApiExtension.impl.cs（43 个 handler 从 [ApiHandler("...")] 特性自动提取生成）
+
+**关键认知更新**：MSF-NG 命令表含 wtlogin.trans_emp → 当前服务器要求 trans_emp 走 MSF-NG 通道，
+legacy 格式（无论签名）均被拒。这正是 MSF-NG 攻坚的价值所在。
+
 ### 待完成（下次会话按序）
 1. ~~SsoEstablishShareKey schema~~ 已破解并实现（MsfNgKeyExchange.cs + PacketContext.EstablishMsfNgSessionAsync），遗留 3 个 NAS 确认点见上
 2. Ping/心跳信道循环接入 SocketContext（模板已提取）
