@@ -22,6 +22,7 @@ internal static class MsfNgProbe
     {
         long uin = args.Length > 0 && long.TryParse(args[0], out var parsed) ? parsed : 0;
         string dumpDir = Path.Combine(Directory.GetCurrentDirectory(), "msfng-probe");
+        string signDir = args.Length > 1 ? args[1] : Directory.GetCurrentDirectory();
         Directory.CreateDirectory(dumpDir);
 
         using var client = new TcpClient();
@@ -77,15 +78,50 @@ internal static class MsfNgProbe
             Console.WriteLine($"[probe] observation ended, connected={client.Connected}");
         }
 
-        // experiment A: kx with populated reserve fields (traceparent style)
-        byte[] headRichReserve = BuildHeadReserve(packer, keyExchangeCommand);
-        await SendAndLog("kx-rich-reserve", AssembleSeqFrame(13, ++seq, headRichReserve, BuildKxBusi(keyExchangeCommand, 0)), observeSeconds: 20);
+        // experiment: REAL signature from wrapper.node in reserve.f24
+        var signProvider = new CharonAnchor.CharonSignProvider(signDir, "3.2.32");
+        using (signProvider)
+        {
+            var kxRequest = MsfNgKeyExchange.BuildRequestVariant(out _, keyExchangeCommand, ReadOnlyMemory<byte>.Empty, TsEncoding.VarInt);
+            var secInfo = await signProvider.GetSecSign(uin, keyExchangeCommand, (int)(++seq), kxRequest);
+            if (secInfo is null)
+            {
+                Console.WriteLine("[probe] GetSecSign failed");
+                return 3;
+            }
+            Console.WriteLine($"[probe] secSig={secInfo.SecSign.Length}B token={secInfo.SecToken.Length}B extra={secInfo.SecExtra.Length}B");
 
-        // experiment B: plain kx again, long window to catch async push / FIN
-        await SendAndLog("kx-longwatch", AssembleWrapped(13, ++seq, head, keyExchangeCommand, 0), observeSeconds: 20);
+            byte[] headReal = BuildHeadV13WithSigs(packer, keyExchangeCommand, secInfo.SecSign, secInfo.SecToken, secInfo.SecExtra);
+            await SendAndLog("kx-f24-real", AssembleSeqFrame(13, ++seq, headReal, BuildKxBusi(keyExchangeCommand, 0)), observeSeconds: 12);
+        }
 
         Console.WriteLine("[probe] done");
         return 0;
+    }
+
+    private static byte[] BuildHeadV13WithSigs(MsfNgPacker packer, string command, byte[] secSig, byte[] deviceToken, byte[] extra)
+    {
+        var sigs = new ProtoWriter();
+        sigs.WriteBytes(1, secSig);
+        sigs.WriteBytes(2, deviceToken);
+        sigs.WriteBytes(3, extra);
+
+        var reserve = new ProtoWriter();
+        reserve.WriteBytes(13, Encoding.UTF8.GetBytes("01-" + Convert.ToHexString(RandomNumberGenerator.GetBytes(16)).ToLowerInvariant() + "-" + Convert.ToHexString(RandomNumberGenerator.GetBytes(8)).ToLowerInvariant() + "-01"));
+        reserve.WriteVarInt(21, 32);
+        reserve.WriteBytes(24, sigs.ToArray());
+
+        using var writer = new BinaryPacket(stackalloc byte[0x200]);
+        writer.EnterLengthBarrier<int>();
+        writer.Write(command, Prefix.Int32 | Prefix.WithPrefix);
+        writer.Write("", Prefix.Int32 | Prefix.WithPrefix);
+
+        byte[] reserveBytes = reserve.ToArray();
+        writer.Write(reserveBytes.Length + 4);
+        writer.Write(4 + reserveBytes.Length);
+        writer.Write(reserveBytes);
+        writer.ExitLengthBarrier<int>(true);
+        return writer.CreateReadOnlySpan().ToArray();
     }
 
     private static byte[] BuildKxBusi(string command, int sceneId)

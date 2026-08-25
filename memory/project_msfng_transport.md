@@ -352,6 +352,51 @@ serialize 还通过 sub_5627F90(stream, fieldnum, str, target) 写 f8/f12/f13/f1
 注意：此容器装的是 req+248/272/296 三串+repeated，非 sigs 本身；sigs(a4/a5/a6) 仅校验不写入，
 真实填充在上游 NodeAPI 层。v20 式 head 有 5 个字符串槽位，是 sigs 候选位置。
 
+### 【2026-08-25 决定性】sigs wire 位置钉死：ReserveFields.f24
+
+`sub_63FB930`（EncodeReserveFields 的 f24 构造器）：
+- task+152 → 指针 → 结构 `{+0: str secSig, +24: str secDeviceToken, +48: str secExtra}`
+- 三串全空 → 不写 f24；任一非空 → `ReserveFields.f24 = { f1: secSig, f2: secDeviceToken, f3: secExtra }`
+- 与 pack 必填校验（req+152/176/200）互相印证 ✓
+
+**完整 MSF-NG 请求公式（普通命令）**：
+```
+[len][ver][enc][seq][x=0][str ""][ReqHead v13: [barrier][cmd][""][reserve]][busi: [len+4][data]]
+reserve = { f12/f13/f15/f16..., f21=32, f26, f24: {f1: sig, f2: token, f3: extra} }
+```
+签名数据来源 = CharonSignProvider.GetSecSign(uin, cmd, seq, body) 的 sign/token/extra！
+
+**下一步**：探针把 GetSecSign 输出填进 reserve.f24 重发 kx/establish —— 这应该就是静默的最终答案。
+
+### 【2026-08-25】NAS 真签名管线全通（里程碑）
+
+**环境方案**（完整踩坑记录）：
+- NAS SSH 密码在 opencode 会话日志里找到（mt;4v8M2<H#O3xU，SSH/sudo 同密码）
+- 依赖库正确来源：ghcr.io/bemly/charonanchor:3.2.32 镜像内 /usr/local/bin/（docker cp 提取）
+  ⚠️ 仓库根 libsymbols.so 是 Mach-O（macOS）版不能用；SignServer 的 wrapper.node(113MB) 版本也不对
+- 正确 wrapper.node md5 = 26256bcbb45deb43ec71d47458b91760（149MB，3.2.32）
+- 运行环境：ubuntu:latest + apt 装 ca-certificates libgnutls30 libssl3t64 libvips42 libx11-6
+  libx11-xcb1 libxext6 libunwind8 libgssapi-krb5-2 libssh2-1t64 libpsl5t64
+  + DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1（无 ICU 必须）
+- self-contained 发布整个目录上传（tar 不能排除 runtime 自己的 .so！）
+
+**实测结果**：
+```
+Loaded wrapper.node at base: 0x7FAD37000000
+Sign function at: base + 0x65E55D1 ✓ (3.2.32 偏移命中)
+secSig=32B token=0B extra=0B   ← 与 legacy 时代行为一致
+kx-f24-real 发送 → 仍静默
+```
+
+**静默未解，剩余候选**：
+1. GetSecSign 的 body/uin/seq 参数绑定方式（试 ECDHBody 包装后签名、uin=0）
+2. 缺前置命令序列（官方连接后可能先有 HelloPush 正确 body / 注册族命令）
+3. ReqHead 第二串（codec+8）或 MSFRequest 其他必填字段的 wire 内容
+4. 需要「成功参照」才能区分失败模式 → 抓 napcat 重连流量（需用户决策动生产）或本机起一次性 NTQQ 容器
+
+**探针现状**：Lagrange.Core.Runner msfng-probe 已集成 CharonSignProvider，
+NAS 目录 /vol1/1000/msfng-probe/msfng-nas-publish 可随时重跑。
+
 ### 待完成（下次会话按序）
 1. ~~SsoEstablishShareKey schema~~ 已破解并实现（MsfNgKeyExchange.cs + PacketContext.EstablishMsfNgSessionAsync），遗留 3 个 NAS 确认点见上
 2. Ping/心跳信道循环接入 SocketContext（模板已提取）

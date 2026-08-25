@@ -10,6 +10,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Lagrange.Core\Lagrange.Core.csproj" />
+      <ProjectReference Include="..\Charon\CharonSignProvider.csproj" />
     </ItemGroup>
 
     <ItemGroup>
