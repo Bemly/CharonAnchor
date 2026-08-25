@@ -47,8 +47,12 @@ internal class ServiceContext
 
         var (attr, service) = handler;
         if (!handler.Attribute.DisableLog) _context.LogTrace(Tag, "Outgoing SSOFrame: {0}", handler.Attribute.Command);
+        Console.Error.WriteLine($"[TRACE] building {attr.Command}");
 
-        return (new BotSsoPacket(attr.Command, await service.Build(@event, _context), GetNewSequence()), attr);
+        var data = await service.Build(@event, _context);
+        Console.Error.WriteLine($"[TRACE] built {attr.Command} len={data.Length}");
+
+        return (new BotSsoPacket(attr.Command, data, GetNewSequence()), attr);
     }
 
     public int GetNewSequence()

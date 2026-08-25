@@ -26,8 +26,11 @@ internal class EventContext : IDisposable
     {
         try
         {
+            Console.Error.WriteLine($"[TRACE] SendEvent enter {@event.GetType().Name}");
             await HandleOutgoingEvent(@event);
+            Console.Error.WriteLine($"[TRACE] outgoing done");
             var (frame, attribute) = await _context.ServiceContext.Resolve(@event);
+            Console.Error.WriteLine($"[TRACE] resolve done frame={frame.Data.Length}");
             var @return = await _context.PacketContext.SendPacket(frame, attribute);
             var resolved = await _context.ServiceContext.Resolve(@return);
 

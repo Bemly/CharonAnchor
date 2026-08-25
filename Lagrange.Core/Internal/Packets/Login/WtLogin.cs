@@ -19,7 +19,9 @@ internal class WtLogin : StructBase
     public WtLogin(BotContext context) : base(context)
     {
         _context = context;
+        Console.Error.WriteLine("[TRACE] WtLogin ctor: computing secp192k1 share");
         _shareKey = Keystore.Secp192K1.KeyExchange(ServerPublicKey, true);
+        Console.Error.WriteLine("[TRACE] WtLogin ctor done");
     }
     
     public ReadOnlyMemory<byte> BuildTransEmp31(byte[]? unusualSig)
