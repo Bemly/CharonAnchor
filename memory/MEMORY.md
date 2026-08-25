@@ -1,5 +1,7 @@
 # CharonAnchor Memory
 
+> ⚡ **交接必读**：`/HANDOFF-MSFNG.md`（仓库根）——MSF-NG/QR 登录攻坚的当前状态、环境与下一步行动清单。
+
 ## 项目状态
 
 - [Project Status](project_status.md) — Fork LagrangeV2 + CharonSignProvider 嵌入方案
