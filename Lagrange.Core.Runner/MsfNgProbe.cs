@@ -25,6 +25,30 @@ internal static class MsfNgProbe
         string signDir = args.Length > 1 ? args[1] : Directory.GetCurrentDirectory();
         Directory.CreateDirectory(dumpDir);
 
+        // replay mode: send a raw captured frame file, then listen
+        string? replayFile = Environment.GetEnvironmentVariable("CHARON_REPLAY_FRAME");
+        if (replayFile is not null)
+        {
+            using var replayClient = new TcpClient();
+            await replayClient.ConnectAsync(Host, Port);
+            Console.WriteLine($"[probe] connected {Host}:{Port}");
+            await using var replayStream = replayClient.GetStream();
+            byte[] frame = await File.ReadAllBytesAsync(replayFile);
+            Console.WriteLine($"[probe] replay {frame.Length}B from {replayFile}");
+            await replayStream.WriteAsync(frame);
+            var watch = Stopwatch.StartNew();
+            while (watch.Elapsed.TotalSeconds < 20 && replayClient.Connected)
+            {
+                byte[]? response = await ReadFrameWithTimeoutAsync(replayStream, TimeSpan.FromSeconds(5));
+                if (response is null) continue;
+                string file = Path.Combine(dumpDir, $"replay-rsp-{DateTime.Now:HHmmssfff}.bin");
+                await File.WriteAllBytesAsync(file, response);
+                Console.WriteLine($"[probe] <- ({response.Length}B) t+{watch.Elapsed.TotalSeconds:F1}s: {Convert.ToHexString(response)}");
+            }
+            Console.WriteLine($"[probe] done connected={replayClient.Connected}");
+            return 0;
+        }
+
         using var client = new TcpClient();
         await client.ConnectAsync(Host, Port);
         Console.WriteLine($"[probe] connected {Host}:{Port}");

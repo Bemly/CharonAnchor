@@ -2,6 +2,13 @@
 
 > 生成：2026-08-25 深夜。交接对象：下一个 agent。
 > 配套长期记忆：`memory/project_msfng_transport.md`（本文件的母本，含全部历史细节）。
+>
+> ⚡⚡ **2026-08-25 深夜更新：传输层已打通！** 官方 trans_emp 帧已完全破解（TEA 链式为
+> Lagrange pre-XOR 变体，非标准 CBC——此前所有解密失败的总根因），重放官方 690B 帧
+> **服务器 0.1s 回了 927B 真实响应**。剩余工作 = 按官方模板重构自有请求（详见
+> memory/project_msfng_transport.md 最底部「决定性突破」章节与待办清单）。
+> 关键修正：Milky 的 BuildFrame 原来从不写 busi（空帧）；ver12 请求需 v12 式 head
+> （非 v13 式）；官方 trans_emp 无任何 kx/establish/register 前置。
 
 ---
 

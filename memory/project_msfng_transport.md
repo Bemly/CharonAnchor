@@ -440,3 +440,59 @@ legacy 格式（无论签名）均被拒。这正是 MSF-NG 攻坚的价值所�
 - objdump 全量反汇编（1.2GB 文本）grep 锚点比 IDA xref 快得多：`objdump -d --no-show-raw-insn wrapper3232.node > full_disasm.txt` 然后 `grep -E "# 0xADDR\b"`
 - ida-domain 反编译正确用法：`p = db.pseudocode.decompile(ea); lines = p.to_text(remove_tags=True)`
 - 每次 run.py 冷开 IDB 需 4-8 分钟，务必批量脚本一次跑完
+
+## 【2026-08-25 深夜·决定性突破】官方 trans_emp 帧完全破解 + 服务器响应打通
+
+### ⚠️ TEA 链式重大更正（此前所有解密失败的总根因）
+Lagrange TeaProvider 的 CBC **不是标准 CBC**！是 pre-XOR 变体：
+```
+加密: X_i = P_i ⊕ D_{i-1}out;  C_i = E(X_i) ⊕ C_{i-1}   (C_0=0)
+解密: D_in_i = D_{i-1}out ⊕ C_i;  P_i = D_i_out ⊕ C_{i-1}
+```
+标准 CBC 解密（P_i = D(C_i)⊕C_{i-1}）对 QQ 帧全错。wrapper sub_85BC530 的 asm 与此一致。
+python 参考实现见会话脚本 dec_final.py（tea_dec_block + qq_dec_lagrange）。
+
+### 官方 trans_emp 0x31 请求帧（qq.pcap C#3，690B，已完整解密）
+```
+[len u32=690]
+[ver u32=12][enc u8=2]
+[basic] [u32 4][u8 x=0][str ""(00000004)]     ← 无D2常量4，非seq！（EncodeBasic: vtable+24 false → wr_bytes(d2空)=00000004）
+[cipher@14] = TEA_zero(以下全部，Lagrange链式):
+  [17B preamble] ea 79 28 65 fb | 00 00 01 2c | 00 | [u24 seq=6e3269] | 20 07 c2 77
+      ← seq 在 preamble 里且只有 3 字节！01 2c=300 常量；20 07 c2 77 恒定待解
+  [head v12 (batch_reqhead_63FA760.c 对应)]:
+    [00 00 08 04][00 00 00 00][00 00 00 00][01][00 00 00 00][04]
+    [str "wtlogin.trans_emp"][str ""][str 32hex="dca7d957..."](疑似MD5(Guid))[str ""]
+    [u16 0002](空短blob)
+    [reserve: [u32 0xc9]+197B 数据("b <同hash32>" trace 开头)]
+  [busi: [u32 len+4][TLV]]
+  [尾部若干 00]
+```
+- 时序：connect → ping21 → Heartbeat.Alive(v13 enc0 seq) → Client.CorrectTime(v13 enc0) → trans_emp(ver12 enc2)
+- **没有任何 kx/establish/register 前置**！trans_emp 直接第三帧发出
+- 轮询 0x12 同模板每 2s；seq 单调递增（69→6a）
+- unk_F76E90 确为 16 零字节（.rodata 无重定位）；enc=2↔零密钥铁证
+- 官方二进制 md5 与我们逆向的 wrapper.node 相同（26256bcb）
+
+### 【里程碑】重放实验成功（2026-08-25 21:57 NAS）
+探针加 CHARON_REPLAY_FRAME 模式：原样重放 pcap 提取的 690B 帧 →
+**服务器 0.1s 回了 927B 响应**（[len][ver12][enc2]，含 "wtlogin.trans_emp" cmd 回显）！
+- 证明传输层/加密层理解 100% 正确，服务器接受该帧形态
+- 响应已解密存 official_rsp31_plain.bin（本地 opencode tmp）
+- 下一步 = 用我们自己的 TLV/Guid/seq 按官方模板重构请求（替换 busi+hash32+seq 三处）
+
+### Milky 侧已完成的代码改动（本次会话）
+- MsfNgPacker.BuildFrame 补上 busi 缺失 bug（原实现从不写 sso.Data！）；
+  enc≠0 时 head+busi 整体加密 ✓ EncodeFinal 语义
+- PacketContext MSF-NG 分支恢复 D2Auth→v12/Simple→v13 原路由（与官方 wire 一致）
+- SocketContext.Connect 连接后发 21B ping（CHARON_MSFNG 或 Lagrange.Server.UseMsfNgTransport 配置）
+- Milky 配置接线 UseMsfNgTransport；Milky 构建修复：生成器改 opt-in（-p:MilkyUseGenerator=true），手写 impl 默认生效
+- 测试 71/71 过；已提交 GitHub（ae7361da）
+- ⚠️ 但 Milky 发的 ver12 帧仍是 v13 式 head → 依旧静默。需按上面官方模板重写 v12 head
+
+### 待办（下次会话）
+1. 解析 official_req31_plain.bin / official_rsp31_plain.bin 全字段（尤其 17B preamble 语义、reserve 197B 内容、响应 body 的 TLV/state）
+2. MsfNgPacker 实现 BuildTransEmpRequest(busi)：官方模板 + 替换 hash32=MD5(Keystore.Guid)、seq、busi
+3. PacketContext 对 wtlogin.trans_emp 走新构造器；响应用现有 DispatchMsfNgPacket 匹配
+4. NAS 实测出码；然后 TransEmp12 轮询同路径
+5. GetSecSign(trans_emp) native 挂起问题仍未解（本实验未签名也通了——重放场景；自有请求是否需要 reserve.f24 签名待测）
