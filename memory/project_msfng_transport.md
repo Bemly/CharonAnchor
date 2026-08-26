@@ -636,3 +636,34 @@ poll resp payload:     同构，blob 内容每次不同
 2. 解出响应明文 → 定位 qr_url/state 字段 → 完成 0x31+0x12 全语义
 3. 逆向载荷 body（sub_33853B0）生成有效设备报告 → 触发大响应
 4. Milky C# 集成（配方全在 teacheck/Program.cs：WrapperTeaEncrypt + EcdhProvider + 帧组装）
+
+## 【2026-08-26 收尾】关联扫描工具就绪，等限流冷却
+
+### gdbhooks_correlate.py（NAS /tmp/qqdyn/）— 响应解密关联扫描器
+原理：官方客户端跑 QR 流程 + tcpdump；在「第一次轮询签名」时暂停
+（此时 0x31 响应已解密入堆）；从 pcap 提取最后一个大响应的密文片段作 needle；
+搜索进程内存找密文位置 → 转储 ±8~16KB（应含解密副本与相关结构）。
+
+踩坑记录（都已修复验证）：
+- TCP 流必须重组后再走帧（裸段会漏帧）
+- 方向过滤用 sp==8080（源端口=服务器→客户端）
+- 帧过滤 enc 字节在 f[4]（无长度前缀切片后），不是 f[8]
+- halt 时机：第一次 rdx==196 的签名（rdx==356 是请求签名，太早）
+- ⚠️ 当日客户端被限流：多次运行后 tcpdump 抓不到任何流量（0 字节 pcap）。
+  冷却（24h+）后重试即可，脚本无需改动。
+
+### 状态总结（截至本轮）
+| 层 | 状态 |
+|---|---|
+| 帧格式/TEA/填充 | ✅ 完全破解并双向验证 |
+| 自组 0x31 请求 | ✅ retCode=0（自有 ECDH 密钥对+设备id）|
+| 0x12 轮询 | ✅ retCode=0 ×4 |
+| kex 响应(76B) 结构 | ✅ 已解析，含 ~49B blob |
+| 大响应(919B+) 解密 | ❌ 密钥派生未知 → 关联扫描可破 |
+| 载荷 body(280B) 生成 | ❌ 随机 body 只得最小响应 → 需逆向 sub_33853B0 |
+
+### 关键文件索引（本机 /var/folders/.../T/opencode/，NAS /tmp/qqdyn/）
+- teacheck/Program.cs — C# 端到端验证（EcdhProvider+WrapperTeaEncrypt+帧组装+轮询）
+- mkframes.py / buildfresh.py — python 帧构造（含正确链式与填充）
+- fresh_payload356.bin / official_req31_plain.bin / q_payload.bin — 样本
+- frame_M/N/P/Q/T*.bin — 验证矩阵各变体
