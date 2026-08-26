@@ -606,3 +606,33 @@ f26: varint 101
 4. Milky C# 集成：MsfNgPacker 补 WrapperTeaEncrypt（pad=(5-len)&7 无尾部 pre-XOR 链）
    + BuildTransEmpRequest 用自有载荷 + 响应解密
 5. 0x12 轮询载荷（196B 格式 byte[8]=01）同路径
+
+## 【2026-08-26 续】轮询全通 + 密钥交换响应结构确认
+
+### 全流程 C# 验证（teacheck/Program.cs）
+自有密钥对 0x31 → **retCode=0**；后续 4 次 0x12 轮询 → **全部 retCode=0**！
+完整请求/轮询/响应管线在自有身份下工作。
+
+### 响应载荷结构确认
+```
+kex resp payload(76B): [u32 69][02][u16 65][1f41][0812 00*8][~49B blob][03]
+poll resp payload:     同构，blob 内容每次不同
+```
+- ~49B blob：疑似服务器临时公钥或加密状态令牌
+- 官方大响应(935B) = 有效 body 载荷才能触发；随机 body 只有 76B 最小响应
+- EcdhProvider.UnpackPublic 接受 49B(04+XY) 或 25B 压缩；48B 裸 XY 需手动加 04 前缀
+
+### 动态工具链（NAS /tmp/qqdyn/，容器 qq-official-gdb）
+- gdbhooks_sign.py：签名函数入参+输出捕获（1041 次调用全录）
+- gdbhooks_inject.py：进程内注入调用签名（FinishBreakpoint 同步上下文技巧）
+- gdbhooks_correlate.py：tcpdump+内存搜索关联（找密文的解密副本）
+- ⚠️ 已知坑：①容器内路径是 /qqdyn 不是 /tmp/qqdyn ②SignBP 计数含大量 SsoReport
+  （978/1041），按 rdx==356 过滤 trans_emp ③gdb batch 里 interrupt 需同步上下文，
+  注入要在 BP stop()/FinishBreakpoint 内做 ④客户端启动偶发失败（限流？），需重试
+
+### 下次会话行动清单（最终）
+1. 相关性扫描重试（客户端启动稳定后）：halt 条件改为「rdx==356 的 trans_emp 签名后」
+   而非固定计数；搜密文转储 ±16KB 找解密副本 → 反推响应密钥派生
+2. 解出响应明文 → 定位 qr_url/state 字段 → 完成 0x31+0x12 全语义
+3. 逆向载荷 body（sub_33853B0）生成有效设备报告 → 触发大响应
+4. Milky C# 集成（配方全在 teacheck/Program.cs：WrapperTeaEncrypt + EcdhProvider + 帧组装）
